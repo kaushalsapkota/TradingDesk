@@ -271,6 +271,14 @@ canvas.chart{display:block;width:100%;height:200px}
 .market-notice{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-12px);opacity:0;pointer-events:none;z-index:100;display:flex;align-items:center;gap:9px;max-width:min(92vw,560px);padding:10px 15px;border:1px solid var(--line2);border-radius:12px;background:var(--raised);box-shadow:var(--shadow);font-size:.84rem;transition:opacity .2s ease,transform .2s ease}
 .market-notice.show{opacity:1;transform:translate(-50%,0)}
 .market-notice .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft);flex:none}
+.td-ticker{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:8px;max-width:min(76vw,720px);padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--panel) 90%,transparent);box-shadow:var(--g-shadow-s,0 4px 15px rgba(0,0,0,.12));overflow:hidden;white-space:nowrap;pointer-events:none}
+.td-ticker .live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-soft);flex:none}
+.td-ticker .ticker-track{display:flex;gap:16px;animation:tickerIn .35s ease both}
+.td-ticker .ticker-item{display:inline-flex;align-items:center;gap:5px;font:600 .68rem var(--f-mono);font-variant-numeric:tabular-nums}
+.td-ticker .ticker-item b{font-family:var(--f-body);font-size:.68rem}
+.td-ticker .ticker-item em{font-style:normal}
+@keyframes tickerIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@media (max-width:960px){.td-ticker{top:calc(58px + env(safe-area-inset-top,0px));max-width:calc(100vw - 28px);left:14px;right:14px;transform:none;justify-content:flex-start}.td-ticker .ticker-track{overflow:hidden}}
 @media (prefers-reduced-motion:reduce){#tdSplash .splash-card,#tdSplash .splash-mark,#tdSplash .splash-bar i{animation:none!important}}
 .trainer-cv{display:block;width:100%;height:clamp(300px,50vh,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -289,6 +297,7 @@ canvas.chart{display:block;width:100%;height:200px}
   <span class="t" id="topTitle">Trading Desk</span>
   <span class="clk" id="topClock"></span>
 </div>
+<div id="tdTicker" class="td-ticker" aria-label="Live market ticker" hidden><i class="live-dot"></i><div class="ticker-track"></div></div>
 <div class="shell">
   <aside class="side" id="side" aria-label="Main menu">
     <div class="brand">
@@ -9556,8 +9565,8 @@ devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(rout
     <div class="ts-acctrow"><span class="ts-dot on"></span><div><b>${/Mac|iPhone|iPad/.test(navigator.platform||"")?"Apple device":"This device"} · ${navigator.userAgent.includes("Chrome")?"Chrome":navigator.userAgent.includes("Safari")?"Safari":navigator.userAgent.includes("Firefox")?"Firefox":"Web browser"}</b><span class="small muted">Active now · ${Intl.DateTimeFormat().resolvedOptions().timeZone||"local time"}</span></div></div>
     <div class="ts-btns"><button class="btn" type="button" id="tdSessionRefresh">Refresh session</button><button class="btn ghost" type="button" id="tdSessionSignOut">Sign out on this device</button></div>
   </div>`;
-  const _pf=tsProfileHTML;
-  tsProfileHTML=function(){return _pf()+sessionHTML();};
+  const _sec=tsSecurityHTML;
+  tsSecurityHTML=function(){return _sec()+sessionHTML();};
   const _tsBind=tsBind;
   tsBind=function(){_tsBind();const r=document.getElementById("tdSessionRefresh");if(r)r.onclick=()=>{r.textContent="Session refreshed";setTimeout(()=>{if(r)r.textContent="Refresh session";},1600);};const s=document.getElementById("tdSessionSignOut");if(s)s.onclick=()=>tsSignOutAsk();};
 
@@ -9566,9 +9575,10 @@ devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(rout
       <form class="ts-form" id="tdSignupForm" novalidate><div class="ts-f"><label for="tdSignupName">Your name</label><input id="tdSignupName" autocomplete="name" maxlength="60" placeholder="Kaushal Sapkota" data-first></div>
       <div class="ts-f"><label for="tdSignupEmail">Email or Gmail</label><input id="tdSignupEmail" type="email" autocomplete="email" required placeholder="you@gmail.com"></div>
       <div class="ts-fbar"><button class="btn gold" type="submit">Create profile</button><button class="btn" type="button" data-x>Cancel</button><span class="small" id="tdSignupState" role="status"></span></div></form>
+      <div class="ts-f"><label for="tdSignupPhone">Phone <span class="muted">(optional)</span></label><input id="tdSignupPhone" type="tel" autocomplete="tel" placeholder="+61 412 345 678"></div>
       <div class="ts-sub" style="margin-top:12px"><h3>Already have an account?</h3><button class="btn" type="button" id="tdGoogleSignup">Continue with Google</button><p class="tiny muted">Google OAuth is available when the deployment owner connects an OAuth client; this button never asks for or stores a Google password.</p></div>`,o=>{
         const f=o.querySelector("#tdSignupForm"),state=o.querySelector("#tdSignupState");
-        f.onsubmit=e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}try{localStorage.setItem("td_signup",JSON.stringify({name,email,createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
+        f.onsubmit=e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim(),phone=o.querySelector("#tdSignupPhone").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}try{localStorage.setItem("td_signup",JSON.stringify({name,email,phone,createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
         o.querySelector("#tdGoogleSignup").onclick=()=>{state.textContent="Connect a Google OAuth client in Vercel to enable secure Google sign-up.";};
       });
   }
@@ -9581,11 +9591,15 @@ devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(rout
   window.tdMarketNotice=marketNotice;
   const _quotes=lmQuotes;
   let quoteBusy=false,quoteRetryAt=0,quoteFailures=0;
-  lmQuotes=async function(force){if(quoteBusy||Date.now()<quoteRetryAt)return 0;quoteBusy=true;try{const n=await _quotes(force);if(n){quoteFailures=0;quoteRetryAt=0;if(Date.now()-lastNotice>9000){lastNotice=Date.now();marketNotice("Live Yahoo Finance prices updated · "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}));}}else{quoteFailures++;quoteRetryAt=Date.now()+Math.min(60000,Math.max(5000,1000*2**Math.min(quoteFailures,6)));}return n;}finally{quoteBusy=false;}};
+  const tickerSymbols=["^GSPC","^NDX","GC=F","BTC-USD","EURUSD=X","^VIX"];
+  const tickerNames={"^GSPC":"S&P","^NDX":"Nasdaq","GC=F":"Gold","BTC-USD":"BTC","EURUSD=X":"EUR/USD","^VIX":"VIX"};
+  function tickerPaint(){const box=document.querySelector("#tdTicker"),track=box&&box.querySelector(".ticker-track"),quotes=LM&&LM.quotes;if(!box||!track)return;const items=tickerSymbols.map(s=>{const q=quotes&&quotes[s];if(!q||!Number.isFinite(q.price))return "";const pct=Number.isFinite(q.pct)?q.pct:null,cls=pct==null?"":pct>=0?"up-t":"down-t";return `<span class="ticker-item"><b>${tickerNames[s]}</b><span>${Number(q.price).toLocaleString(undefined,{maximumFractionDigits:s==="BTC-USD"?0:2})}</span>${pct==null?"":`<em class="${cls}">${pct>=0?"+":""}${pct.toFixed(2)}%</em>`}</span>`;}).filter(Boolean);if(!items.length){box.hidden=true;return;}track.innerHTML=items.join("");box.hidden=false;}
+  lmQuotes=async function(force){if(quoteBusy||Date.now()<quoteRetryAt)return 0;quoteBusy=true;try{const n=await _quotes(force);if(n){quoteFailures=0;quoteRetryAt=0;tickerPaint();if(Date.now()-lastNotice>9000){lastNotice=Date.now();marketNotice("Live Yahoo Finance prices updated · "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}));}}else{quoteFailures++;quoteRetryAt=Date.now()+Math.min(60000,Math.max(5000,1000*2**Math.min(quoteFailures,6)));}return n;}finally{quoteBusy=false;}};
   const _mkPaint=mkPaint;mkPaint=function(){_mkPaint();const b=document.getElementById("mkBody");if(b)b.innerHTML=b.innerHTML.replaceAll("via Zapier","via Vercel").replaceAll("Zapier connector","Vercel live API").replaceAll("Fetching via Zapier","Fetching live data…");};
   const _intel=VIEWS.intel;VIEWS.intel=sub=>_intel(sub).replaceAll("through your Zapier connector","from the Vercel live API").replaceAll("via your Zapier connector","from the Vercel live API");
   if(typeof route!=="undefined"&&route.page==="intel")mkPaint();
-  setInterval(()=>{if(document.visibilityState==="visible"&&marketPage())lmQuotes(true);},1000);
+  setInterval(tickerPaint,1000);
+  setInterval(()=>{if(document.visibilityState==="visible"&&marketPage())lmQuotes(true);},15000);
 })();
 try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
 try{applyTheme();}catch{}

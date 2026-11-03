@@ -18,11 +18,25 @@ const json = (res, status, body, maxAge = 15) => {
 };
 
 async function upstream(url) {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "TradingDesk/1.0 (+https://github.com/kaushalsapkota/TradingDesk)" },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: { "User-Agent": "TradingDesk/1.0 (+https://github.com/kaushalsapkota/TradingDesk)" },
+      signal: controller.signal,
+    });
+  } finally { clearTimeout(timeout); }
   if (!response.ok) throw new Error(`Upstream returned ${response.status}`);
   return response;
+}
+
+async function upstreamAny(urls) {
+  let lastError;
+  for (const url of urls) {
+    try { return await upstream(url); } catch (error) { lastError = error; }
+  }
+  throw lastError || new Error("Upstream unavailable.");
 }
 
 function quoteRows(payload) {
@@ -79,7 +93,8 @@ module.exports = async (req, res) => {
     if (type === "quotes") {
       const symbols = (params.get("symbols") || "").split(",").filter((symbol) => SYMBOL.test(symbol)).slice(0, 40);
       if (!symbols.length) return json(res, 400, { error: "At least one valid symbol is required." }, 0);
-      const upstreamResponse = await upstream(`${YAHOO}/v8/finance/spark?symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=15m`);
+      const query = `symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=15m`;
+      const upstreamResponse = await upstreamAny([`${YAHOO}/v8/finance/spark?${query}`, `https://query2.finance.yahoo.com/v8/finance/spark?${query}`]);
       return json(res, 200, { quotes: quoteRows(await upstreamResponse.json()), fetchedAt: Math.floor(Date.now() / 1000) }, 1);
     }
 
@@ -90,7 +105,8 @@ module.exports = async (req, res) => {
       if (!SYMBOL.test(symbol) || !/^(1m|2m|5m|15m|30m|60m|90m|1h|1d|5d|1wk|1mo|3mo)$/.test(interval) || !/^(1d|5d|1mo|3mo|6mo|1y|5y)$/.test(range)) {
         return json(res, 400, { error: "Invalid chart request." }, 0);
       }
-      const upstreamResponse = await upstream(`${YAHOO}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`);
+      const query = `interval=${interval}&range=${range}`;
+      const upstreamResponse = await upstreamAny([`${YAHOO}/v8/finance/chart/${encodeURIComponent(symbol)}?${query}`, `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${query}`]);
       const result = (await upstreamResponse.json())?.chart?.result?.[0];
       if (!result) return json(res, 502, { error: "No chart data returned." }, 0);
       const quote = result.indicators?.quote?.[0] || {};
