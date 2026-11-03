@@ -15,7 +15,7 @@
   --f-display:"Manrope","Inter",system-ui,sans-serif;
   --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
-  --r:14px; color-scheme:dark;
+  --r:14px; color-scheme:light;
 }
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
   --bg:#F6F3EC; --panel:#FFFFFF; --raised:#FBFAF6; --sunk:#EFEBE2; --line:#E4DED2; --line2:#D6CEBF;
@@ -272,7 +272,7 @@ canvas.chart{display:block;width:100%;height:200px}
     <nav id="nav"></nav>
     <div class="sidefoot">
       <span id="sideClock" class="mono"></span>
-      <span id="syncState">Saved on this device</span>
+      <span id="syncState">Saved on this device</span><span>Powered by Kaushal Sapkota</span>
     </div>
   </aside>
   <main class="stage"><div class="page" id="app"></div></main>
@@ -2797,7 +2797,7 @@ h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
 <script>
 "use strict";
 /* ---------- Light / Dark / System theme, remembered on this device ---------- */
-const THEME=()=>{try{return localStorage.getItem("td_theme")||"system";}catch{return "system";}};
+const THEME=()=>{try{return localStorage.getItem("td_theme")||"light";}catch{return "light";}};
 function applyTheme(){const t=THEME();if(t==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
   $$(".thm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));}
 const _rn2=renderNav;renderNav=function(){_rn2();const br=document.querySelector(".brand");if(br&&!document.querySelector(".thm")){br.insertAdjacentHTML("afterend",`<div class="thm" role="group" aria-label="Theme">${[["light","Light"],["dark","Dark"],["system","Auto"]].map(([k,l])=>`<button data-t="${k}">${l}</button>`).join("")}</div>`);
@@ -5125,7 +5125,7 @@ function shellInit(){const tb=$(".topbar");if(!tb||tb.dataset.v5f)return;tb.data
   const right=document.createElement("div");right.className="tb-right";
   right.innerHTML=`<button class="iconbtn tb-sbtn" id="qOpen" aria-label="Search">${ix("search",20)}</button><button class="iconbtn" id="thmBtn"></button>`;
   tb.insertBefore(logo,tt);tb.insertBefore(sw,tt);tb.appendChild(right);right.insertBefore(clk,right.firstChild);
-  thmPaint();$("#thmBtn").onclick=()=>{const order=["system","light","dark"],n=order[(order.indexOf(THEME())+1)%3];try{localStorage.setItem("td_theme",n);}catch{}applyTheme();thmPaint();
+  thmPaint();$("#thmBtn").onclick=()=>{const order=["light","dark","system"],n=order[(order.indexOf(THEME())+1)%3];try{localStorage.setItem("td_theme",n);}catch{}applyTheme();thmPaint();
     if(route.page==="trainer"&&typeof drawT==="function")drawT();if(route.page==="journal"&&typeof drawEquity==="function")try{render();}catch{}toast(THM_L[n]);};
   /* desktop: the menu button collapses the nav to an icon rail (like YouTube) */
   mb.addEventListener("click",e=>{if(innerWidth<=960)return;e.stopImmediatePropagation();const d=document.documentElement,on=!d.classList.contains("navmini");d.classList.toggle("navmini",on);try{localStorage.setItem("td_navmini",on?"1":"0");}catch{}},true);
