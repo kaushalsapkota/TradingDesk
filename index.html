@@ -68,6 +68,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav[aria-current="page"] svg{color:var(--gold);opacity:1}
 .nav .badge{margin-left:auto;font:600 .66rem var(--f-mono);color:var(--gold)}
 .sidefoot{margin-top:auto;display:grid;gap:8px;font-size:.78rem;color:var(--faint);padding:0 6px}
+.site-credit{padding-top:8px;border-top:1px solid var(--line);font-size:.7rem;letter-spacing:.02em;color:var(--muted)}
+.site-credit b{color:var(--gold);font-weight:600}
 .topbar{display:none}
 .stage{min-width:0;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .page{max-width:1120px;margin:0 auto;padding-block:30px 80px;display:grid;gap:26px}
@@ -84,6 +86,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   .page{padding-block:20px 70px;gap:20px}
 }
 .iconbtn{border:1px solid var(--line);background:var(--raised);border-radius:9px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+#thmBtn,.thm{display:none!important}
 
 /* ---------- building blocks ---------- */
 .head{display:grid;gap:10px}
@@ -254,15 +257,47 @@ details.acc > .in{padding:0 16px 16px;display:grid;gap:12px}
 canvas.chart{display:block;width:100%;height:200px}
 .note-item{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);display:grid;gap:6px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raised);border:1px solid var(--line2);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:.88rem;z-index:60}
+#tdSplash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--gold) 18%,var(--bg)),var(--bg) 62%);transition:opacity .45s ease,visibility .45s ease}
+#tdSplash.done{opacity:0;visibility:hidden;pointer-events:none}
+#tdSplash .splash-card{display:grid;justify-items:center;gap:14px;text-align:center;padding:32px;animation:splashRise .75s cubic-bezier(.2,.8,.2,1) both}
+#tdSplash .splash-mark{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);box-shadow:0 18px 50px color-mix(in srgb,var(--gold) 18%,transparent);animation:splashPulse 1.8s ease-in-out infinite}
+#tdSplash h1{font-size:clamp(2rem,6vw,3.8rem);margin:0}
+#tdSplash p{color:var(--muted);max-width:34ch}
+#tdSplash .splash-bar{width:min(250px,70vw);height:4px;border-radius:99px;background:var(--line);overflow:hidden}
+#tdSplash .splash-bar i{display:block;width:100%;height:100%;background:var(--gold);transform-origin:left;animation:splashLoad 3s linear both}
+@keyframes splashRise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes splashPulse{50%{transform:scale(1.05);box-shadow:0 22px 65px color-mix(in srgb,var(--gold) 28%,transparent)}}
+@keyframes splashLoad{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.market-notice{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-12px);opacity:0;pointer-events:none;z-index:100;display:flex;align-items:center;gap:9px;max-width:min(92vw,560px);padding:10px 15px;border:1px solid var(--line2);border-radius:12px;background:var(--raised);box-shadow:var(--shadow);font-size:.84rem;transition:opacity .2s ease,transform .2s ease}
+.market-notice.show{opacity:1;transform:translate(-50%,0)}
+.market-notice .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft);flex:none}
+.td-ticker{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:8px;max-width:min(76vw,720px);padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--panel) 90%,transparent);box-shadow:var(--g-shadow-s,0 4px 15px rgba(0,0,0,.12));overflow:hidden;white-space:nowrap;pointer-events:none}
+.td-ticker .live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-soft);flex:none}
+.td-ticker .ticker-track{display:flex;width:max-content;gap:16px;animation:tickerMarquee 42s linear infinite}
+.td-ticker .ticker-item{display:inline-flex;align-items:center;gap:5px;font:600 .68rem var(--f-mono);font-variant-numeric:tabular-nums}
+.td-ticker .ticker-item b{font-family:var(--f-body);font-size:.68rem}
+.td-ticker .ticker-item em{font-style:normal}
+@keyframes tickerMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (max-width:960px){.td-ticker{top:calc(58px + env(safe-area-inset-top,0px));max-width:calc(100vw - 28px);left:14px;right:14px;transform:none;justify-content:flex-start}.td-ticker .ticker-track{overflow:hidden}}
+@media (prefers-reduced-motion:reduce){#tdSplash .splash-card,#tdSplash .splash-mark,#tdSplash .splash-bar i,.td-ticker .ticker-track{animation:none!important}}
 .trainer-cv{display:block;width:100%;height:clamp(300px,50vh,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
+<div id="tdSplash" aria-label="Loading Trading Desk" role="status">
+  <div class="splash-card">
+    <div class="splash-mark" aria-hidden="true"><svg width="42" height="42" viewBox="0 0 42 42" fill="none"><path d="M9 29V13M17 33V9M25 26V6M33 35V16" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"/><path d="M6 31l9-8 8 3 12-15" stroke="var(--up)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>Trading Desk</h1>
+    <p>Market intelligence, lessons and a clearer plan for every session.</p>
+    <div class="splash-bar" aria-hidden="true"><i></i></div>
+  </div>
+</div>
 <div class="topbar">
   <button class="iconbtn" id="menuBtn" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h14M2 9h14M2 14h14"/></svg></button>
   <span class="t" id="topTitle">Trading Desk</span>
   <span class="clk" id="topClock"></span>
 </div>
+<div id="tdTicker" class="td-ticker" aria-label="Live market ticker" hidden><i class="live-dot"></i><div class="ticker-track"></div></div>
 <div class="shell">
   <aside class="side" id="side" aria-label="Main menu">
     <div class="brand">
@@ -273,6 +308,7 @@ canvas.chart{display:block;width:100%;height:200px}
     <div class="sidefoot">
       <span id="sideClock" class="mono"></span>
       <span id="syncState">Saved on this device</span>
+      <span class="site-credit">Powered by <b>Kaushal Sapkota</b></span>
     </div>
   </aside>
   <main class="stage"><div class="page" id="app"></div></main>
@@ -1670,7 +1706,7 @@ VIEWS.markets=()=>{const np=S.settings.region==="np";
   <div class="grid g2" id="mkTop"></div>
   <div class="card stack"><h3>Today on one timeline (${HOME_NAME()} time)</h3><div class="svgwrap" id="mkTl"></div></div>
   <div class="mkt" id="mkList"></div>
-  <div class="callout info"><b>Live prices, charts and news are now inside this Desk:</b> open <a href="#live">Live markets</a>, <a href="#news">Live news</a> or <a href="#poly">Polymarket odds</a> in the Claude desktop app on your Mac.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. For TradingView-style live charts inside an app, use your Mac app's Pro Chart tab.</p>
+  <div class="callout info"><b>Live prices, charts and news are now inside this Desk:</b> open <a href="#live">Live markets</a>, <a href="#news">Live news</a> or <a href="#poly">Polymarket odds</a>. Data is fetched server-side and labelled with its source and update time.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. The embedded Market Intelligence view includes watchlists, chart timeframes and drawing tools.</p>
    <h4>Global</h4><div class="links">${LIVE_AU.map(([n,u,s])=>`<a href="${u}" target="_blank" rel="noopener">${n}<span>${s} <i class=ix-ext></i></span></a>`).join("")}</div>
 </div>`;};
 AFTER.markets=()=>{const draw=()=>{if(!$("#mkList"))return;const now=new Date(),np=S.settings.region==="np";
@@ -2797,7 +2833,7 @@ h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
 <script>
 "use strict";
 /* ---------- Light / Dark / System theme, remembered on this device ---------- */
-const THEME=()=>{try{return localStorage.getItem("td_theme")||"system";}catch{return "system";}};
+const THEME=()=>{try{return localStorage.getItem("td_theme")||"light";}catch{return "light";}};
 function applyTheme(){const t=THEME();if(t==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
   $$(".thm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));}
 const _rn2=renderNav;renderNav=function(){_rn2();const br=document.querySelector(".brand");if(br&&!document.querySelector(".thm")){br.insertAdjacentHTML("afterend",`<div class="thm" role="group" aria-label="Theme">${[["light","Light"],["dark","Dark"],["system","Auto"]].map(([k,l])=>`<button data-t="${k}">${l}</button>`).join("")}</div>`);
@@ -3974,10 +4010,15 @@ html.pvp .nowbar{background:var(--panel)!important}
 .mk-tiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .mk-tile{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--sunk);text-decoration:none;color:var(--ink);min-width:0;border:1px solid transparent}
 .mk-tile:hover{border-color:var(--line2)}
+.mk-tile{animation:mkTileIn .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--mk-i,0) * 35ms)}
+.mk-tile:hover .mk-sp{filter:drop-shadow(0 0 4px color-mix(in srgb,var(--up) 55%,transparent))}
+.mk-tp b{transition:color .25s,transform .25s}.mk-tile:hover .mk-tp b{transform:translateY(-1px)}
+@keyframes mkTileIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .mk-tt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;min-width:0}
 .mk-tt b{font:700 .9rem var(--f-mono)}.mk-tt span{font-size:.7rem;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mk-tp{display:grid;gap:1px}.mk-tp b{font:700 1.05rem var(--f-mono)}.mk-tp em{font:500 .74rem var(--f-mono);font-style:normal}
-.mk-sp{width:100%;height:28px;display:block}.mk-sp polyline{stroke:var(--up)}.mk-sp.dn polyline{stroke:var(--down)}
+.mk-sp{width:100%;height:28px;display:block}.mk-sp polyline{stroke:var(--up);stroke-dasharray:180;stroke-dashoffset:180;animation:mkDraw 1s ease-out forwards}.mk-sp.dn polyline{stroke:var(--down)}
+@keyframes mkDraw{to{stroke-dashoffset:0}}
 .mk-br{display:grid;gap:10px}
 .mk-brh{display:flex;justify-content:space-between;font:700 .9rem var(--f-mono)}
 .mk-brbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunk)}
@@ -5324,13 +5365,13 @@ shellInit();
 const VV_PRE=[["f","Female"],["m1","Male 1"],["m2","Male 2"]];
 const VV_NOVEL=/\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|princess|hysterical|deranged|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i;
 const VV_BADNAME=/india|indian|nepal|hindi|rishi|veena|\bneel\b|lekha|heera|\bravi\b|kalpana|hemant|aditi|raveena|prabhat|swara|sangeeta|\bisha\b/i;
-const VV_FEM=/\b(samantha|karen|serena|moira|tessa|victoria|allison|ava|susan|zoe|zoey|fiona|kate|catherine|nicky|joelle|noelle|matilda|stephanie|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|emma|clara|sara|ellie|olivia|amy|emily|salli|joanna|kimberly|ivy|kendra|nicole|freya|abbi|bella|hollie|maisie|annette|carly|elsie|tina|jane|molly|mia|evie|female|woman)\b/i;
+const VV_FEM=/\b(samantha|karen|serena|moira|tessa|victoria|allison|ava|susan|zoe|zoey|fiona|kate|catherine|nicky|joelle|noelle|matilda|stephanie|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|emma|clara|sara|ellie|olivia|amy|emily|salli|joanna|kimberly|ivy|kendra|nicole|freya|abbi|bella|hollie|maisie|annette|carly|elsie|tina|jane|molly|mia|evie|female|woman|google us english|microsoft zira|microsoft aria|microsoft jenny|microsoft ava)\b/i;
 const VV_MALE=/\b(daniel|arthur|aaron|gordon|lee|tom|alex|oliver|david|mark|george|ryan|william|guy|christopher|eric|brian|andrew|evan|nathan|jamie|malcolm|matthew|russell|thomas|ken|duncan|darren|neil|tim|liam|noah|elliot|ethan|jacob|james|roger|tony|davis|jason|brandon|connor|male|man)\b/i;
 const vvLang=v=>String(v.lang||"").replace("_","-");
 function vvOk(v){const l=vvLang(v);return /^en(-|$)/i.test(l)&&!/-(IN|NP)\b/i.test(l)&&!VV_NOVEL.test(v.name)&&!VV_BADNAME.test(v.name);}
 function vvGender(v){const n=String(v.name||"").trim();if(/^google us english$/i.test(n))return "f";if(VV_FEM.test(n))return "f";if(VV_MALE.test(n))return "m";return "";}
 function vvScore(v,g){const n=v.name,l=vvLang(v);let s=/^en-AU/i.test(l)?30:/^en-GB/i.test(l)?26:/^en-US/i.test(l)?22:/^en-(NZ|IE)/i.test(l)?16:8;
-  if(/siri/i.test(n))s+=45;if(/premium/i.test(n))s+=40;if(/enhanced/i.test(n))s+=32;if(/natural|neural|online/i.test(n))s+=30;if(/google/i.test(n))s+=18;if(/compact/i.test(n))s-=20;
+  if(/siri/i.test(n))s+=45;if(/premium/i.test(n))s+=55;if(/enhanced/i.test(n))s+=48;if(/natural|neural|online/i.test(n))s+=42;if(/google us english|microsoft (zira|aria|jenny|ava)/i.test(n))s+=34;if(/google/i.test(n))s+=18;if(/compact/i.test(n))s-=20;
   if(g==="f"&&/samantha|karen|serena|moira/i.test(n))s+=12;if(g==="m"&&/daniel|arthur|aaron|gordon|\blee\b/i.test(n))s+=12;return s;}
 const vvBase=v=>String(v.name).replace(/\s*\(.*\)\s*/g,"").replace(/^(microsoft|google|apple)\s+/i,"").trim().toLowerCase();
 const vvAccent=v=>{const l=vvLang(v);return /AU/i.test(l)?"Australian":/GB/i.test(l)?"British":/US/i.test(l)?"American":/NZ/i.test(l)?"New Zealand":/IE/i.test(l)?"Irish":"English";};
@@ -5343,7 +5384,7 @@ function vvPresets(){const out={none:true,single:false,f:{},m1:{},m2:{}};if(!VOI
   let f=fem[0]||null,m1=male[0]||null,m2=m1?(male.find(v=>v!==m1&&vvLang(v)!==vvLang(m1))||male.find(v=>v!==m1)||null):null;
   if(!f)f=unk[0]||null;if(!m1)m1=unk.find(v=>v!==f)||null;if(m1&&!m2)m2=unk.find(v=>v!==f&&v!==m1)||null;
   const any=f||m1||ok[0];out.single=new Set([f,m1,m2].filter(Boolean)).size<=1&&ok.length<=1;
-  out.f=f?{v:f,pitch:1}:{v:any,pitch:1.15,note:"higher pitch"};
+  out.f=f?{v:f,pitch:1}:{v:any,pitch:1,note:"female voice unavailable; using the clearest English voice"};
   out.m1=m1?{v:m1,pitch:1}:{v:any,pitch:.86,note:"lower pitch"};
   out.m2=m2?{v:m2,pitch:1}:{v:m1||any,pitch:m1?.8:.76,note:"deeper pitch"};
   return out;}
@@ -5946,7 +5987,7 @@ const Z_KIND={server_not_connected:"missing",server_not_found:"missing",selectio
   not_granted:"off",capability_disabled:"off",capability_removed:"off",no_mcp:"off",user_changed:"off",blocked_by_policy:"policy",
   server_unavailable:"busy",upstream_error:"busy",rate_limited:"busy",timeout:"busy",cancelled:"busy",tool_error:"source",bad_data:"source",bad_request:"source",transform_error:"source"};
 const zKind=e=>Z_KIND[e&&e.code]||"busy";
-const zBlocking=()=>["off","missing","choose","reauth","denied","policy"].includes(Z.state);
+const zBlocking=()=>false;
 const Z_MSG={busy:"Zapier didn't answer just now. Try Refresh in a minute.",
   source:"The data source returned an error through Zapier (the site may be limiting requests, or your Zapier plan may be out of tasks).",
   off:"This view can't reach your connectors.",missing:"The Zapier connector isn't connected.",choose:"Choose which Zapier connector to use.",reauth:"Your Zapier sign-in has expired.",
@@ -6104,13 +6145,13 @@ async function zRefresh(btn){const pg=route.page;if(zBlocking()){zRetry();return
 /* ---------- Live markets page ---------- */
 lmNoBrowser=snap=>zCard(snap&&snap.at);
 lmPaintConn=function(){const c=$("#lmConn");if(!c)return;const busy=Z.busy>0,blk=zBlocking();
-  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching via Zapier…":blk?"Live data off":Z.state==="ok"?"Live via Zapier · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
+  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching live data…":blk?"Live data off":Z.state==="ok"?"Live via Vercel · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
   const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance via Zapier"):"";};
 lmDck=function(){const el=$("#lmDck");if(!el)return;const row=(n,k,at)=>`<div><span>${n}</span><span class="${LM.err[k]?"no":at?"ok":""}">${LM.err[k]?lmEsc(LM.err[k]):at?"OK · "+zAgo(at):"not loaded"}</span></div>`;
   el.innerHTML=row("Prices · Yahoo Finance","quotes",LM.qAt)+row("Chart candles · Yahoo Finance","chart",LM.chartAt)+row("News · Google News","news",LM.nAt)+row("Odds · Polymarket","poly",LM.pAt)+
-   `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side by your Zapier connector, so it works on phone and laptop and never opens a browser. Each fetch uses one Zapier task, so prices refresh when you open a page and they're more than 10 minutes old, or when you press Refresh. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
+   `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side so it works on phone and laptop without opening a browser. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
 {const _v=VIEWS.live;VIEWS.live=()=>_v()
-  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles from Yahoo Finance, fetched by your Zapier connector on phone or laptop. Every number shows its source and time. Nothing is simulated.")
+  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles from Yahoo Finance, fetched server-side on phone or laptop. Every number shows its source and time. Nothing is simulated.")
   .replace('<span class="small muted" id="lmAt"></span></div>',`<span class="zr"><span class="small muted" id="lmAt"></span>${zRefreshBtn()}</span></div>`)
   .replace('<button class="btn" id="lmRe">Refresh now</button>','');}
 function zLivePaint(){lmPaintWL();lmPaintConn();lmDck();const m=$("#lmNewsMini");if(m)m.innerHTML=LM.news?newsHTML(LM.news.slice(0,8)):`<p class="small muted">${zBlocking()?"Headlines need your Zapier connector.":"Loading…"}</p>`;
@@ -6968,7 +7009,7 @@ ICON.intel='<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.4"/><pat
 try{renderNav();}catch(e){}
 
 const mkSrc=(src,keys,extra)=>{const ats=keys.map(k=>k==="q"?LM.qAt:(MK.d[k]||{}).at).filter(Boolean),at=ats.length?Math.min(...ats):0,busy=keys.some(k=>k==="q"?Z.busy>0:MK.busy[k]);
-  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching via Zapier…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
+  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching live data…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
 const MK_SRCN={ix:"Yahoo Finance candles",sec5:"Yahoo Finance sector closes",vol:"Yahoo Finance VIX series",q:"Yahoo Finance prices",nq:"Nasdaq.com quotes",opt:"Nasdaq.com option chain",cot:"CFTC positioning",okx:"OKX futures data",s15:"Yahoo Finance 15-minute closes",s1h:"Yahoo Finance hourly closes",s1d:"Yahoo Finance daily closes",liq:"Yahoo Finance candles",rad:"Yahoo Finance daily candles"};
 const mkErrOf=k=>k==="q"?LM.err.quotes:MK.err[k];
 const mkErr=keys=>{const e=keys.map(k=>[k,mkErrOf(k)]).filter(x=>x[1]);if(!e.length)return "";const by=new Map();e.forEach(([k,m])=>{const n=MK_SRCN[k.split("_")[0]]||"Source";by.set(m,[...(by.get(m)||[]),n]);});
@@ -6979,7 +7020,7 @@ const mkLoading=()=>zBlocking()?mkEmpty("Live data is off","Allow your Zapier co
 const mkCard=(title,sub,body,src,cls="")=>`<section class="card mk-card ${cls}"><div class="mk-ch"><div><h3>${title}</h3>${sub?`<p class="small muted">${sub}</p>`:""}</div></div>${body}${src||""}</section>`;
 
 VIEWS.intel=sub=>{const t=MK_TABS.some(x=>x[0]===sub)?sub:(MK.tab||"pulse");MK.tab=t;
-  return `${head("Markets · US$ · Sydney time","Market Intelligence","US futures, indices, sectors, options and crypto in one place, read from real data through your Zapier connector. Yahoo, Nasdaq and exchange data can be delayed (futures about 10 minutes), so treat this as near-live context, not a trading signal.")}
+  return `${head("Markets · US$ · Sydney time","Market Intelligence","Animated market intelligence built from live server-side quotes, candles and news. Sources identify their update time and any exchange delay; nothing is invented or presented as a trading signal.")}
   <div id="mkTop"></div>
   <div class="mk-tabs" role="tablist" aria-label="Market Intelligence sections" id="mkTabs">${MK_TABS.map(([k,l])=>`<button role="tab" id="mkt-${k}" data-mk="${k}" aria-selected="${k===t}" aria-controls="mkBody" tabindex="${k===t?0:-1}">${l}</button>`).join("")}</div>
   <div class="mk-body" id="mkBody" role="tabpanel" aria-labelledby="mkt-${t}"></div>`;};
@@ -7033,7 +7074,7 @@ MK_VIEW.pulse=()=>{const n=mkNarrative(),br=mkBreadth(),nq=MK.d.nq;
     bb=`<div class="mk-br"><div class="mk-brh"><b class="up-t">${br.a} advancing</b><b class="down-t">${br.d} declining</b></div><div class="mk-brbar" role="img" aria-label="${br.a} advancing, ${br.d} declining, ${br.u} unchanged"><i class="a" style="width:${pa}%"></i><i class="u" style="width:${100-pa-pd}%"></i><i class="d" style="width:${pd}%"></i></div>
      <p class="small muted">${pa>=65?"Broad buying: most large US names are up.":pd>=65?"Broad selling: most large US names are down.":"Split tape: buyers and sellers are evenly matched."} Measured on ${t} large US stocks and sector ETFs${nq.st?` · ${mkE(nq.st)}`:""}${nq.asOf?` · last trade ${mkE(nq.asOf)}`:""}.</p>
      <div class="mk-lead"><div><span class="tiny muted">Leading</span>${top.slice(0,4).map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div><div><span class="tiny muted">Lagging</span>${top.slice(-4).reverse().map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div></div></div>`;}
-  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance via Zapier",["q"],"Futures can be delayed about 10 min"))}
+  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Animated sparklines use today's 1-minute closes where Yahoo provides them.",tiles,mkSrc("Yahoo Finance via Trading Desk Vercel API",["q"],"Exchange delays are shown by the upstream source"))}
    ${mkCard("Market breadth","How many of the big names are actually moving with the index.",mkErr(["nq"])+bb,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Money Flow ----- */
@@ -9402,7 +9443,11 @@ window.TD_AUDIO={"f":{"w-buyers":{"ch":[[0.0,6.131],[6.131,11.123],[17.255,7.71]
       return Math.max(base,(w/2.6*1000/rate+1200)/sp);};}
   /* attach the chosen narrator's recording when the scene is built */
   function attach(sc,id){if(!sc||!id)return sc;sc.__aid=id;const key=pk(),m=TDA[key]||{},a=m[id];
-    sc.__akey=key;sc.__audio=(a&&a.ch&&a.ch.length===sc.steps.length&&XA.ok&&!XA.fail[key+"/"+id])?a:null;return sc;}
+    sc.__akey=key;
+    /* Audio files are optional. The deployed Desk ships without a binary audio
+       bundle, so use the browser's speech voice unless an asset is explicitly enabled. */
+    sc.__audio=(window.TD_ENABLE_RECORDED_AUDIO===true&&a&&a.ch&&a.ch.length===sc.steps.length&&XA.ok&&!XA.fail[key+"/"+id])?a:null;
+    return sc;}
   if(typeof sceneFor==="function"){const _sf=sceneFor;sceneFor=function(id){return attach(_sf(id),id);};}
   if(typeof Player==="function"){const _P=Player;Player=function(host,sc,opt){const off=_P(host,sc,opt);try{const el=host.querySelector(".player");if(el)el.__sc=sc;}catch(e){}return off;};}
   function get(key,id){const k=key+"/"+id;if(XA.buf[k])return Promise.resolve(XA.buf[k]);if(XA.load[k])return XA.load[k];
@@ -9422,7 +9467,14 @@ window.TD_AUDIO={"f":{"w-buyers":{"ch":[[0.0,6.131],[6.131,11.123],[17.255,7.71]
   /* one voice only: silence device speech whenever a recorded lesson is on the page */
   const recorded=()=>players().some(el=>el.__sc.__audio);
   try{if(window.speechSynthesis&&speechSynthesis.speak){const _speak=speechSynthesis.speak.bind(speechSynthesis);
-    speechSynthesis.speak=function(u){if(u&&u.text&&u.text.trim().length>1){ /* never use the robotic device voice: recorded narration only */setTimeout(()=>{try{u.onstart&&u.onstart({});u.onend&&u.onend({});}catch(e){}},0);return;}return _speak(u);};}}catch(e){}
+    speechSynthesis.speak=function(u){
+      if(u&&u.text&&u.text.trim().length>1&&recorded()){
+        setTimeout(()=>{try{u.onstart&&u.onstart({});u.onend&&u.onend({});}catch(e){}},0);
+        return;
+      }
+      return _speak(u);
+    };
+  }}catch(e){}
   /* narrator changed: rebuild the lesson so chapter lengths match the new voice */
   let lastPk=pk();
   function tick(){const cur=pk();if(cur!==lastPk){lastPk=cur;stop();const el=active();if(el&&typeof render==="function"){try{render();}catch(e){}}return;}
@@ -9457,4 +9509,130 @@ devApply();setTimeout(()=>{devStamp();devCheckLive();},1500);
 /* ---------------- init ---------------- */
 applyRegion();render();tick();setInterval(tick,20000);
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(route.page==="trainer")drawT();if(route.page==="journal")drawEquity(jFiltered());},150);});
+</script>
+<script>
+"use strict";
+/* Vercel runtime: use same-origin server functions instead of Claude/Zapier-only connectors. */
+const tdLiveFetch=async(params)=>{
+  const response=await fetch("/api/market?"+new URLSearchParams(params),{headers:{Accept:"application/json"}});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(body.error||"Live market data unavailable.");
+  return body;
+};
+async function tdChart(symbol, interval="1d", range="6mo"){
+  const body=await tdLiveFetch({type:"chart",symbol,interval,range});
+  return body;
+}
+try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
+applyTheme();
+Z.state="ok";Z.mcp={};
+zMcp=async()=>Z.mcp;
+
+lmQuotes=async function(force){
+  try{
+    const body=await tdLiveFetch({type:"quotes",symbols:WLALL.map(w=>w[0]).join(",")});
+    LM.quotes=body.quotes||{};LM.qAt=body.fetchedAt||Math.floor(Date.now()/1000);
+    LM.ok.quotes=LM.qAt;LM.err.quotes=null;LM.connected=true;
+    lmPaintWL();lmPaintConn();return Object.keys(LM.quotes).length;
+  }catch(error){LM.err.quotes=error.message;LM.connected=false;lmPaintWL();lmPaintConn();return 0;}
+};
+lmLoadChart=async function(keep,force){
+  const tf=TFS.find(t=>t[0]===LM.tf)||TFS[1],iv=tf[0]==="4h"?"1h":tf[0];
+  try{
+    const body=await tdLiveFetch({type:"chart",symbol:LM.sym,interval:iv,range:tf[2]});
+    LM.bars=body.bars||[];LM.meta=body.meta||{};LM.chartAt=body.fetchedAt||Math.floor(Date.now()/1000);
+    LM.ok.chart=LM.chartAt;LM.err.chart=null;lmDraw(keep);lmPaintConn();lmDck();return LM.bars.length;
+  }catch(error){LM.err.chart=error.message;const meta=$("#lmMeta");if(meta)meta.innerHTML=`<span class="down-t">${esc(error.message)}</span>`;lmPaintConn();lmDck();return 0;}
+};
+lmNews=async function(force){
+  try{const body=await tdLiveFetch({type:"news"});LM.news=body.news||[];LM.nAt=body.fetchedAt||Math.floor(Date.now()/1000);LM.ok.news=LM.nAt;LM.err.news=null;return LM.news.length;}
+  catch(error){LM.err.news=error.message;return 0;}
+};
+lmPoly=async function(force){
+  try{const body=await tdLiveFetch({type:"poly"});LM.poly=body.poly||[];LM.pAt=body.fetchedAt||Math.floor(Date.now()/1000);LM.ok.poly=LM.pAt;LM.err.poly=null;return LM.poly.length;}
+  catch(error){LM.err.poly=error.message;return 0;}
+};
+const _mkLoadTabVercel=mkLoadTab;
+mkLoadTab=async function(tab,force){
+  if(tab==="pulse"||tab==="flow"){
+    await lmQuotes(force);
+    const rows={};
+    Object.entries(LM.quotes||{}).forEach(([symbol,q])=>{rows[symbol]={p:q.price,ch:q.chg,pct:q.pct,v:0,prev:q.prev};});
+    MK.d.nq={rows,st:"Live via Vercel",asOf:LM.qAt,at:LM.qAt};
+  }
+  if(tab==="chart"){
+    const [iv,rg]=MK_IXTF[MK.ixTf]||["5m","5d"];
+    try{
+      const body=await tdChart(MK.ixSym,iv,rg);
+      MK.d["ix_"+MK.ixSym+"_"+MK.ixTf]={sym:MK.ixSym,b:(body.bars||[]).map(x=>[x.time,x.open,x.high,x.low,x.close,x.volume||0]),px:body.meta?.regularMarketPrice||body.bars?.at(-1)?.close,at:body.fetchedAt};
+    }catch(error){MK.err["ix_"+MK.ixSym+"_"+MK.ixTf]=error.message;}
+  }
+  if(typeof _mkLoadTabVercel==="function"&&tab!=="pulse"&&tab!=="flow"&&tab!=="chart"){
+    await _mkLoadTabVercel(tab,force);
+  }
+  if(route.page==="intel"&&MK.tab===tab)mkPaintIf();
+};
+zEnsure=async function(want,force){
+  const jobs=[];
+  if(want.quotes)jobs.push(lmQuotes(force));
+  if(want.news)jobs.push(lmNews(force));
+  if(want.poly)jobs.push(lmPoly(force));
+  const results=await Promise.allSettled(jobs);return results.some(r=>r.status==="fulfilled"&&r.value>0);
+};
+devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(route.page==="home")devCardPaint();};
+</script>
+<script>
+"use strict";
+/* Premium entry, account onboarding and market-only live feedback. */
+(function(){
+  const splash=document.getElementById("tdSplash");
+  setTimeout(()=>{if(splash)splash.classList.add("done");},3000);
+  setTimeout(()=>{if(splash)splash.remove();},3550);
+
+  const sessionHTML=()=>`<div class="ts-sub td-session"><h3>Current session</h3>
+    <p class="small muted">This is the device and browser currently using your Desk. Your password is never handled here.</p>
+    <div class="ts-acctrow"><span class="ts-dot on"></span><div><b>${/Mac|iPhone|iPad/.test(navigator.platform||"")?"Apple device":"This device"} · ${navigator.userAgent.includes("Chrome")?"Chrome":navigator.userAgent.includes("Safari")?"Safari":navigator.userAgent.includes("Firefox")?"Firefox":"Web browser"}</b><span class="small muted">Active now · ${Intl.DateTimeFormat().resolvedOptions().timeZone||"local time"}</span></div></div>
+    <div class="ts-btns"><button class="btn" type="button" id="tdSessionRefresh">Refresh session</button><button class="btn ghost" type="button" id="tdSessionSignOut">Sign out on this device</button></div>
+  </div>`;
+  const _sec=tsSecurityHTML;
+  tsSecurityHTML=function(){return _sec()+sessionHTML();};
+  const _tsBind=tsBind;
+  tsBind=function(){_tsBind();const r=document.getElementById("tdSessionRefresh");if(r)r.onclick=()=>{r.textContent="Session refreshed";setTimeout(()=>{if(r)r.textContent="Refresh session";},1600);};const s=document.getElementById("tdSessionSignOut");if(s)s.onclick=()=>tsSignOutAsk();};
+
+  function signup(){
+    tsModal("Sign in to Trading Desk",`<p class="small muted">Use Google or verify your phone number. Email profiles remain available for local-only use; passwords are never handled by this page.</p>
+      <div class="ts-sub"><button class="btn gold" type="button" id="tdGoogleSignup">Continue with Google</button></div>
+      <form class="ts-form" id="tdSignupForm" novalidate><div class="ts-f"><label for="tdSignupName">Your name <span class="muted">(local profile)</span></label><input id="tdSignupName" autocomplete="name" maxlength="60" placeholder="Kaushal Sapkota" data-first></div>
+      <div class="ts-f"><label for="tdSignupEmail">Email</label><input id="tdSignupEmail" type="email" autocomplete="email" required placeholder="you@gmail.com"></div>
+      <div class="ts-f"><label for="tdSignupPhone">Phone verification</label><input id="tdSignupPhone" type="tel" autocomplete="tel" placeholder="+61 412 345 678"></div>
+      <div class="ts-f"><label for="tdPhoneCode">SMS code</label><input id="tdPhoneCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code"><button class="btn sm" type="button" id="tdPhoneSend">Send code</button></div>
+      <div class="ts-fbar"><button class="btn" type="submit">Create local profile</button><button class="btn" type="button" data-x>Cancel</button><span class="small" id="tdSignupState" role="status"></span></div></form>
+      <p class="tiny muted">Google and SMS require the matching Vercel environment variables. The interface reports configuration errors instead of pretending a sign-in succeeded.</p>`,o=>{
+        const f=o.querySelector("#tdSignupForm"),state=o.querySelector("#tdSignupState"),phone=()=>o.querySelector("#tdSignupPhone").value.trim();
+        o.querySelector("#tdGoogleSignup").onclick=()=>{location.href="/api/auth/google";};
+        o.querySelector("#tdPhoneSend").onclick=async()=>{state.textContent="Sending code…";try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"send",phone:phone()})}),b=await r.json();state.textContent=r.ok?"Code sent by SMS.":b.error||"Could not send code.";}catch{state.textContent="Could not reach phone sign-in.";}}
+        f.onsubmit=async e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim(),code=o.querySelector("#tdPhoneCode").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}if(code){try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",phone:phone(),code})}),b=await r.json();if(!r.ok){state.textContent=b.error||"Phone verification failed.";return;}}catch{state.textContent="Could not reach phone sign-in.";return;}}try{localStorage.setItem("td_signup",JSON.stringify({name,email,phone:phone(),createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
+      });
+  }
+  const _open=tsOpenMenu;
+  tsOpenMenu=function(){_open();const m=document.getElementById("acctMenu");if(!m)return;const d=document.createElement("button");d.type="button";d.setAttribute("role","menuitem");d.innerHTML=ix("user",18)+" Create email profile";d.onclick=()=>{tsCloseMenu();signup();};const hr=m.querySelector("hr");if(hr)hr.before(d);};
+
+  let noticeTimer=0,lastNotice=0;
+  function marketPage(){return typeof route!=="undefined"&&["live","intel","news","poly"].includes(route.page);}
+  function marketNotice(text){if(!marketPage())return;let n=document.getElementById("marketNotice");if(!n){n=document.createElement("div");n.id="marketNotice";n.className="market-notice";n.setAttribute("role","status");n.innerHTML='<i class="dot"></i><span></span>';document.body.appendChild(n);}n.querySelector("span").textContent=text;n.classList.add("show");clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>n.classList.remove("show"),3000);}
+  window.tdMarketNotice=marketNotice;
+  const _quotes=lmQuotes;
+  let quoteBusy=false,quoteRetryAt=0,quoteFailures=0;
+  const tickerNames={"^GSPC":"S&P","^NDX":"Nasdaq","GC=F":"Gold","BTC-USD":"BTC","EURUSD=X":"EUR/USD","^VIX":"VIX"};
+  function tickerPaint(){const box=document.querySelector("#tdTicker"),track=box&&box.querySelector(".ticker-track"),quotes=LM&&LM.quotes;if(!box||!track)return;const tickerSymbols=WLALL.map(w=>w[0]),items=tickerSymbols.map(s=>{const q=quotes&&quotes[s],w=WLALL.find(x=>x[0]===s);if(!q||!Number.isFinite(q.price))return "";const pct=Number.isFinite(q.pct)?q.pct:null,cls=pct==null?"":pct>=0?"up-t":"down-t";return `<span class="ticker-item"><b>${tickerNames[s]||w?.[1]||s}</b><span>${Number(q.price).toLocaleString(undefined,{maximumFractionDigits:/USD|=X$/.test(s)?4:s==="BTC-USD"?0:2})}</span>${pct==null?"":`<em class="${cls}">${pct>=0?"+":""}${pct.toFixed(2)}%</em>`}</span>`;}).filter(Boolean);if(!items.length){box.hidden=true;return;}const run=items.join("");track.innerHTML=run+run;box.hidden=false;}
+  lmQuotes=async function(force){if(quoteBusy||Date.now()<quoteRetryAt)return 0;quoteBusy=true;try{const n=await _quotes(force);if(n){quoteFailures=0;quoteRetryAt=0;tickerPaint();if(Date.now()-lastNotice>9000){lastNotice=Date.now();marketNotice("Live Yahoo Finance prices updated · "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}));}}else{quoteFailures++;quoteRetryAt=Date.now()+Math.min(60000,Math.max(5000,1000*2**Math.min(quoteFailures,6)));}return n;}finally{quoteBusy=false;}};
+  const _mkPaint=mkPaint;mkPaint=function(){_mkPaint();const b=document.getElementById("mkBody");if(b)b.innerHTML=b.innerHTML.replaceAll("via Zapier","via Vercel").replaceAll("Zapier connector","Vercel live API").replaceAll("Fetching via Zapier","Fetching live data…");};
+  const _intel=VIEWS.intel;VIEWS.intel=sub=>_intel(sub).replaceAll("through your Zapier connector","from the Vercel live API").replaceAll("via your Zapier connector","from the Vercel live API");
+  fetch("/api/auth/session",{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():null).then(s=>{if(!s||!s.signedIn||!s.user)return;try{localStorage.setItem("td_signup",JSON.stringify({...s.user,createdAt:new Date().toISOString()}));}catch{}try{tsAcctBtn();}catch{}}).catch(()=>{});
+  if(typeof route!=="undefined"&&route.page==="intel")mkPaint();
+  setInterval(tickerPaint,1000);
+  setInterval(()=>{if(document.visibilityState==="visible"&&marketPage())lmQuotes(true);},15000);
+})();
+try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
+try{applyTheme();}catch{}
 </script>
