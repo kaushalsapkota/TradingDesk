@@ -273,13 +273,13 @@ canvas.chart{display:block;width:100%;height:200px}
 .market-notice .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft);flex:none}
 .td-ticker{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:8px;max-width:min(76vw,720px);padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--panel) 90%,transparent);box-shadow:var(--g-shadow-s,0 4px 15px rgba(0,0,0,.12));overflow:hidden;white-space:nowrap;pointer-events:none}
 .td-ticker .live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px var(--up-soft);flex:none}
-.td-ticker .ticker-track{display:flex;gap:16px;animation:tickerIn .35s ease both}
+.td-ticker .ticker-track{display:flex;width:max-content;gap:16px;animation:tickerMarquee 42s linear infinite}
 .td-ticker .ticker-item{display:inline-flex;align-items:center;gap:5px;font:600 .68rem var(--f-mono);font-variant-numeric:tabular-nums}
 .td-ticker .ticker-item b{font-family:var(--f-body);font-size:.68rem}
 .td-ticker .ticker-item em{font-style:normal}
-@keyframes tickerIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes tickerMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (max-width:960px){.td-ticker{top:calc(58px + env(safe-area-inset-top,0px));max-width:calc(100vw - 28px);left:14px;right:14px;transform:none;justify-content:flex-start}.td-ticker .ticker-track{overflow:hidden}}
-@media (prefers-reduced-motion:reduce){#tdSplash .splash-card,#tdSplash .splash-mark,#tdSplash .splash-bar i{animation:none!important}}
+@media (prefers-reduced-motion:reduce){#tdSplash .splash-card,#tdSplash .splash-mark,#tdSplash .splash-bar i,.td-ticker .ticker-track{animation:none!important}}
 .trainer-cv{display:block;width:100%;height:clamp(300px,50vh,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -4010,10 +4010,15 @@ html.pvp .nowbar{background:var(--panel)!important}
 .mk-tiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .mk-tile{display:grid;gap:6px;padding:12px;border-radius:12px;background:var(--sunk);text-decoration:none;color:var(--ink);min-width:0;border:1px solid transparent}
 .mk-tile:hover{border-color:var(--line2)}
+.mk-tile{animation:mkTileIn .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--mk-i,0) * 35ms)}
+.mk-tile:hover .mk-sp{filter:drop-shadow(0 0 4px color-mix(in srgb,var(--up) 55%,transparent))}
+.mk-tp b{transition:color .25s,transform .25s}.mk-tile:hover .mk-tp b{transform:translateY(-1px)}
+@keyframes mkTileIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .mk-tt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;min-width:0}
 .mk-tt b{font:700 .9rem var(--f-mono)}.mk-tt span{font-size:.7rem;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mk-tp{display:grid;gap:1px}.mk-tp b{font:700 1.05rem var(--f-mono)}.mk-tp em{font:500 .74rem var(--f-mono);font-style:normal}
-.mk-sp{width:100%;height:28px;display:block}.mk-sp polyline{stroke:var(--up)}.mk-sp.dn polyline{stroke:var(--down)}
+.mk-sp{width:100%;height:28px;display:block}.mk-sp polyline{stroke:var(--up);stroke-dasharray:180;stroke-dashoffset:180;animation:mkDraw 1s ease-out forwards}.mk-sp.dn polyline{stroke:var(--down)}
+@keyframes mkDraw{to{stroke-dashoffset:0}}
 .mk-br{display:grid;gap:10px}
 .mk-brh{display:flex;justify-content:space-between;font:700 .9rem var(--f-mono)}
 .mk-brbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunk)}
@@ -7004,7 +7009,7 @@ ICON.intel='<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.4"/><pat
 try{renderNav();}catch(e){}
 
 const mkSrc=(src,keys,extra)=>{const ats=keys.map(k=>k==="q"?LM.qAt:(MK.d[k]||{}).at).filter(Boolean),at=ats.length?Math.min(...ats):0,busy=keys.some(k=>k==="q"?Z.busy>0:MK.busy[k]);
-  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching via Zapier…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
+  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching live data…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
 const MK_SRCN={ix:"Yahoo Finance candles",sec5:"Yahoo Finance sector closes",vol:"Yahoo Finance VIX series",q:"Yahoo Finance prices",nq:"Nasdaq.com quotes",opt:"Nasdaq.com option chain",cot:"CFTC positioning",okx:"OKX futures data",s15:"Yahoo Finance 15-minute closes",s1h:"Yahoo Finance hourly closes",s1d:"Yahoo Finance daily closes",liq:"Yahoo Finance candles",rad:"Yahoo Finance daily candles"};
 const mkErrOf=k=>k==="q"?LM.err.quotes:MK.err[k];
 const mkErr=keys=>{const e=keys.map(k=>[k,mkErrOf(k)]).filter(x=>x[1]);if(!e.length)return "";const by=new Map();e.forEach(([k,m])=>{const n=MK_SRCN[k.split("_")[0]]||"Source";by.set(m,[...(by.get(m)||[]),n]);});
@@ -7015,7 +7020,7 @@ const mkLoading=()=>zBlocking()?mkEmpty("Live data is off","Allow your Zapier co
 const mkCard=(title,sub,body,src,cls="")=>`<section class="card mk-card ${cls}"><div class="mk-ch"><div><h3>${title}</h3>${sub?`<p class="small muted">${sub}</p>`:""}</div></div>${body}${src||""}</section>`;
 
 VIEWS.intel=sub=>{const t=MK_TABS.some(x=>x[0]===sub)?sub:(MK.tab||"pulse");MK.tab=t;
-  return `${head("Markets · US$ · Sydney time","Market Intelligence","US futures, indices, sectors, options and crypto in one place, read from real data through your Zapier connector. Yahoo, Nasdaq and exchange data can be delayed (futures about 10 minutes), so treat this as near-live context, not a trading signal.")}
+  return `${head("Markets · US$ · Sydney time","Market Intelligence","Animated market intelligence built from live server-side quotes, candles and news. Sources identify their update time and any exchange delay; nothing is invented or presented as a trading signal.")}
   <div id="mkTop"></div>
   <div class="mk-tabs" role="tablist" aria-label="Market Intelligence sections" id="mkTabs">${MK_TABS.map(([k,l])=>`<button role="tab" id="mkt-${k}" data-mk="${k}" aria-selected="${k===t}" aria-controls="mkBody" tabindex="${k===t?0:-1}">${l}</button>`).join("")}</div>
   <div class="mk-body" id="mkBody" role="tabpanel" aria-labelledby="mkt-${t}"></div>`;};
@@ -7069,7 +7074,7 @@ MK_VIEW.pulse=()=>{const n=mkNarrative(),br=mkBreadth(),nq=MK.d.nq;
     bb=`<div class="mk-br"><div class="mk-brh"><b class="up-t">${br.a} advancing</b><b class="down-t">${br.d} declining</b></div><div class="mk-brbar" role="img" aria-label="${br.a} advancing, ${br.d} declining, ${br.u} unchanged"><i class="a" style="width:${pa}%"></i><i class="u" style="width:${100-pa-pd}%"></i><i class="d" style="width:${pd}%"></i></div>
      <p class="small muted">${pa>=65?"Broad buying: most large US names are up.":pd>=65?"Broad selling: most large US names are down.":"Split tape: buyers and sellers are evenly matched."} Measured on ${t} large US stocks and sector ETFs${nq.st?` · ${mkE(nq.st)}`:""}${nq.asOf?` · last trade ${mkE(nq.asOf)}`:""}.</p>
      <div class="mk-lead"><div><span class="tiny muted">Leading</span>${top.slice(0,4).map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div><div><span class="tiny muted">Lagging</span>${top.slice(-4).reverse().map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div></div></div>`;}
-  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance via Zapier",["q"],"Futures can be delayed about 10 min"))}
+  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Animated sparklines use today's 1-minute closes where Yahoo provides them.",tiles,mkSrc("Yahoo Finance via Trading Desk Vercel API",["q"],"Exchange delays are shown by the upstream source"))}
    ${mkCard("Market breadth","How many of the big names are actually moving with the index.",mkErr(["nq"])+bb,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Money Flow ----- */
@@ -9514,6 +9519,10 @@ const tdLiveFetch=async(params)=>{
   if(!response.ok)throw new Error(body.error||"Live market data unavailable.");
   return body;
 };
+async function tdChart(symbol, interval="1d", range="6mo"){
+  const body=await tdLiveFetch({type:"chart",symbol,interval,range});
+  return body;
+}
 try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
 applyTheme();
 Z.state="ok";Z.mcp={};
@@ -9543,6 +9552,26 @@ lmPoly=async function(force){
   try{const body=await tdLiveFetch({type:"poly"});LM.poly=body.poly||[];LM.pAt=body.fetchedAt||Math.floor(Date.now()/1000);LM.ok.poly=LM.pAt;LM.err.poly=null;return LM.poly.length;}
   catch(error){LM.err.poly=error.message;return 0;}
 };
+const _mkLoadTabVercel=mkLoadTab;
+mkLoadTab=async function(tab,force){
+  if(tab==="pulse"||tab==="flow"){
+    await lmQuotes(force);
+    const rows={};
+    Object.entries(LM.quotes||{}).forEach(([symbol,q])=>{rows[symbol]={p:q.price,ch:q.chg,pct:q.pct,v:0,prev:q.prev};});
+    MK.d.nq={rows,st:"Live via Vercel",asOf:LM.qAt,at:LM.qAt};
+  }
+  if(tab==="chart"){
+    const [iv,rg]=MK_IXTF[MK.ixTf]||["5m","5d"];
+    try{
+      const body=await tdChart(MK.ixSym,iv,rg);
+      MK.d["ix_"+MK.ixSym+"_"+MK.ixTf]={sym:MK.ixSym,b:(body.bars||[]).map(x=>[x.time,x.open,x.high,x.low,x.close,x.volume||0]),px:body.meta?.regularMarketPrice||body.bars?.at(-1)?.close,at:body.fetchedAt};
+    }catch(error){MK.err["ix_"+MK.ixSym+"_"+MK.ixTf]=error.message;}
+  }
+  if(typeof _mkLoadTabVercel==="function"&&tab!=="pulse"&&tab!=="flow"&&tab!=="chart"){
+    await _mkLoadTabVercel(tab,force);
+  }
+  if(route.page==="intel"&&MK.tab===tab)mkPaintIf();
+};
 zEnsure=async function(want,force){
   const jobs=[];
   if(want.quotes)jobs.push(lmQuotes(force));
@@ -9571,15 +9600,18 @@ devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(rout
   tsBind=function(){_tsBind();const r=document.getElementById("tdSessionRefresh");if(r)r.onclick=()=>{r.textContent="Session refreshed";setTimeout(()=>{if(r)r.textContent="Refresh session";},1600);};const s=document.getElementById("tdSessionSignOut");if(s)s.onclick=()=>tsSignOutAsk();};
 
   function signup(){
-    tsModal("Create your Trading Desk profile",`<p class="small muted">Use an email address such as Gmail to create a local profile on this device. We never store your password. Claude sign-in remains the sync and security layer for private cloud data.</p>
-      <form class="ts-form" id="tdSignupForm" novalidate><div class="ts-f"><label for="tdSignupName">Your name</label><input id="tdSignupName" autocomplete="name" maxlength="60" placeholder="Kaushal Sapkota" data-first></div>
-      <div class="ts-f"><label for="tdSignupEmail">Email or Gmail</label><input id="tdSignupEmail" type="email" autocomplete="email" required placeholder="you@gmail.com"></div>
-      <div class="ts-fbar"><button class="btn gold" type="submit">Create profile</button><button class="btn" type="button" data-x>Cancel</button><span class="small" id="tdSignupState" role="status"></span></div></form>
-      <div class="ts-f"><label for="tdSignupPhone">Phone <span class="muted">(optional)</span></label><input id="tdSignupPhone" type="tel" autocomplete="tel" placeholder="+61 412 345 678"></div>
-      <div class="ts-sub" style="margin-top:12px"><h3>Already have an account?</h3><button class="btn" type="button" id="tdGoogleSignup">Continue with Google</button><p class="tiny muted">Google OAuth is available when the deployment owner connects an OAuth client; this button never asks for or stores a Google password.</p></div>`,o=>{
-        const f=o.querySelector("#tdSignupForm"),state=o.querySelector("#tdSignupState");
-        f.onsubmit=e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim(),phone=o.querySelector("#tdSignupPhone").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}try{localStorage.setItem("td_signup",JSON.stringify({name,email,phone,createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
-        o.querySelector("#tdGoogleSignup").onclick=()=>{state.textContent="Connect a Google OAuth client in Vercel to enable secure Google sign-up.";};
+    tsModal("Sign in to Trading Desk",`<p class="small muted">Use Google or verify your phone number. Email profiles remain available for local-only use; passwords are never handled by this page.</p>
+      <div class="ts-sub"><button class="btn gold" type="button" id="tdGoogleSignup">Continue with Google</button></div>
+      <form class="ts-form" id="tdSignupForm" novalidate><div class="ts-f"><label for="tdSignupName">Your name <span class="muted">(local profile)</span></label><input id="tdSignupName" autocomplete="name" maxlength="60" placeholder="Kaushal Sapkota" data-first></div>
+      <div class="ts-f"><label for="tdSignupEmail">Email</label><input id="tdSignupEmail" type="email" autocomplete="email" required placeholder="you@gmail.com"></div>
+      <div class="ts-f"><label for="tdSignupPhone">Phone verification</label><input id="tdSignupPhone" type="tel" autocomplete="tel" placeholder="+61 412 345 678"></div>
+      <div class="ts-f"><label for="tdPhoneCode">SMS code</label><input id="tdPhoneCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code"><button class="btn sm" type="button" id="tdPhoneSend">Send code</button></div>
+      <div class="ts-fbar"><button class="btn" type="submit">Create local profile</button><button class="btn" type="button" data-x>Cancel</button><span class="small" id="tdSignupState" role="status"></span></div></form>
+      <p class="tiny muted">Google and SMS require the matching Vercel environment variables. The interface reports configuration errors instead of pretending a sign-in succeeded.</p>`,o=>{
+        const f=o.querySelector("#tdSignupForm"),state=o.querySelector("#tdSignupState"),phone=()=>o.querySelector("#tdSignupPhone").value.trim();
+        o.querySelector("#tdGoogleSignup").onclick=()=>{location.href="/api/auth/google";};
+        o.querySelector("#tdPhoneSend").onclick=async()=>{state.textContent="Sending code…";try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"send",phone:phone()})}),b=await r.json();state.textContent=r.ok?"Code sent by SMS.":b.error||"Could not send code.";}catch{state.textContent="Could not reach phone sign-in.";}}
+        f.onsubmit=async e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim(),code=o.querySelector("#tdPhoneCode").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}if(code){try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",phone:phone(),code})}),b=await r.json();if(!r.ok){state.textContent=b.error||"Phone verification failed.";return;}}catch{state.textContent="Could not reach phone sign-in.";return;}}try{localStorage.setItem("td_signup",JSON.stringify({name,email,phone:phone(),createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
       });
   }
   const _open=tsOpenMenu;
@@ -9591,12 +9623,12 @@ devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(rout
   window.tdMarketNotice=marketNotice;
   const _quotes=lmQuotes;
   let quoteBusy=false,quoteRetryAt=0,quoteFailures=0;
-  const tickerSymbols=["^GSPC","^NDX","GC=F","BTC-USD","EURUSD=X","^VIX"];
   const tickerNames={"^GSPC":"S&P","^NDX":"Nasdaq","GC=F":"Gold","BTC-USD":"BTC","EURUSD=X":"EUR/USD","^VIX":"VIX"};
-  function tickerPaint(){const box=document.querySelector("#tdTicker"),track=box&&box.querySelector(".ticker-track"),quotes=LM&&LM.quotes;if(!box||!track)return;const items=tickerSymbols.map(s=>{const q=quotes&&quotes[s];if(!q||!Number.isFinite(q.price))return "";const pct=Number.isFinite(q.pct)?q.pct:null,cls=pct==null?"":pct>=0?"up-t":"down-t";return `<span class="ticker-item"><b>${tickerNames[s]}</b><span>${Number(q.price).toLocaleString(undefined,{maximumFractionDigits:s==="BTC-USD"?0:2})}</span>${pct==null?"":`<em class="${cls}">${pct>=0?"+":""}${pct.toFixed(2)}%</em>`}</span>`;}).filter(Boolean);if(!items.length){box.hidden=true;return;}track.innerHTML=items.join("");box.hidden=false;}
+  function tickerPaint(){const box=document.querySelector("#tdTicker"),track=box&&box.querySelector(".ticker-track"),quotes=LM&&LM.quotes;if(!box||!track)return;const tickerSymbols=WLALL.map(w=>w[0]),items=tickerSymbols.map(s=>{const q=quotes&&quotes[s],w=WLALL.find(x=>x[0]===s);if(!q||!Number.isFinite(q.price))return "";const pct=Number.isFinite(q.pct)?q.pct:null,cls=pct==null?"":pct>=0?"up-t":"down-t";return `<span class="ticker-item"><b>${tickerNames[s]||w?.[1]||s}</b><span>${Number(q.price).toLocaleString(undefined,{maximumFractionDigits:/USD|=X$/.test(s)?4:s==="BTC-USD"?0:2})}</span>${pct==null?"":`<em class="${cls}">${pct>=0?"+":""}${pct.toFixed(2)}%</em>`}</span>`;}).filter(Boolean);if(!items.length){box.hidden=true;return;}const run=items.join("");track.innerHTML=run+run;box.hidden=false;}
   lmQuotes=async function(force){if(quoteBusy||Date.now()<quoteRetryAt)return 0;quoteBusy=true;try{const n=await _quotes(force);if(n){quoteFailures=0;quoteRetryAt=0;tickerPaint();if(Date.now()-lastNotice>9000){lastNotice=Date.now();marketNotice("Live Yahoo Finance prices updated · "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}));}}else{quoteFailures++;quoteRetryAt=Date.now()+Math.min(60000,Math.max(5000,1000*2**Math.min(quoteFailures,6)));}return n;}finally{quoteBusy=false;}};
   const _mkPaint=mkPaint;mkPaint=function(){_mkPaint();const b=document.getElementById("mkBody");if(b)b.innerHTML=b.innerHTML.replaceAll("via Zapier","via Vercel").replaceAll("Zapier connector","Vercel live API").replaceAll("Fetching via Zapier","Fetching live data…");};
   const _intel=VIEWS.intel;VIEWS.intel=sub=>_intel(sub).replaceAll("through your Zapier connector","from the Vercel live API").replaceAll("via your Zapier connector","from the Vercel live API");
+  fetch("/api/auth/session",{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():null).then(s=>{if(!s||!s.signedIn||!s.user)return;try{localStorage.setItem("td_signup",JSON.stringify({...s.user,createdAt:new Date().toISOString()}));}catch{}try{tsAcctBtn();}catch{}}).catch(()=>{});
   if(typeof route!=="undefined"&&route.page==="intel")mkPaint();
   setInterval(tickerPaint,1000);
   setInterval(()=>{if(document.visibilityState==="visible"&&marketPage())lmQuotes(true);},15000);

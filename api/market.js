@@ -46,7 +46,8 @@ function quoteRows(payload) {
     const quote = response?.indicators?.quote?.[0] || {};
     const closes = (quote.close || []).filter((value) => Number.isFinite(value));
     const timestamps = (response.timestamp || []).filter((_, index) => Number.isFinite(quote.close?.[index]));
-    const price = closes.at(-1) ?? response.meta?.regularMarketPrice;
+    const livePrice = response.meta?.regularMarketPrice;
+    const price = Number.isFinite(livePrice) ? livePrice : closes.at(-1);
     const previous = response.meta?.previousClose ?? response.meta?.chartPreviousClose;
     if (!Number.isFinite(price)) continue;
     rows[result.symbol] = {
@@ -54,7 +55,11 @@ function quoteRows(payload) {
       prev: Number.isFinite(previous) ? previous : null,
       chg: Number.isFinite(previous) ? price - previous : null,
       pct: Number.isFinite(previous) && previous ? (price / previous - 1) * 100 : null,
-      ts: timestamps.at(-1) || response.meta?.regularMarketTime || null,
+      ts: response.meta?.regularMarketTime || timestamps.at(-1) || null,
+      marketState: response.meta?.marketState || null,
+      exchange: response.meta?.fullExchangeName || response.meta?.exchangeName || null,
+      currency: response.meta?.currency || null,
+      delayed: response.meta?.exchangeDataDelayedBy || 0,
       spark: closes.slice(-60),
     };
   }
@@ -93,9 +98,9 @@ module.exports = async (req, res) => {
     if (type === "quotes") {
       const symbols = (params.get("symbols") || "").split(",").filter((symbol) => SYMBOL.test(symbol)).slice(0, 40);
       if (!symbols.length) return json(res, 400, { error: "At least one valid symbol is required." }, 0);
-      const query = `symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=15m`;
+      const query = `symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=1m`;
       const upstreamResponse = await upstreamAny([`${YAHOO}/v8/finance/spark?${query}`, `https://query2.finance.yahoo.com/v8/finance/spark?${query}`]);
-      return json(res, 200, { quotes: quoteRows(await upstreamResponse.json()), fetchedAt: Math.floor(Date.now() / 1000) }, 1);
+      return json(res, 200, { quotes: quoteRows(await upstreamResponse.json()), fetchedAt: Math.floor(Date.now() / 1000), source: "Yahoo Finance via Trading Desk Vercel API" }, 1);
     }
 
     if (type === "chart") {
