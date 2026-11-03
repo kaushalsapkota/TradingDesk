@@ -1,5 +1,15 @@
-<title>Kaushal's Trading Desk</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="claude:viewport-fit-sides" content="cover">
+<title>Kaushal's Trading Desk</title>
+<!-- Vercel Speed Insights -->
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -257,6 +267,8 @@ canvas.chart{display:block;width:100%;height:200px}
 .trainer-cv{display:block;width:100%;height:clamp(300px,50vh,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
+</head>
+<body>
 
 <div class="topbar">
   <button class="iconbtn" id="menuBtn" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h14M2 9h14M2 14h14"/></svg></button>
@@ -9458,3 +9470,6 @@ devApply();setTimeout(()=>{devStamp();devCheckLive();},1500);
 applyRegion();render();tick();setInterval(tick,20000);
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(route.page==="trainer")drawT();if(route.page==="journal")drawEquity(jFiltered());},150);});
 </script>
+
+</body>
+</html>
