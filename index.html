@@ -2348,7 +2348,15 @@ async function brGet(url,max=400000){return brQueue(async()=>{const mcp=await br
     try{throw {code:"no_browser"};const r=null;
       const t=txtOf(r),i=t.indexOf("\n---\n");return i>=0?t.slice(i+5):t;}
     catch(e){lmLog("Error: "+(e.code||"error")+(e.what?" on "+e.what:"")+(e.message?": "+String(e.message).slice(0,80):""));if(attempt||!(e&&(e.code==="tool_error"||e.code==="timeout")))throw e;}}});}
-async function brJSON(url){const t=await brGet(url);const s=t.indexOf("{"),a=t.indexOf("[");const st=s<0?a:a<0?s:Math.min(s,a);
+async function brJSON(url){
+  // Prefer a direct no-store request so the deployed website can refresh quotes
+  // without requiring the Claude desktop bridge. Fall back to the bridge for
+  // environments where the upstream API blocks browser CORS.
+  try{
+    const r=await fetch(url,{cache:"no-store",headers:{Accept:"application/json"}});
+    if(r.ok){const body=await r.text();if(body.trim())return JSON.parse(body);}
+  }catch{}
+  const t=await brGet(url);const s=t.indexOf("{"),a=t.indexOf("[");const st=s<0?a:a<0?s:Math.min(s,a);
   let body=t.slice(st);const tc=body.indexOf("Tab Context");if(tc>0)body=body.slice(0,tc);body=body.slice(0,Math.max(body.lastIndexOf("}"),body.lastIndexOf("]"))+1);return JSON.parse(body);}
 const BR_ERR={paused:"Live updates are paused because Claude's browser panel was closed. Click Resume to continue (the panel will open again).",timeout:"No answer from the Claude app's browser. Make sure this page is open in the Claude desktop app on your Mac (not the website or phone) and that you clicked Allow.",no_mcp:"This view can't use the Claude app's browser. Open the Trading Desk in the Claude desktop app on your Mac.",server_not_connected:"Live data needs the Claude desktop app: open this page there (not in a web browser or the phone app).",not_granted:"You declined browser access for this page. Allow it from the page's Permissions menu.",approval_required:"Claude needs your OK to let this page use its browser.",cancelled:"The browser request was cancelled.",blocked_by_policy:"Your organisation blocks this.",server_unavailable:"The Claude app's browser didn't answer in time."};
 const brErr=e=>BR_ERR[e&&e.code]||(e instanceof SyntaxError?"The data source returned something unexpected (it may be rate-limiting).":"Couldn't load ("+lmEsc((e&&(e.code||e.message))||"error")+").");
@@ -2362,19 +2370,17 @@ async function lmSave(){if(!window.claude)return;try{const db=await claude.use("
 async function lmLoadSnap(){if(!window.claude)return null;try{const db=await claude.use("db"),u=await claude.use("user");if(!db||!u)return null;const id=await u.id();const d=await db.doc("data/users/"+id+"/live").get();return d&&(d.data?d.data():d);}catch{return null;}}
 
 /* ---------- quotes (Yahoo spark JSON) ---------- */
-async function lmQuotes(){const syms=WLALL.map(w=>w[0]),chunks=[syms.slice(0,15),syms.slice(15)];
-  for(const c of chunks){try{const j=await brJSON("https://query1.finance.yahoo.com/v8/finance/spark?symbols="+encodeURIComponent(c.join(","))+"&range=1d&interval=5m");
-      const rows=j.spark&&j.spark.result?Object.fromEntries(j.spark.result.map(x=>[x.symbol,x.response&&x.response[0]?{...x.response[0].meta,timestamp:x.response[0].timestamp,close:x.response[0].indicators.quote[0].close}:{}])):j;
-      for(const s of c){const r=rows[s];if(!r)continue;const cl=(r.close||[]).filter(v=>v!=null),ts=(r.timestamp||[]).filter((_,k)=>(r.close||[])[k]!=null);const last=cl[cl.length-1];if(last==null)continue;
-        const prev=r.previousClose??r.chartPreviousClose;LM.quotes[s]={price:last,prev,chg:prev?last-prev:null,pct:prev?(last/prev-1)*100:null,ts:ts[ts.length-1]||null,spark:cl.slice(-60),at:Math.floor(Date.now()/1000)};}
-      LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;}
-    catch(e){LM.err.quotes=brErr(e);if(e&&["no_mcp","server_not_connected","not_granted","approval_required","blocked_by_policy","timeout","paused","bad_request","not_in_manifest"].includes(e.code))LM.connected=false;}}
+async function lmQuotes(){const syms=WLALL.map(w=>w[0]);
+  try{const j=await fetch("/api/market?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("market proxy "+r.status);return r.json();});
+    for(const row of (j.data||[])){const prev=Number(row.previousClose),price=Number(row.price);if(!Number.isFinite(price)||!Number.isFinite(prev))continue;LM.quotes[row.symbol]={price,prev,chg:Number(row.change),pct:Number(row.changePercent),ts:Math.floor((row.updatedAt||Date.now())/1000),spark:[],at:Math.floor(Date.now()/1000)};}
+    LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;LM.feedDelayed=Boolean(j.delayed);
+  }catch(e){LM.err.quotes="Free market feed unavailable: "+(e.message||"try again shortly");LM.connected=false;}
   lmPaintWL();lmPaintConn();}
 function stateOf(q){if(!q)return "";const age=Date.now()/1000-(q.ts||0);return age<1200?"":"closed";}
 function lmPaintWL(){const el=$("#lmWL");if(!el)return;el.innerHTML=WL.map(([g,list])=>`<h4>${g}</h4>`+list.map(w=>{const q=LM.quotes[w[0]],cl=q&&q.pct>0?"up-t":q&&q.pct<0?"down-t":"";
   return `<button class="wr ${w[0]===LM.sym?"sel":""}" data-s="${lmEsc(w[0])}" title="${q?"Last bar "+lmSyd(q.ts)+" Sydney · Yahoo Finance":"No data yet"}">${lgo(w)}<span><b>${lmEsc(w[1])}</b>${q&&stateOf(q)?'<span class="dd" title="No new data for 20+ minutes: market closed or paused">–</span>':""}<small>${lmEsc(w[2])}</small></span>
-  <span class="pp"><b>${q?lmPx(q.price):"–"}</b><small class="${cl}">${q&&q.chg!=null?(q.chg>0?"+":"")+lmPx(q.chg)+" "+(q.pct>0?"+":"")+q.pct.toFixed(2)+"%":""}</small></span></button>`;}).join("")).join("");}
-function lmPaintConn(){const c=$("#lmConn");if(!c)return;c.className="lm-conn "+(LM.connected?"ok":LM.connected===false?"bad":"");if(LM.paused){c.className="lm-conn bad";c.lastChild.textContent="Paused";const a=$("#lmAt");if(a)a.innerHTML=`Live updates paused <button class="btn" data-lmretry="1" style="margin-left:6px">Resume</button>`;return;}c.lastChild.textContent=LM.connected?"Live via your Claude app · Yahoo Finance":LM.connected===false?"Not connected":"Connecting…";
+  <span class="pp"><b>${q?lmPx(q.price):"–"}</b><small class="${cl}">${q&&Number.isFinite(q.chg)&&Number.isFinite(q.pct)?(q.chg>0?"+":"")+lmPx(q.chg)+" "+(q.pct>0?"+":"")+q.pct.toFixed(2)+"%":"—"}</small></span></button>`;}).join("")).join("");}
+function lmPaintConn(){const c=$("#lmConn");if(!c)return;c.className="lm-conn "+(LM.connected?"ok":LM.connected===false?"bad":"");if(LM.paused){c.className="lm-conn bad";c.lastChild.textContent="Paused";const a=$("#lmAt");if(a)a.innerHTML=`Live updates paused <button class="btn" data-lmretry="1" style="margin-left:6px">Resume</button>`;return;}c.lastChild.textContent=LM.connected?(LM.feedDelayed?"Live delayed feed · Yahoo Finance":"Live feed · Yahoo Finance"):LM.connected===false?"Feed unavailable":"Connecting…";
   const a=$("#lmAt");if(a)a.textContent=LM.ok.quotes?"Prices updated "+lmAgo(LM.ok.quotes)+" · refresh every 20 s":"";}
 
 /* ---------- chart (Yahoo chart JSON › Lightweight Charts) ---------- */
