@@ -68,6 +68,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav[aria-current="page"] svg{color:var(--gold);opacity:1}
 .nav .badge{margin-left:auto;font:600 .66rem var(--f-mono);color:var(--gold)}
 .sidefoot{margin-top:auto;display:grid;gap:8px;font-size:.78rem;color:var(--faint);padding:0 6px}
+.site-credit{padding-top:8px;border-top:1px solid var(--line);font-size:.7rem;letter-spacing:.02em;color:var(--muted)}
+.site-credit b{color:var(--gold);font-weight:600}
 .topbar{display:none}
 .stage{min-width:0;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .page{max-width:1120px;margin:0 auto;padding-block:30px 80px;display:grid;gap:26px}
@@ -84,6 +86,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   .page{padding-block:20px 70px;gap:20px}
 }
 .iconbtn{border:1px solid var(--line);background:var(--raised);border-radius:9px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+#thmBtn,.thm{display:none!important}
 
 /* ---------- building blocks ---------- */
 .head{display:grid;gap:10px}
@@ -273,6 +276,7 @@ canvas.chart{display:block;width:100%;height:200px}
     <div class="sidefoot">
       <span id="sideClock" class="mono"></span>
       <span id="syncState">Saved on this device</span>
+      <span class="site-credit">Powered by <b>Kaushal Sapkota</b></span>
     </div>
   </aside>
   <main class="stage"><div class="page" id="app"></div></main>
@@ -1670,7 +1674,7 @@ VIEWS.markets=()=>{const np=S.settings.region==="np";
   <div class="grid g2" id="mkTop"></div>
   <div class="card stack"><h3>Today on one timeline (${HOME_NAME()} time)</h3><div class="svgwrap" id="mkTl"></div></div>
   <div class="mkt" id="mkList"></div>
-  <div class="callout info"><b>Live prices, charts and news are now inside this Desk:</b> open <a href="#live">Live markets</a>, <a href="#news">Live news</a> or <a href="#poly">Polymarket odds</a> in the Claude desktop app on your Mac.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. For TradingView-style live charts inside an app, use your Mac app's Pro Chart tab.</p>
+  <div class="callout info"><b>Live prices, charts and news are now inside this Desk:</b> open <a href="#live">Live markets</a>, <a href="#news">Live news</a> or <a href="#poly">Polymarket odds</a>. Data is fetched server-side and labelled with its source and update time.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. The embedded Market Intelligence view includes watchlists, chart timeframes and drawing tools.</p>
    <h4>Global</h4><div class="links">${LIVE_AU.map(([n,u,s])=>`<a href="${u}" target="_blank" rel="noopener">${n}<span>${s} <i class=ix-ext></i></span></a>`).join("")}</div>
 </div>`;};
 AFTER.markets=()=>{const draw=()=>{if(!$("#mkList"))return;const now=new Date(),np=S.settings.region==="np";
@@ -5946,7 +5950,7 @@ const Z_KIND={server_not_connected:"missing",server_not_found:"missing",selectio
   not_granted:"off",capability_disabled:"off",capability_removed:"off",no_mcp:"off",user_changed:"off",blocked_by_policy:"policy",
   server_unavailable:"busy",upstream_error:"busy",rate_limited:"busy",timeout:"busy",cancelled:"busy",tool_error:"source",bad_data:"source",bad_request:"source",transform_error:"source"};
 const zKind=e=>Z_KIND[e&&e.code]||"busy";
-const zBlocking=()=>["off","missing","choose","reauth","denied","policy"].includes(Z.state);
+const zBlocking=()=>false;
 const Z_MSG={busy:"Zapier didn't answer just now. Try Refresh in a minute.",
   source:"The data source returned an error through Zapier (the site may be limiting requests, or your Zapier plan may be out of tasks).",
   off:"This view can't reach your connectors.",missing:"The Zapier connector isn't connected.",choose:"Choose which Zapier connector to use.",reauth:"Your Zapier sign-in has expired.",
@@ -6104,13 +6108,13 @@ async function zRefresh(btn){const pg=route.page;if(zBlocking()){zRetry();return
 /* ---------- Live markets page ---------- */
 lmNoBrowser=snap=>zCard(snap&&snap.at);
 lmPaintConn=function(){const c=$("#lmConn");if(!c)return;const busy=Z.busy>0,blk=zBlocking();
-  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching via Zapier…":blk?"Live data off":Z.state==="ok"?"Live via Zapier · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
+  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching live data…":blk?"Live data off":Z.state==="ok"?"Live via Vercel · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
   const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance via Zapier"):"";};
 lmDck=function(){const el=$("#lmDck");if(!el)return;const row=(n,k,at)=>`<div><span>${n}</span><span class="${LM.err[k]?"no":at?"ok":""}">${LM.err[k]?lmEsc(LM.err[k]):at?"OK · "+zAgo(at):"not loaded"}</span></div>`;
   el.innerHTML=row("Prices · Yahoo Finance","quotes",LM.qAt)+row("Chart candles · Yahoo Finance","chart",LM.chartAt)+row("News · Google News","news",LM.nAt)+row("Odds · Polymarket","poly",LM.pAt)+
-   `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side by your Zapier connector, so it works on phone and laptop and never opens a browser. Each fetch uses one Zapier task, so prices refresh when you open a page and they're more than 10 minutes old, or when you press Refresh. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
+   `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side so it works on phone and laptop without opening a browser. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
 {const _v=VIEWS.live;VIEWS.live=()=>_v()
-  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles from Yahoo Finance, fetched by your Zapier connector on phone or laptop. Every number shows its source and time. Nothing is simulated.")
+  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles from Yahoo Finance, fetched server-side on phone or laptop. Every number shows its source and time. Nothing is simulated.")
   .replace('<span class="small muted" id="lmAt"></span></div>',`<span class="zr"><span class="small muted" id="lmAt"></span>${zRefreshBtn()}</span></div>`)
   .replace('<button class="btn" id="lmRe">Refresh now</button>','');}
 function zLivePaint(){lmPaintWL();lmPaintConn();lmDck();const m=$("#lmNewsMini");if(m)m.innerHTML=LM.news?newsHTML(LM.news.slice(0,8)):`<p class="small muted">${zBlocking()?"Headlines need your Zapier connector.":"Loading…"}</p>`;
@@ -9402,7 +9406,11 @@ window.TD_AUDIO={"f":{"w-buyers":{"ch":[[0.0,6.131],[6.131,11.123],[17.255,7.71]
       return Math.max(base,(w/2.6*1000/rate+1200)/sp);};}
   /* attach the chosen narrator's recording when the scene is built */
   function attach(sc,id){if(!sc||!id)return sc;sc.__aid=id;const key=pk(),m=TDA[key]||{},a=m[id];
-    sc.__akey=key;sc.__audio=(a&&a.ch&&a.ch.length===sc.steps.length&&XA.ok&&!XA.fail[key+"/"+id])?a:null;return sc;}
+    sc.__akey=key;
+    /* Audio files are optional. The deployed Desk ships without a binary audio
+       bundle, so use the browser's speech voice unless an asset is explicitly enabled. */
+    sc.__audio=(window.TD_ENABLE_RECORDED_AUDIO===true&&a&&a.ch&&a.ch.length===sc.steps.length&&XA.ok&&!XA.fail[key+"/"+id])?a:null;
+    return sc;}
   if(typeof sceneFor==="function"){const _sf=sceneFor;sceneFor=function(id){return attach(_sf(id),id);};}
   if(typeof Player==="function"){const _P=Player;Player=function(host,sc,opt){const off=_P(host,sc,opt);try{const el=host.querySelector(".player");if(el)el.__sc=sc;}catch(e){}return off;};}
   function get(key,id){const k=key+"/"+id;if(XA.buf[k])return Promise.resolve(XA.buf[k]);if(XA.load[k])return XA.load[k];
@@ -9422,7 +9430,14 @@ window.TD_AUDIO={"f":{"w-buyers":{"ch":[[0.0,6.131],[6.131,11.123],[17.255,7.71]
   /* one voice only: silence device speech whenever a recorded lesson is on the page */
   const recorded=()=>players().some(el=>el.__sc.__audio);
   try{if(window.speechSynthesis&&speechSynthesis.speak){const _speak=speechSynthesis.speak.bind(speechSynthesis);
-    speechSynthesis.speak=function(u){if(u&&u.text&&u.text.trim().length>1){ /* never use the robotic device voice: recorded narration only */setTimeout(()=>{try{u.onstart&&u.onstart({});u.onend&&u.onend({});}catch(e){}},0);return;}return _speak(u);};}}catch(e){}
+    speechSynthesis.speak=function(u){
+      if(u&&u.text&&u.text.trim().length>1&&recorded()){
+        setTimeout(()=>{try{u.onstart&&u.onstart({});u.onend&&u.onend({});}catch(e){}},0);
+        return;
+      }
+      return _speak(u);
+    };
+  }}catch(e){}
   /* narrator changed: rebuild the lesson so chapter lengths match the new voice */
   let lastPk=pk();
   function tick(){const cur=pk();if(cur!==lastPk){lastPk=cur;stop();const el=active();if(el&&typeof render==="function"){try{render();}catch(e){}}return;}
@@ -9457,4 +9472,52 @@ devApply();setTimeout(()=>{devStamp();devCheckLive();},1500);
 /* ---------------- init ---------------- */
 applyRegion();render();tick();setInterval(tick,20000);
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(route.page==="trainer")drawT();if(route.page==="journal")drawEquity(jFiltered());},150);});
+</script>
+<script>
+"use strict";
+/* Vercel runtime: use same-origin server functions instead of Claude/Zapier-only connectors. */
+const tdLiveFetch=async(params)=>{
+  const response=await fetch("/api/market?"+new URLSearchParams(params),{headers:{Accept:"application/json"}});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(body.error||"Live market data unavailable.");
+  return body;
+};
+document.documentElement.dataset.theme="dark";
+try{localStorage.setItem("td_theme","dark");}catch{}
+applyTheme();
+Z.state="ok";Z.mcp={};
+zMcp=async()=>Z.mcp;
+
+lmQuotes=async function(force){
+  try{
+    const body=await tdLiveFetch({type:"quotes",symbols:WLALL.map(w=>w[0]).join(",")});
+    LM.quotes=body.quotes||{};LM.qAt=body.fetchedAt||Math.floor(Date.now()/1000);
+    LM.ok.quotes=LM.qAt;LM.err.quotes=null;LM.connected=true;
+    lmPaintWL();lmPaintConn();return Object.keys(LM.quotes).length;
+  }catch(error){LM.err.quotes=error.message;LM.connected=false;lmPaintWL();lmPaintConn();return 0;}
+};
+lmLoadChart=async function(keep,force){
+  const tf=TFS.find(t=>t[0]===LM.tf)||TFS[1],iv=tf[0]==="4h"?"1h":tf[0];
+  try{
+    const body=await tdLiveFetch({type:"chart",symbol:LM.sym,interval:iv,range:tf[2]});
+    LM.bars=body.bars||[];LM.meta=body.meta||{};LM.chartAt=body.fetchedAt||Math.floor(Date.now()/1000);
+    LM.ok.chart=LM.chartAt;LM.err.chart=null;lmDraw(keep);lmPaintConn();lmDck();return LM.bars.length;
+  }catch(error){LM.err.chart=error.message;const meta=$("#lmMeta");if(meta)meta.innerHTML=`<span class="down-t">${esc(error.message)}</span>`;lmPaintConn();lmDck();return 0;}
+};
+lmNews=async function(force){
+  try{const body=await tdLiveFetch({type:"news"});LM.news=body.news||[];LM.nAt=body.fetchedAt||Math.floor(Date.now()/1000);LM.ok.news=LM.nAt;LM.err.news=null;return LM.news.length;}
+  catch(error){LM.err.news=error.message;return 0;}
+};
+lmPoly=async function(force){
+  try{const body=await tdLiveFetch({type:"poly"});LM.poly=body.poly||[];LM.pAt=body.fetchedAt||Math.floor(Date.now()/1000);LM.ok.poly=LM.pAt;LM.err.poly=null;return LM.poly.length;}
+  catch(error){LM.err.poly=error.message;return 0;}
+};
+zEnsure=async function(want,force){
+  const jobs=[];
+  if(want.quotes)jobs.push(lmQuotes(force));
+  if(want.news)jobs.push(lmNews(force));
+  if(want.poly)jobs.push(lmPoly(force));
+  const results=await Promise.allSettled(jobs);return results.some(r=>r.status==="fulfilled"&&r.value>0);
+};
+devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(route.page==="home")devCardPaint();};
 </script>
