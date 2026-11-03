@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
       const symbols = (params.get("symbols") || "").split(",").filter((symbol) => SYMBOL.test(symbol)).slice(0, 40);
       if (!symbols.length) return json(res, 400, { error: "At least one valid symbol is required." }, 0);
       const upstreamResponse = await upstream(`${YAHOO}/v8/finance/spark?symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=15m`);
-      return json(res, 200, { quotes: quoteRows(await upstreamResponse.json()), fetchedAt: Math.floor(Date.now() / 1000) });
+      return json(res, 200, { quotes: quoteRows(await upstreamResponse.json()), fetchedAt: Math.floor(Date.now() / 1000) }, 1);
     }
 
     if (type === "chart") {

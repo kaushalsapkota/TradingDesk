@@ -257,10 +257,33 @@ details.acc > .in{padding:0 16px 16px;display:grid;gap:12px}
 canvas.chart{display:block;width:100%;height:200px}
 .note-item{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);display:grid;gap:6px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raised);border:1px solid var(--line2);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:.88rem;z-index:60}
+#tdSplash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--gold) 18%,var(--bg)),var(--bg) 62%);transition:opacity .45s ease,visibility .45s ease}
+#tdSplash.done{opacity:0;visibility:hidden;pointer-events:none}
+#tdSplash .splash-card{display:grid;justify-items:center;gap:14px;text-align:center;padding:32px;animation:splashRise .75s cubic-bezier(.2,.8,.2,1) both}
+#tdSplash .splash-mark{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);box-shadow:0 18px 50px color-mix(in srgb,var(--gold) 18%,transparent);animation:splashPulse 1.8s ease-in-out infinite}
+#tdSplash h1{font-size:clamp(2rem,6vw,3.8rem);margin:0}
+#tdSplash p{color:var(--muted);max-width:34ch}
+#tdSplash .splash-bar{width:min(250px,70vw);height:4px;border-radius:99px;background:var(--line);overflow:hidden}
+#tdSplash .splash-bar i{display:block;width:100%;height:100%;background:var(--gold);transform-origin:left;animation:splashLoad 3s linear both}
+@keyframes splashRise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes splashPulse{50%{transform:scale(1.05);box-shadow:0 22px 65px color-mix(in srgb,var(--gold) 28%,transparent)}}
+@keyframes splashLoad{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.market-notice{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-12px);opacity:0;pointer-events:none;z-index:100;display:flex;align-items:center;gap:9px;max-width:min(92vw,560px);padding:10px 15px;border:1px solid var(--line2);border-radius:12px;background:var(--raised);box-shadow:var(--shadow);font-size:.84rem;transition:opacity .2s ease,transform .2s ease}
+.market-notice.show{opacity:1;transform:translate(-50%,0)}
+.market-notice .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft);flex:none}
+@media (prefers-reduced-motion:reduce){#tdSplash .splash-card,#tdSplash .splash-mark,#tdSplash .splash-bar i{animation:none!important}}
 .trainer-cv{display:block;width:100%;height:clamp(300px,50vh,460px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
+<div id="tdSplash" aria-label="Loading Trading Desk" role="status">
+  <div class="splash-card">
+    <div class="splash-mark" aria-hidden="true"><svg width="42" height="42" viewBox="0 0 42 42" fill="none"><path d="M9 29V13M17 33V9M25 26V6M33 35V16" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"/><path d="M6 31l9-8 8 3 12-15" stroke="var(--up)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>Trading Desk</h1>
+    <p>Market intelligence, lessons and a clearer plan for every session.</p>
+    <div class="splash-bar" aria-hidden="true"><i></i></div>
+  </div>
+</div>
 <div class="topbar">
   <button class="iconbtn" id="menuBtn" aria-label="Open menu"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h14M2 9h14M2 14h14"/></svg></button>
   <span class="t" id="topTitle">Trading Desk</span>
@@ -2801,7 +2824,7 @@ h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
 <script>
 "use strict";
 /* ---------- Light / Dark / System theme, remembered on this device ---------- */
-const THEME=()=>{try{return localStorage.getItem("td_theme")||"system";}catch{return "system";}};
+const THEME=()=>{try{return localStorage.getItem("td_theme")||"light";}catch{return "light";}};
 function applyTheme(){const t=THEME();if(t==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
   $$(".thm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));}
 const _rn2=renderNav;renderNav=function(){_rn2();const br=document.querySelector(".brand");if(br&&!document.querySelector(".thm")){br.insertAdjacentHTML("afterend",`<div class="thm" role="group" aria-label="Theme">${[["light","Light"],["dark","Dark"],["system","Auto"]].map(([k,l])=>`<button data-t="${k}">${l}</button>`).join("")}</div>`);
@@ -9482,8 +9505,7 @@ const tdLiveFetch=async(params)=>{
   if(!response.ok)throw new Error(body.error||"Live market data unavailable.");
   return body;
 };
-document.documentElement.dataset.theme="dark";
-try{localStorage.setItem("td_theme","dark");}catch{}
+try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
 applyTheme();
 Z.state="ok";Z.mcp={};
 zMcp=async()=>Z.mcp;
@@ -9520,4 +9542,51 @@ zEnsure=async function(want,force){
   const results=await Promise.allSettled(jobs);return results.some(r=>r.status==="fulfilled"&&r.value>0);
 };
 devCheckLive=async function(){DEV.live=true;DEV.checked=true;devBadges();if(route.page==="home")devCardPaint();};
+</script>
+<script>
+"use strict";
+/* Premium entry, account onboarding and market-only live feedback. */
+(function(){
+  const splash=document.getElementById("tdSplash");
+  setTimeout(()=>{if(splash)splash.classList.add("done");},3000);
+  setTimeout(()=>{if(splash)splash.remove();},3550);
+
+  const sessionHTML=()=>`<div class="ts-sub td-session"><h3>Current session</h3>
+    <p class="small muted">This is the device and browser currently using your Desk. Your password is never handled here.</p>
+    <div class="ts-acctrow"><span class="ts-dot on"></span><div><b>${/Mac|iPhone|iPad/.test(navigator.platform||"")?"Apple device":"This device"} · ${navigator.userAgent.includes("Chrome")?"Chrome":navigator.userAgent.includes("Safari")?"Safari":navigator.userAgent.includes("Firefox")?"Firefox":"Web browser"}</b><span class="small muted">Active now · ${Intl.DateTimeFormat().resolvedOptions().timeZone||"local time"}</span></div></div>
+    <div class="ts-btns"><button class="btn" type="button" id="tdSessionRefresh">Refresh session</button><button class="btn ghost" type="button" id="tdSessionSignOut">Sign out on this device</button></div>
+  </div>`;
+  const _pf=tsProfileHTML;
+  tsProfileHTML=function(){return _pf()+sessionHTML();};
+  const _tsBind=tsBind;
+  tsBind=function(){_tsBind();const r=document.getElementById("tdSessionRefresh");if(r)r.onclick=()=>{r.textContent="Session refreshed";setTimeout(()=>{if(r)r.textContent="Refresh session";},1600);};const s=document.getElementById("tdSessionSignOut");if(s)s.onclick=()=>tsSignOutAsk();};
+
+  function signup(){
+    tsModal("Create your Trading Desk profile",`<p class="small muted">Use an email address such as Gmail to create a local profile on this device. We never store your password. Claude sign-in remains the sync and security layer for private cloud data.</p>
+      <form class="ts-form" id="tdSignupForm" novalidate><div class="ts-f"><label for="tdSignupName">Your name</label><input id="tdSignupName" autocomplete="name" maxlength="60" placeholder="Kaushal Sapkota" data-first></div>
+      <div class="ts-f"><label for="tdSignupEmail">Email or Gmail</label><input id="tdSignupEmail" type="email" autocomplete="email" required placeholder="you@gmail.com"></div>
+      <div class="ts-fbar"><button class="btn gold" type="submit">Create profile</button><button class="btn" type="button" data-x>Cancel</button><span class="small" id="tdSignupState" role="status"></span></div></form>
+      <div class="ts-sub" style="margin-top:12px"><h3>Already have an account?</h3><button class="btn" type="button" id="tdGoogleSignup">Continue with Google</button><p class="tiny muted">Google OAuth is available when the deployment owner connects an OAuth client; this button never asks for or stores a Google password.</p></div>`,o=>{
+        const f=o.querySelector("#tdSignupForm"),state=o.querySelector("#tdSignupState");
+        f.onsubmit=e=>{e.preventDefault();const name=o.querySelector("#tdSignupName").value.trim().slice(0,60),email=o.querySelector("#tdSignupEmail").value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){state.textContent="Enter a valid email address.";return;}try{localStorage.setItem("td_signup",JSON.stringify({name,email,createdAt:new Date().toISOString()}));}catch{}state.textContent="Profile created on this device.";setTimeout(()=>{tsCloseModal();toast("Welcome to Trading Desk");try{tsAcctBtn();}catch{}},900);};
+        o.querySelector("#tdGoogleSignup").onclick=()=>{state.textContent="Connect a Google OAuth client in Vercel to enable secure Google sign-up.";};
+      });
+  }
+  const _open=tsOpenMenu;
+  tsOpenMenu=function(){_open();const m=document.getElementById("acctMenu");if(!m)return;const d=document.createElement("button");d.type="button";d.setAttribute("role","menuitem");d.innerHTML=ix("user",18)+" Create email profile";d.onclick=()=>{tsCloseMenu();signup();};const hr=m.querySelector("hr");if(hr)hr.before(d);};
+
+  let noticeTimer=0,lastNotice=0;
+  function marketPage(){return typeof route!=="undefined"&&["live","intel","news","poly"].includes(route.page);}
+  function marketNotice(text){if(!marketPage())return;let n=document.getElementById("marketNotice");if(!n){n=document.createElement("div");n.id="marketNotice";n.className="market-notice";n.setAttribute("role","status");n.innerHTML='<i class="dot"></i><span></span>';document.body.appendChild(n);}n.querySelector("span").textContent=text;n.classList.add("show");clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>n.classList.remove("show"),3000);}
+  window.tdMarketNotice=marketNotice;
+  const _quotes=lmQuotes;
+  let quoteBusy=false,quoteRetryAt=0,quoteFailures=0;
+  lmQuotes=async function(force){if(quoteBusy||Date.now()<quoteRetryAt)return 0;quoteBusy=true;try{const n=await _quotes(force);if(n){quoteFailures=0;quoteRetryAt=0;if(Date.now()-lastNotice>9000){lastNotice=Date.now();marketNotice("Live Yahoo Finance prices updated · "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}));}}else{quoteFailures++;quoteRetryAt=Date.now()+Math.min(60000,Math.max(5000,1000*2**Math.min(quoteFailures,6)));}return n;}finally{quoteBusy=false;}};
+  const _mkPaint=mkPaint;mkPaint=function(){_mkPaint();const b=document.getElementById("mkBody");if(b)b.innerHTML=b.innerHTML.replaceAll("via Zapier","via Vercel").replaceAll("Zapier connector","Vercel live API").replaceAll("Fetching via Zapier","Fetching live data…");};
+  const _intel=VIEWS.intel;VIEWS.intel=sub=>_intel(sub).replaceAll("through your Zapier connector","from the Vercel live API").replaceAll("via your Zapier connector","from the Vercel live API");
+  if(typeof route!=="undefined"&&route.page==="intel")mkPaint();
+  setInterval(()=>{if(document.visibilityState==="visible"&&marketPage())lmQuotes(true);},1000);
+})();
+try{if(!localStorage.getItem("td_theme"))localStorage.setItem("td_theme","light");}catch{}
+try{applyTheme();}catch{}
 </script>
