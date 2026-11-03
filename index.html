@@ -5360,13 +5360,13 @@ shellInit();
 const VV_PRE=[["f","Female"],["m1","Male 1"],["m2","Male 2"]];
 const VV_NOVEL=/\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|princess|hysterical|deranged|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i;
 const VV_BADNAME=/india|indian|nepal|hindi|rishi|veena|\bneel\b|lekha|heera|\bravi\b|kalpana|hemant|aditi|raveena|prabhat|swara|sangeeta|\bisha\b/i;
-const VV_FEM=/\b(samantha|karen|serena|moira|tessa|victoria|allison|ava|susan|zoe|zoey|fiona|kate|catherine|nicky|joelle|noelle|matilda|stephanie|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|emma|clara|sara|ellie|olivia|amy|emily|salli|joanna|kimberly|ivy|kendra|nicole|freya|abbi|bella|hollie|maisie|annette|carly|elsie|tina|jane|molly|mia|evie|female|woman)\b/i;
+const VV_FEM=/\b(samantha|karen|serena|moira|tessa|victoria|allison|ava|susan|zoe|zoey|fiona|kate|catherine|nicky|joelle|noelle|matilda|stephanie|zira|hazel|libby|sonia|natasha|aria|jenny|michelle|emma|clara|sara|ellie|olivia|amy|emily|salli|joanna|kimberly|ivy|kendra|nicole|freya|abbi|bella|hollie|maisie|annette|carly|elsie|tina|jane|molly|mia|evie|female|woman|google us english|microsoft zira|microsoft aria|microsoft jenny|microsoft ava)\b/i;
 const VV_MALE=/\b(daniel|arthur|aaron|gordon|lee|tom|alex|oliver|david|mark|george|ryan|william|guy|christopher|eric|brian|andrew|evan|nathan|jamie|malcolm|matthew|russell|thomas|ken|duncan|darren|neil|tim|liam|noah|elliot|ethan|jacob|james|roger|tony|davis|jason|brandon|connor|male|man)\b/i;
 const vvLang=v=>String(v.lang||"").replace("_","-");
 function vvOk(v){const l=vvLang(v);return /^en(-|$)/i.test(l)&&!/-(IN|NP)\b/i.test(l)&&!VV_NOVEL.test(v.name)&&!VV_BADNAME.test(v.name);}
 function vvGender(v){const n=String(v.name||"").trim();if(/^google us english$/i.test(n))return "f";if(VV_FEM.test(n))return "f";if(VV_MALE.test(n))return "m";return "";}
 function vvScore(v,g){const n=v.name,l=vvLang(v);let s=/^en-AU/i.test(l)?30:/^en-GB/i.test(l)?26:/^en-US/i.test(l)?22:/^en-(NZ|IE)/i.test(l)?16:8;
-  if(/siri/i.test(n))s+=45;if(/premium/i.test(n))s+=40;if(/enhanced/i.test(n))s+=32;if(/natural|neural|online/i.test(n))s+=30;if(/google/i.test(n))s+=18;if(/compact/i.test(n))s-=20;
+  if(/siri/i.test(n))s+=45;if(/premium/i.test(n))s+=55;if(/enhanced/i.test(n))s+=48;if(/natural|neural|online/i.test(n))s+=42;if(/google us english|microsoft (zira|aria|jenny|ava)/i.test(n))s+=34;if(/google/i.test(n))s+=18;if(/compact/i.test(n))s-=20;
   if(g==="f"&&/samantha|karen|serena|moira/i.test(n))s+=12;if(g==="m"&&/daniel|arthur|aaron|gordon|\blee\b/i.test(n))s+=12;return s;}
 const vvBase=v=>String(v.name).replace(/\s*\(.*\)\s*/g,"").replace(/^(microsoft|google|apple)\s+/i,"").trim().toLowerCase();
 const vvAccent=v=>{const l=vvLang(v);return /AU/i.test(l)?"Australian":/GB/i.test(l)?"British":/US/i.test(l)?"American":/NZ/i.test(l)?"New Zealand":/IE/i.test(l)?"Irish":"English";};
@@ -5379,7 +5379,7 @@ function vvPresets(){const out={none:true,single:false,f:{},m1:{},m2:{}};if(!VOI
   let f=fem[0]||null,m1=male[0]||null,m2=m1?(male.find(v=>v!==m1&&vvLang(v)!==vvLang(m1))||male.find(v=>v!==m1)||null):null;
   if(!f)f=unk[0]||null;if(!m1)m1=unk.find(v=>v!==f)||null;if(m1&&!m2)m2=unk.find(v=>v!==f&&v!==m1)||null;
   const any=f||m1||ok[0];out.single=new Set([f,m1,m2].filter(Boolean)).size<=1&&ok.length<=1;
-  out.f=f?{v:f,pitch:1}:{v:any,pitch:1.15,note:"higher pitch"};
+  out.f=f?{v:f,pitch:1}:{v:any,pitch:1,note:"female voice unavailable; using the clearest English voice"};
   out.m1=m1?{v:m1,pitch:1}:{v:any,pitch:.86,note:"lower pitch"};
   out.m2=m2?{v:m2,pitch:1}:{v:m1||any,pitch:m1?.8:.76,note:"deeper pitch"};
   return out;}
