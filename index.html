@@ -2009,7 +2009,7 @@ function Player(host,sc,opt={}){
   let speechToken=0,speechWatch=null;
   function stopNarration(){speechToken++;clearTimeout(speechWatch);speechWatch=null;if(VOICE.ok)try{speechSynthesis.cancel();}catch{}speechDone=true;}
   function speechParts(text){
-    const words=plain(text).split(/\\s+/).filter(Boolean),out=[];let line="";
+    const words=plain(text).split(/\s+/).filter(Boolean),out=[];let line="";
     words.forEach(word=>{const next=line?line+" "+word:word;if(next.length>175&&line){out.push(line);line=word;}else line=next;if(/[.!?;:]$/.test(line)&&line.length>70){out.push(line);line="";}});
     if(line)out.push(line);return out;
   }
