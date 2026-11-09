@@ -8,8 +8,14 @@ const SYMBOLS = [
   { symbol: "QQQ", name: "Nasdaq 100 ETF", group: "Indices" },
   { symbol: "EURUSD=X", name: "EUR / USD", group: "Forex" },
   { symbol: "GC=F", name: "Gold futures", group: "Commodities" },
-  { symbol: "CL=F", name: "WTI crude oil", group: "Commodities" }
+  { symbol: "CL=F", name: "WTI crude oil", group: "Commodities" },
+  { symbol: "AMZN", name: "Amazon", group: "US stocks" },
+  { symbol: "GOOGL", name: "Alphabet", group: "US stocks" },
+  { symbol: "META", name: "Meta Platforms", group: "US stocks" },
+  { symbol: "TSLA", name: "Tesla", group: "US stocks" },
+  { symbol: "AMD", name: "Advanced Micro Devices", group: "US stocks" }
 ];
+const LIVE_SYMBOLS = ["AAPL","NVDA","MSFT","AMZN","GOOGL","META","TSLA","AMD","SPY","QQQ"];
 
 async function getStooqQuote(item) {
   const map = {AAPL:"aapl.us",NVDA:"nvda.us",MSFT:"msft.us",SPY:"spy.us",QQQ:"qqq.us"};
@@ -64,19 +70,34 @@ async function getQuote(item) {
   }
 }
 
+async function getAlpacaSnapshots() {
+ const key=process.env.APCA_API_KEY_ID,secret=process.env.APCA_API_SECRET_KEY;if(!key||!secret)return null;
+ const url="https://data.alpaca.markets/v2/stocks/snapshots?symbols="+LIVE_SYMBOLS.join(",")+"&feed=iex";
+ const response=await fetch(url,{headers:{"APCA-API-KEY-ID":key,"APCA-API-SECRET-KEY":secret,"Accept":"application/json"},signal:AbortSignal.timeout(6500)});
+ if(!response.ok)throw new Error("Alpaca market feed returned "+response.status);
+ const payload=await response.json(),snapshots=payload.snapshots||payload,now=Date.now();
+ return Object.fromEntries(LIVE_SYMBOLS.filter(symbol=>snapshots[symbol]).map(symbol=>{
+  const snap=snapshots[symbol],item=SYMBOLS.find(x=>x.symbol===symbol)||{symbol,name:symbol,group:"US stocks"},trade=snap.latestTrade||{},minute=snap.minuteBar||{},day=snap.dailyBar||{},prev=snap.prevDailyBar||{};
+  const price=Number.isFinite(trade.p)?trade.p:(Number.isFinite(minute.c)?minute.c:day.c),previous=Number.isFinite(prev.c)?prev.c:null,stamp=trade.t||minute.t||day.t||null,age=stamp?now-new Date(stamp).getTime():Infinity;
+  return [symbol,{symbol,name:item.name,group:item.group,price,previousClose:previous,change:Number.isFinite(previous)&&Number.isFinite(price)?price-previous:null,changePercent:Number.isFinite(previous)&&previous!==0&&Number.isFinite(price)?(price-previous)/previous*100:null,currency:"USD",exchange:"IEX",marketState:"IEX",timestamp:stamp?new Date(stamp).getTime():now,history:[prev.c,day.o,minute.o,minute.c,price].filter(Number.isFinite),source:"Alpaca IEX",feed:"IEX",realtime:age<120000,delayed:false}];
+ }));
+}
+
 module.exports = async function handler(req, res) {
-  res.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=45");
+  res.setHeader("Cache-Control", process.env.APCA_API_KEY_ID && process.env.APCA_API_SECRET_KEY ? "s-maxage=2, stale-while-revalidate=3" : "s-maxage=15, stale-while-revalidate=45");
   res.setHeader("Content-Type", "application/json");
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   try {
-    const results = await Promise.allSettled(SYMBOLS.map(getQuote));
-    const data = results.map((result, index) => result.status === "fulfilled"
-      ? result.value
-      : { symbol: SYMBOLS[index].symbol, name: SYMBOLS[index].name, group: SYMBOLS[index].group, error: "Quote temporarily unavailable" });
+    let liveSnapshots=null,liveFeedError=null;
+    try { liveSnapshots=await getAlpacaSnapshots(); } catch(error) { liveFeedError=error.message; console.error("Alpaca feed unavailable",error.message); }
+    const data=await Promise.all(SYMBOLS.map(async item=>{if(liveSnapshots&&liveSnapshots[item.symbol])return liveSnapshots[item.symbol];try{return await getQuote(item)}catch(_){return {symbol:item.symbol,name:item.name,group:item.group,error:"Quote temporarily unavailable"}}}));
+    const realtime=!!liveSnapshots&&Object.keys(liveSnapshots).length>0;
     return res.status(200).json({
-      provider: "Yahoo Finance with Stooq fallback",
+      provider:realtime?"Alpaca IEX real-time + Yahoo/Stooq snapshots":"Yahoo Finance with Stooq fallback",
+      realtime,liveFeed:realtime?"Alpaca IEX":null,liveSymbols:realtime?Object.keys(liveSnapshots).length:0,pollIntervalMs:realtime?5000:null,liveFeedError:liveFeedError||null,
       sources: [
-        {name:"Yahoo Finance",status:"active",role:"Primary snapshots"},
+        {name:"Alpaca IEX",status:process.env.APCA_API_KEY_ID&&process.env.APCA_API_SECRET_KEY?"configured":"api_key_required",role:"Real-time US stock trades and quotes from IEX; 10 symbols"},
+        {name:"Yahoo Finance",status:"active",role:"Fallback snapshots for international indices, FX and commodities"},
         {name:"Stooq",status:"fallback",role:"US equity and ETF fallback snapshots"},
         {name:"Binance",status:"active",role:"Live crypto WebSocket stream"},
         {name:"Coinbase Exchange",status:"available",role:"Alternative crypto feed; adapter not yet enabled"},
