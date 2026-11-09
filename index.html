@@ -9503,7 +9503,24 @@ const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=
 const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD"];
 let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
 function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
-function ribbonPaint(rows,delayed){const el=$("#kaMarketRibbon");if(!el)return;const items=(rows||[]).filter(x=>Number.isFinite(+x.price)).map(x=>{const pct=+x.changePercent||0,cl=pct>=0?"up":"down";return '<span class="mr-item" data-symbol="'+safe(x.symbol)+'"><b>'+safe(x.symbol)+'</b><span>'+safe((+x.price).toLocaleString("en-US",{maximumFractionDigits:4}))+'</span><span class="'+cl+'">'+(pct>0?"+":"")+pct.toFixed(2)+'%</span></span>';}).join("");if(!items){el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Waiting for verified market feed…</span>';return;}el.innerHTML='<span class="mr-label">MARKET PULSE</span><div class="mr-track">'+items+items+'</div><span class="mr-state">'+(delayed?"DELAYED PUBLIC FEED":"PUBLIC FEED")+' · AUTO REFRESH</span>';}
+function ribbonPaint(rows,delayed){
+ const el=$("#kaMarketRibbon");if(!el)return;
+ let label=el.querySelector(".mr-label");if(!label){label=document.createElement("span");label.className="mr-label";label.textContent="LIVE MARKETS";el.prepend(label);}
+ let track=el.querySelector(".mr-track");
+ if(!track){track=document.createElement("div");track.className="mr-track";el.insertBefore(track,el.querySelector(".mr-state"));}
+ let state=el.querySelector(".mr-state");if(!state){state=document.createElement("span");state.className="mr-state";el.append(state);}
+ const valid=(rows||[]).filter(x=>Number.isFinite(Number(x.price)));
+ if(!valid.length){state.textContent="FEED UNAVAILABLE · RETRYING";return;}
+ const makeItem=q=>{const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=q.symbol;const name=document.createElement("b");name.textContent=q.symbol;const price=document.createElement("span");price.className="mr-price";const change=document.createElement("span");change.className="mr-change";item.append(name,price,change);return item;};
+ const update=(item,q)=>{const price=item.querySelector(".mr-price"),change=item.querySelector(".mr-change"),next=Number(q.price),previous=Number(item.dataset.lastPrice),pct=Number(q.changePercent);if(Number.isFinite(previous)&&previous!==next){price.classList.remove("tick-up","tick-down");void price.offsetWidth;price.classList.add(next>previous?"tick-up":"tick-down");}price.textContent=next.toLocaleString("en-US",{maximumFractionDigits:4});change.textContent=Number.isFinite(pct)?(pct>0?"+":"")+pct.toFixed(2)+"%":"—";change.classList.toggle("up",Number.isFinite(pct)&&pct>=0);change.classList.toggle("down",Number.isFinite(pct)&&pct<0);item.dataset.lastPrice=String(next);item.title=(q.source||"Market data")+" · Updated "+(q.updatedAt?new Date(q.updatedAt).toLocaleTimeString():"time unavailable");};
+ const current=new Map([...track.querySelectorAll(".mr-item")].map(n=>[n.dataset.symbol,n]));
+ const firstSet=valid.map(q=>{let n=current.get(q.symbol);if(!n)n=makeItem(q);update(n,q);return n;});
+ const signature=firstSet.map(n=>n.dataset.symbol).join("|");
+ if(track.dataset.symbols!==signature){track.replaceChildren(...firstSet,...firstSet.map(n=>n.cloneNode(true)));track.dataset.symbols=signature;}
+ else{const nodes=[...track.querySelectorAll(".mr-item")];nodes.forEach((n,i)=>{const q=valid[i%valid.length];if(q)update(n,q);});}
+ state.textContent=delayed?"STOCKS · DELAYED / SNAPSHOT FEED":"STOCKS · LIVE PROVIDER QUOTES";
+ state.title="Prices update when the market-data provider publishes a new quote. Crypto trades stream separately from Coinbase.";
+}
 async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
 function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
 function authMessage(s){const el=$("#kaAuthMsg");if(el)el.textContent=s;}
@@ -9592,21 +9609,11 @@ function ribbonLabel(){
  const el=$("#kaMarketRibbon");if(!el)return;
  const label=el.querySelector(".mr-label");if(label)label.textContent="LIVE MARKETS";
  const state=el.querySelector(".mr-state");
- if(state){const t=state.textContent||"";state.textContent=t.includes("DELAYED")?"DELAYED FEED · PROVIDER UPDATES":"LIVE FEED · PROVIDER UPDATES";}
+ if(state&&/DELAYED|SNAPSHOT/.test(state.textContent||""))state.textContent="STOCKS · DELAYED / SNAPSHOT";
 }
 function run(){
  profileMenu();sidebar();ribbonLabel();
- // The client refreshes once per second. Provider timestamps remain authoritative:
- // a one-second poll does not imply that an exchange publishes a new quote every second.
- if(!window.__kaRibbonOneSecond){
-  window.__kaRibbonOneSecond=true;
-  setInterval(()=>{if(document.hidden)return;const el=$("#kaMarketRibbon");if(!el)return;
-   fetch("/api/market?symbols="+encodeURIComponent("AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD"),{cache:"no-store"})
-    .then(r=>{if(!r.ok)throw Error("feed");return r.json();})
-    .then(j=>{if(typeof ribbonPaint==="function")ribbonPaint(j.data,j.realtime!==true);ribbonLabel();})
-    .catch(()=>{const s=el.querySelector(".mr-state");if(s)s.textContent="FEED RETRYING · LAST VERIFIED QUOTE";});
-  },1000);
- }
+ // Quote snapshots refresh on the main 15-second schedule; Coinbase streams crypto trades live.
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
 setInterval(()=>{profileMenu();sidebar();},2500);
@@ -9671,7 +9678,7 @@ function paint(t){
  }
  document.querySelectorAll('.mr-item[data-symbol="'+t.product_id+'"]').forEach(node=>{
   const spans=node.querySelectorAll("span");
-  if(spans[0])spans[0].textContent=money(price);
+  if(spans[0]){const old=Number((spans[0].textContent||"").replace(/,/g,""));if(Number.isFinite(old)&&old!==price){spans[0].classList.remove("tick-up","tick-down");void spans[0].offsetWidth;spans[0].classList.add(price>old?"tick-up":"tick-down");}spans[0].textContent=money(price);}
   if(spans[1]){spans[1].textContent=pct===null?"—":(pct>0?"+":"")+pct.toFixed(2)+"%";spans[1].classList.toggle("up",pct!==null&&pct>=0);spans[1].classList.toggle("down",pct!==null&&pct<0);}
   node.title="Live Coinbase trade · "+new Date(Number(t.time||Date.now())).toLocaleTimeString();
  });
@@ -9704,91 +9711,44 @@ setInterval(restore,500);
 })();
 </script>
 <style id="kaushal-full-width-market-ribbon">
-/* One seamless full-width market strip directly below the search/header bar */
-.topbar{
-  border-bottom:0!important;
-  box-shadow:none!important;
-}
+/* Full-width strip inside the dashboard content column, aligned with its true edges. */
+.topbar{border-bottom:0!important;box-shadow:none!important}
 .topbar::after{display:none!important}
-.stage{padding-top:0!important}
+.stage{padding-top:0!important;min-width:0!important}
 #kaMarketRibbon.market-ribbon{
-  position:sticky!important;
-  top:var(--tb,58px)!important;
-  z-index:59!important;
-  box-sizing:border-box!important;
-  width:calc(100% + 56px)!important;
-  max-width:none!important;
-  min-height:48px!important;
-  margin:0 0 12px -28px!important;
-  padding:0!important;
-  border:0!important;
-  border-top:1px solid color-mix(in srgb,var(--line) 45%,transparent)!important;
-  border-bottom:1px solid var(--line)!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  background:color-mix(in srgb,var(--panel) 96%,var(--gold))!important;
-  display:flex!important;
-  align-items:stretch!important;
-  gap:0!important;
-  overflow:hidden!important;
+ position:sticky!important;top:var(--tb,58px)!important;z-index:59!important;
+ box-sizing:border-box!important;width:calc(100% + 40px)!important;max-width:none!important;
+ min-height:48px!important;margin:0 0 12px -20px!important;padding:0!important;
+ border:0!important;border-top:1px solid color-mix(in srgb,var(--line) 45%,transparent)!important;
+ border-bottom:1px solid var(--line)!important;border-radius:0!important;box-shadow:none!important;
+ background:color-mix(in srgb,var(--panel) 96%,var(--gold))!important;
+ display:flex!important;align-items:stretch!important;gap:0!important;overflow:hidden!important;
 }
-#kaMarketRibbon .mr-label{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:132px!important;
-  min-width:132px!important;
-  padding:0 18px!important;
-  border:0!important;
-  border-right:1px solid var(--line)!important;
-  background:transparent!important;
-  font-size:.68rem!important;
-  letter-spacing:.15em!important;
-  white-space:nowrap!important;
-}
-#kaMarketRibbon .mr-track{
-  flex:1 1 auto!important;
-  min-width:0!important;
-  width:0!important;
-  overflow:visible!important;
-  align-items:center!important;
-  animation-duration:48s!important;
-}
-#kaMarketRibbon .mr-item{
-  min-height:48px!important;
-  padding:0 20px!important;
-  border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;
-  gap:10px!important;
-  font-size:.74rem!important;
-}
-#kaMarketRibbon .mr-state{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  flex:0 0 auto!important;
-  min-width:150px!important;
-  padding:0 18px!important;
-  margin:0!important;
-  border-left:1px solid var(--line)!important;
-  background:color-mix(in srgb,var(--panel) 80%,transparent)!important;
-  font-size:.6rem!important;
-  letter-spacing:.04em!important;
-  white-space:nowrap!important;
-}
+#kaMarketRibbon .mr-label{display:flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 132px!important;width:132px!important;min-width:132px!important;padding:0 12px!important;
+ border:0!important;border-right:1px solid var(--line)!important;background:transparent!important;
+ color:var(--gold)!important;font:700 .68rem var(--f-mono)!important;letter-spacing:.12em!important;white-space:nowrap!important}
+#kaMarketRibbon .mr-track{display:flex!important;flex:1 1 0!important;min-width:0!important;width:auto!important;
+ overflow:visible!important;align-items:center!important;white-space:nowrap!important;animation:mr-scroll 48s linear infinite!important;will-change:transform!important}
+#kaMarketRibbon .mr-item{display:flex!important;flex:0 0 auto!important;align-items:center!important;min-height:48px!important;
+ padding:0 20px!important;border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;gap:10px!important;font-size:.74rem!important}
+#kaMarketRibbon .mr-item .mr-price{font-variant-numeric:tabular-nums}
+#kaMarketRibbon .mr-item .up{color:var(--up)!important}
+#kaMarketRibbon .mr-item .down{color:var(--down)!important}
+#kaMarketRibbon .mr-item .tick-up{animation:kaQuoteUp .65s ease}
+#kaMarketRibbon .mr-item .tick-down{animation:kaQuoteDown .65s ease}
+#kaMarketRibbon .mr-state{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;
+ min-width:160px!important;padding:0 14px!important;margin:0!important;border-left:1px solid var(--line)!important;
+ background:color-mix(in srgb,var(--panel) 80%,transparent)!important;color:var(--muted)!important;
+ font:500 .59rem var(--f-mono)!important;letter-spacing:.03em!important;white-space:nowrap!important}
+@keyframes kaQuoteUp{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #20c99799}100%{text-shadow:0 0 0 transparent}}
+@keyframes kaQuoteDown{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #f0647599}100%{text-shadow:0 0 0 transparent}}
 @media(max-width:960px){
-  .topbar{border-bottom:0!important}
-  #kaMarketRibbon.market-ribbon{
-    width:calc(100% + 32px)!important;
-    margin-left:-16px!important;
-    min-height:46px!important;
-    top:var(--tb,54px)!important;
-  }
-  #kaMarketRibbon .mr-label{width:108px!important;min-width:108px!important;padding:0 10px!important;font-size:.61rem!important}
-  #kaMarketRibbon .mr-item{min-height:46px!important;padding:0 13px!important}
-  #kaMarketRibbon .mr-state{min-width:0!important;padding:0 10px!important;font-size:.55rem!important}
+ #kaMarketRibbon.market-ribbon{width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:46px!important;top:var(--tb,54px)!important}
+ #kaMarketRibbon .mr-label{flex-basis:108px!important;width:108px!important;min-width:108px!important;padding:0 8px!important;font-size:.6rem!important}
+ #kaMarketRibbon .mr-item{min-height:46px!important;padding:0 13px!important}
+ #kaMarketRibbon .mr-state{min-width:0!important;padding:0 9px!important;font-size:.54rem!important}
 }
-@media(max-width:560px){
-  #kaMarketRibbon .mr-state{display:none!important}
-  #kaMarketRibbon .mr-label{width:96px!important;min-width:96px!important}
-}
+@media(max-width:560px){#kaMarketRibbon .mr-state{display:none!important}#kaMarketRibbon .mr-label{flex-basis:96px!important;width:96px!important;min-width:96px!important}}
+@media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
 </style>
