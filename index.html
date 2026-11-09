@@ -683,7 +683,7 @@ const SOURCES=[
   ["ForexOp: published pass rates","https://forexop.com/learning/prop-firm-challenge-pass-rate/"]]],
  ["Regulators & safety",[["ASIC 26-193MR: warning on risky broker products (Aug 2026)","https://www.asic.gov.au/about-asic/news-centre/find-a-media-release/2026-releases/26-193mr-asic-warns-retail-investors-about-risky-products-offered-by-online-brokers"],
   ["Moneysmart investor alert list","https://moneysmart.gov.au/check-and-report-scams/investor-alert-list"],["ASIC Connect (professional registers)","https://connectonline.asic.gov.au/"],["Scamwatch","https://www.scamwatch.gov.au/"]]],
- ["Learning more",[["TradingView Lightweight Charts (the chart engine in your Mac app)","https://www.tradingview.com/lightweight-charts/"],["Babypips School of Pipsology (free forex course)","https://www.babypips.com/learn/forex"],
+ ["Learning more",[["TradingView Lightweight Charts (open-source charting library)","https://www.tradingview.com/lightweight-charts/"],["Babypips School of Pipsology (free forex course)","https://www.babypips.com/learn/forex"],
   ["Moneysmart: share investing","https://moneysmart.gov.au/how-to-invest/invest-in-shares"]]]
 ];
 </script>
@@ -9518,5 +9518,95 @@ async function checkBreakingNews(){try{const r=await fetch("/api/news?q="+encode
 function viewCountWrap(){if(typeof Player!=="function"||Player.__kaWrapped)return;const original=Player;const wrapped=function(host,sc,opt){const off=original(host,sc,opt);try{const id=(opt&&opt.title)||sc.title||"lesson",key="kaLessonViews:"+id;let badge=host.querySelector(".ka-view-count");if(!badge){badge=document.createElement("span");badge.className="ka-view-count";badge.textContent=(+localStorage.getItem(key)||0)+" plays on this device";host.querySelector(".screen")?.appendChild(badge);}const count=()=>{if(host.dataset.kaCounted==="1")return;host.dataset.kaCounted="1";const n=(+localStorage.getItem(key)||0)+1;localStorage.setItem(key,String(n));badge.textContent=n+" plays on this device";};host.addEventListener("click",e=>{if(e.target.closest('[data-a="play"],.bigplay,canvas'))count();},{capture:true});}catch{}return off;};wrapped.__kaWrapped=true;Player=wrapped;}
 function start(){splash();authUI();soundToggle();ribbonInit();refreshRibbon();viewCountWrap();setInterval(()=>{ribbonInit();refreshRibbon();authUI();soundToggle();},30000);setInterval(checkBreakingNews,240000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshRibbon();});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
+})();
+</script>
+
+
+<style id="kaushal-live-polish">
+:root{--kaushal-warm:#c7a46b}
+.market-ribbon{position:sticky!important;top:0!important;margin:0 0 12px!important;min-height:42px!important;border-radius:11px!important;z-index:100!important}
+.market-ribbon .mr-label{width:auto!important;min-width:104px!important;letter-spacing:.12em!important}
+.market-ribbon .mr-track{animation-duration:42s!important}
+.market-ribbon .mr-item{padding-inline:13px!important}
+.market-ribbon .mr-item .up{animation:kaQuoteUp .65s ease}
+.market-ribbon .mr-item .down{animation:kaQuoteDown .65s ease}
+@keyframes kaQuoteUp{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #20c99799}100%{text-shadow:0 0 0 transparent}}
+@keyframes kaQuoteDown{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #f0647599}100%{text-shadow:0 0 0 transparent}}
+#kaAuthTrigger,#kaAuthSide,.ka-sound-toggle{display:none!important}
+.ka-profile-wrap{position:relative;display:inline-flex;align-items:center;z-index:120}
+.ka-profile-trigger{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:11px;padding:8px 11px;background:var(--panel);color:var(--ink);font:600 .76rem var(--f-body);cursor:pointer;white-space:nowrap}
+.ka-profile-trigger .ka-avatar{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#e9d5a8,#b78a50);color:#302414;font-weight:800}
+.ka-profile-menu{position:absolute;right:0;top:calc(100% + 9px);width:224px;padding:8px;border:1px solid var(--line2);border-radius:14px;background:var(--panel);box-shadow:0 14px 38px #0002;display:none}
+.ka-profile-menu.open{display:grid;gap:4px;animation:kaMenuIn .16s ease-out}
+.ka-profile-menu button{width:100%;text-align:left;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--ink);font:500 .8rem var(--f-body);cursor:pointer}
+.ka-profile-menu button:hover{background:var(--raised)}
+.ka-profile-menu .ka-profile-caption{padding:7px 10px;color:var(--muted);font:600 .62rem var(--f-mono);letter-spacing:.1em}
+@keyframes kaMenuIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.ka-alert{right:14px!important;top:70px!important;width:min(310px,calc(100vw - 28px))!important;padding:11px 13px!important;border:1px solid color-mix(in srgb,var(--gold) 55%,var(--line))!important;border-radius:12px!important;background:color-mix(in srgb,var(--panel) 92%,#fff)!important;color:var(--ink)!important;box-shadow:0 8px 24px #0002!important;backdrop-filter:blur(16px)!important}
+.ka-alert b{font-size:.6rem!important}.ka-alert span{font-size:.78rem!important;line-height:1.35!important}
+.ka-view-count{background:var(--panel)!important;color:var(--muted)!important;border-color:var(--line)!important}
+@media(min-width:961px){
+ .shell{grid-template-columns:248px minmax(0,1fr)!important;transition:grid-template-columns .28s ease}
+ .side{transition:width .28s ease,transform .28s ease}
+ .shell.ka-side-collapsed{grid-template-columns:78px minmax(0,1fr)!important}
+ .side.ka-collapsed{width:78px!important;overflow:hidden}
+ .side.ka-collapsed .brand .brand-name,.side.ka-collapsed .nav .nl,.side.ka-collapsed .nav .badge,.side.ka-collapsed .sidefoot,.side.ka-collapsed .nav-group-label{display:none!important}
+ .side.ka-collapsed .nav{justify-content:center;padding-inline:0}
+ .side.ka-collapsed .nav svg{margin:0}
+}
+.ka-side-toggle{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--raised);color:var(--ink);cursor:pointer;display:grid;place-items:center;flex:none}
+.ka-side-toggle svg{width:16px;height:16px}
+@media(max-width:960px){.market-ribbon{top:0!important;margin-top:0!important}.ka-profile-wrap{margin-left:auto}.ka-profile-menu{position:fixed;right:14px;top:60px}}
+</style>
+<script id="kaushal-live-polish-script">
+(()=>{if(window.__kaLivePolish)return;window.__kaLivePolish=true;
+const $=s=>document.querySelector(s);
+function profileMenu(){
+ const top=$(".topbar"),brand=$(".side .brand");
+ let host=top||brand;if(!host)return;
+ if(!$("#kaProfileWrap")){
+  const w=document.createElement("div");w.id="kaProfileWrap";w.className="ka-profile-wrap";
+  w.innerHTML='<button class="ka-profile-trigger" id="kaProfileTrigger" aria-expanded="false"><span class="ka-avatar">K</span><span>Profile</span><span aria-hidden="true">⌄</span></button><div class="ka-profile-menu" id="kaProfileMenu"><div class="ka-profile-caption">ACCOUNT & PREFERENCES</div><button id="kaProfileAuth">Sign in / Create account</button><button id="kaProfileSound">Sound alerts: Off</button><button id="kaProfileTheme">Appearance settings</button></div>';
+  host.appendChild(w);
+  $("#kaProfileTrigger").addEventListener("click",()=>{const m=$("#kaProfileMenu"),open=m.classList.toggle("open");$("#kaProfileTrigger").setAttribute("aria-expanded",String(open));});
+  $("#kaProfileAuth").onclick=()=>{if(typeof openAuth==="function")openAuth();$("#kaProfileMenu").classList.remove("open");};
+  $("#kaProfileSound").onclick=()=>{const on=localStorage.getItem("kaSoundAlerts")==="on";localStorage.setItem("kaSoundAlerts",on?"off":"on");soundLabel();};
+  $("#kaProfileTheme").onclick=()=>{const b=$("#thmBtn");if(b)b.click();else $("#themeBtn")?.click();};
+  document.addEventListener("click",e=>{if(!w.contains(e.target))$("#kaProfileMenu")?.classList.remove("open");});
+ }
+ const old=$("#kaAuthTrigger");if(old)old.style.display="none";const side=$("#kaAuthSide");if(side)side.style.display="none";
+ soundLabel();
+}
+function soundLabel(){const b=$("#kaProfileSound");if(b)b.textContent="Sound alerts: "+(localStorage.getItem("kaSoundAlerts")==="on"?"On":"Off");}
+function sidebar(){
+ const side=$(".side"),shell=$(".shell");if(!side||!shell||$("#kaSideToggle"))return;
+ const brand=side.querySelector(".brand");if(!brand)return;
+ const b=document.createElement("button");b.id="kaSideToggle";b.className="ka-side-toggle";b.type="button";b.title="Collapse sidebar";b.setAttribute("aria-label","Collapse sidebar");b.textContent="‹";brand.appendChild(b);
+ const collapsed=localStorage.getItem("kaSidebarCollapsed")==="1";
+ function set(v){side.classList.toggle("ka-collapsed",v);shell.classList.toggle("ka-side-collapsed",v);b.textContent=v?"›":"‹";b.title=v?"Expand sidebar":"Collapse sidebar";localStorage.setItem("kaSidebarCollapsed",v?"1":"0");}
+ set(collapsed);b.onclick=()=>set(!side.classList.contains("ka-collapsed"));
+}
+function ribbonLabel(){
+ const el=$("#kaMarketRibbon");if(!el)return;
+ const label=el.querySelector(".mr-label");if(label)label.textContent="LIVE MARKETS";
+ const state=el.querySelector(".mr-state");
+ if(state){const t=state.textContent||"";state.textContent=t.includes("DELAYED")?"DELAYED FEED · PROVIDER UPDATES":"LIVE FEED · PROVIDER UPDATES";}
+}
+function run(){
+ profileMenu();sidebar();ribbonLabel();
+ // The client refreshes once per second. Provider timestamps remain authoritative:
+ // a one-second poll does not imply that an exchange publishes a new quote every second.
+ if(!window.__kaRibbonOneSecond){
+  window.__kaRibbonOneSecond=true;
+  setInterval(()=>{if(document.hidden)return;const el=$("#kaMarketRibbon");if(!el)return;
+   fetch("/api/market?symbols="+encodeURIComponent("AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD"),{cache:"no-store"})
+    .then(r=>{if(!r.ok)throw Error("feed");return r.json();})
+    .then(j=>{if(typeof ribbonPaint==="function")ribbonPaint(j.data,!(j.realtime===true));ribbonLabel();})
+    .catch(()=>{const s=el.querySelector(".mr-state");if(s)s.textContent="FEED RETRYING · LAST VERIFIED QUOTE";});
+  },1000);
+ }
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
+setInterval(()=>{profileMenu();sidebar();},2500);
 })();
 </script>
