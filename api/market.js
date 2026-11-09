@@ -1,27 +1,8 @@
-const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.\-^=]{0,14}$/;
-
-export default async function handler(req, res) {
-  const raw = String(req.query?.symbols || "AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD");
-  const symbols = [...new Set(raw.split(",").map((symbol) => symbol.trim().toUpperCase()).filter((symbol) => SYMBOL_PATTERN.test(symbol)))].slice(0, 50);
-
-  if (!symbols.length) return res.status(400).json({ error: "No supported symbols requested" });
-
-  try {
-    const results = await Promise.all(symbols.map(async (symbol) => {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1m&includePrePost=true`;
-      const response = await fetch(url, { headers: { Accept: "application/json" } });
-      if (!response.ok) throw new Error(`Yahoo returned ${response.status}`);
-      const payload = await response.json();
-      const result = payload?.chart?.result?.[0];
-      const meta = result?.meta;
-      const price = Number(meta?.regularMarketPrice ?? meta?.postMarketPrice ?? meta?.previousClose);
-      const previousClose = Number(meta?.previousClose ?? meta?.chartPreviousClose);
-      if (!Number.isFinite(price) || !Number.isFinite(previousClose)) return null;
-      return { symbol, price, previousClose, change: price - previousClose, changePercent: ((price - previousClose) / previousClose) * 100, currency: meta?.currency || "USD", marketState: meta?.marketState || "CLOSED", updatedAt: Date.now() };
-    }));
-    res.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=30");
-    return res.status(200).json({ source: "Yahoo Finance delayed public feed", delayed: true, updatedAt: Date.now(), data: results.filter(Boolean) });
-  } catch (error) {
-    return res.status(502).json({ error: "Live market feed unavailable", detail: error instanceof Error ? error.message : "Unknown upstream error" });
-  }
-}
+const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.\\-^=]{0,14}$/;
+const COIN_IDS={"BTC-USD":"bitcoin","ETH-USD":"ethereum"};
+const STOOQ=new Set(["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ"]);
+async function getJson(url,ms=7000){const r=await fetch(url,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(ms)});if(!r.ok)throw Error("Upstream returned "+r.status);return r.json();}
+async function yahooQuote(symbol){const p=await getJson("https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(symbol)+"?range=1d&interval=1m&includePrePost=true"),r=p?.chart?.result?.[0],m=r?.meta;const price=Number(m?.regularMarketPrice??m?.postMarketPrice??m?.previousClose),previousClose=Number(m?.previousClose??m?.chartPreviousClose);if(!Number.isFinite(price)||!Number.isFinite(previousClose)||!previousClose)throw Error("No valid quote");return {symbol,price,previousClose,change:price-previousClose,changePercent:(price-previousClose)/previousClose*100,currency:m?.currency||"USD",marketState:m?.marketState||"UNKNOWN",source:"Yahoo Finance",updatedAt:Date.now(),delayed:true};}
+async function coinQuote(symbol){const id=COIN_IDS[symbol];if(!id)throw Error("No alternate source");const j=await getJson("https://api.coingecko.com/api/v3/simple/price?ids="+id+"&vs_currencies=usd&include_24hr_change=true"),price=Number(j?.[id]?.usd),pct=Number(j?.[id]?.usd_24h_change);if(!Number.isFinite(price)||!Number.isFinite(pct))throw Error("No crypto quote");const previousClose=price/(1+pct/100);return {symbol,price,previousClose,change:price-previousClose,changePercent:pct,currency:"USD",marketState:"OPEN",source:"CoinGecko",updatedAt:Date.now(),delayed:true};}
+async function stooqQuote(symbol){if(!STOOQ.has(symbol))throw Error("No alternate source");const r=await fetch("https://stooq.com/q/d/l/?s="+symbol.toLowerCase()+".us&i=d",{signal:AbortSignal.timeout(7000)});if(!r.ok)throw Error("Stooq returned "+r.status);const lines=(await r.text()).trim().split(/\\r?\\n/);if(lines.length<3)throw Error("No alternate daily quote");const a=lines[lines.length-1].split(","),b=lines[lines.length-2].split(","),price=Number(a[4]),previousClose=Number(b[4]);if(!price||!previousClose)throw Error("Invalid alternate quote");return {symbol,price,previousClose,change:price-previousClose,changePercent:(price-previousClose)/previousClose*100,currency:"USD",marketState:"CLOSED",source:"Stooq daily fallback",updatedAt:Date.now(),delayed:true};}
+export default async function handler(req,res){const raw=String(req.query?.symbols||"AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD"),symbols=[...new Set(raw.split(",").map(s=>s.trim().toUpperCase()).filter(s=>SYMBOL_PATTERN.test(s)))].slice(0,50);if(!symbols.length)return res.status(400).json({error:"No supported symbols requested"});const data=await Promise.all(symbols.map(async symbol=>{try{return await yahooQuote(symbol);}catch{for(const fn of [()=>coinQuote(symbol),()=>stooqQuote(symbol)])try{return await fn();}catch{}return null;}}));res.setHeader("Cache-Control","s-maxage=10, stale-while-revalidate=20");return res.status(200).json({source:"Yahoo Finance with CoinGecko and Stooq fallbacks",delayed:true,updatedAt:Date.now(),data:data.filter(Boolean)});}
