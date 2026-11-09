@@ -56,7 +56,7 @@ export default async function handler(req, res) {
 
   const result = await Promise.all(symbols.map(async symbol => { try { return await quote(symbol) } catch (error) { console.error('Quote unavailable for', symbol, error instanceof Error ? error.message : 'unknown error'); return null } }))
   const clean = result.filter(Boolean)
-  const data = clean.map(q => ({ symbol: q.symbol, price: q.regularMarketPrice.raw, changePercent: q.regularMarketChangePercent.raw, change: q.regularMarketChange.raw, updatedAt: (q.regularMarketTime || Date.now() / 1000) * 1000, source: q.source, realtime: !!q.isRealTime }))
+  const data = clean.map(q => ({ symbol: q.symbol, price: q.regularMarketPrice.raw, previousClose: Number.isFinite(q.regularMarketChange.raw) ? q.regularMarketPrice.raw - q.regularMarketChange.raw : null, changePercent: q.regularMarketChangePercent.raw, change: q.regularMarketChange.raw, updatedAt: (q.regularMarketTime || Date.now() / 1000) * 1000, source: q.source, realtime: !!q.isRealTime }))
   const allRealtime = clean.length > 0 && clean.every(q => q.isRealTime)
   const anyDelayed = clean.some(q => !q.isRealTime)
   res.setHeader('Cache-Control', key && secret ? 's-maxage=2, stale-while-revalidate=3' : 'no-store')
