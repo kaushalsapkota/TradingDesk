@@ -1,10 +1,8 @@
-const ALLOWED_SYMBOLS = new Set([
-  "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "SPY", "QQQ", "BTC-USD", "ETH-USD"
-]);
+const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.\-^=]{0,14}$/;
 
 export default async function handler(req, res) {
   const raw = String(req.query?.symbols || "AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD");
-  const symbols = raw.split(",").map((symbol) => symbol.trim().toUpperCase()).filter((symbol) => ALLOWED_SYMBOLS.has(symbol)).slice(0, 20);
+  const symbols = [...new Set(raw.split(",").map((symbol) => symbol.trim().toUpperCase()).filter((symbol) => SYMBOL_PATTERN.test(symbol)))].slice(0, 50);
 
   if (!symbols.length) return res.status(400).json({ error: "No supported symbols requested" });
 
