@@ -1,4 +1,3 @@
-<meta charset="utf-8">
 <title>Kaushal's Trading Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7,8 +6,8 @@
 /* Layout: terminal-style shell. Desktop = fixed left rail (grouped nav + region switch) beside a scrolling stage (max 1120px).
    Phone = slim top bar + slide-over menu. Candle colours follow TradingView's defaults (teal up / coral down); gold is the one accent. */
 :root{
-  --bg:#F6F3EC; --panel:#FFFFFF; --raised:#FBFAF6; --sunk:#EFEBE2; --line:#E4DED2; --line2:#D6CEBF;
-  --ink:#1D232B; --muted:#5E6672; --faint:#8E949C;
+  --bg:#080A0D; --panel:#11151B; --raised:#171D25; --sunk:#0B0D10; --line:#1E252E; --line2:#2A3440;
+  --ink:#F0EDE5; --muted:#A7AFBA; --faint:#6B7480;
   --gold:#C6A66A; --gold-ink:#14110A; --gold-soft:rgba(198,166,106,.14);
   --up:#36C995; --down:#EF6875; --up-soft:rgba(54,201,149,.14); --down-soft:rgba(239,104,117,.13);
   --blue:#70A9E8; --blue-soft:rgba(112,169,232,.14); --violet:#B6A4E0;
@@ -1990,6 +1989,8 @@ function Player(host,sc,opt={}){
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,TOTAL=sceneTotal(sc);
   sc.steps.forEach((_,i)=>{if(i){const t=document.createElement("i");t.className="tick";t.style.left=(cum(i)/TOTAL*100)+"%";tl.appendChild(t);}});
   let k=0,playing=false,t0=0,el=0,speed=1,raf=0,dead=false,spoken=-1,speechDone=true,ended=false,endT=0;
+  const onPlayerVisibility=()=>{if(document.hidden){playing=false;t0=0;try{speechSynthesis.cancel();}catch{}speechDone=true;icon();}};
+  document.addEventListener("visibilitychange",onPlayerVisibility);
   if(!VOICE.ok)vB.hidden=true;
   const prevTo=i=>i>0?sc.steps[i-1].to:(sc.start??-1);
   const ovUpTo=i=>{let o=[];for(let j=0;j<=i;j++){if(sc.steps[j].clear)o=[];o=o.concat(sc.steps[j].ov||[]);}return o;};
@@ -2049,7 +2050,7 @@ function Player(host,sc,opt={}){
   else{const bp=document.createElement("button");bp.className="bigplay";bp.setAttribute("aria-label","Play lesson");bp.innerHTML='<svg width="28" height="28" viewBox="0 0 14 14" fill="currentColor"><path d="M3.5 1.5v11l9-5.5z"/></svg>';bp.onclick=play;host.querySelector(".screen").appendChild(bp);}
   if(VOICE.ok&&speechSynthesis.getVoices().length===0)try{speechSynthesis.onvoiceschanged=()=>{};}catch{}
   raf=requestAnimationFrame(frame);
-  return ()=>{dead=true;document.removeEventListener("keydown",onKey);clearTimeout(actT);cancelAnimationFrame(raf);clearTimeout(endT);if(VOICE.ok)try{speechSynthesis.cancel();}catch{}};
+  return ()=>{dead=true;document.removeEventListener("keydown",onKey);document.removeEventListener("visibilitychange",onPlayerVisibility);clearTimeout(actT);cancelAnimationFrame(raf);clearTimeout(endT);if(VOICE.ok)try{speechSynthesis.cancel();}catch{}};
 }
 
 /* ===================== drawing helpers for illustrated scenes ===================== */
@@ -4827,10 +4828,10 @@ async function rxMount(lesson,force){const card=$("#rxCard");if(!card)return;con
   const honest=`<p class="tiny muted" style="margin:0">One past example picked by a fixed rule so you can see the idea on a real chart. It is not a signal, and one example proves nothing either way: some of these fail, and that's normal.</p>`;
   const paint=(s,from)=>{if(!s){return;}if(s.none){body.innerHTML=`<div class="callout info small">The rule found no clean example in the ${RX_TF[tf][0].toLowerCase()} data for any of NQ, gold, ES or EUR/USD. Try the other timeframe.</div>${rule}`;return;}
     body.innerHTML=`<div class="rx-chart" id="rxChart"></div>${rxFacts(s)}<p class="tiny muted" style="margin:0">${from}</p>${rule}${honest}`;const ch=rxChart($("#rxChart"),s);if(ch)cleanup.push(()=>{try{ch.remove();}catch{}});};
-  if((!s||force)&&live){body.innerHTML=`<p class="small muted" style="margin:0">Finding a real ${esc((L.t||"").toLowerCase())} example in ${RX_TF[tf][0].toLowerCase()} ${esc(RX_NAMES[cfg[0]])} candles from Yahoo Finance public feed…</p>`;
+  if((!s||force)&&live){body.innerHTML=`<p class="small muted" style="margin:0">Finding a real ${esc((L.t||"").toLowerCase())} example in ${RX_TF[tf][0].toLowerCase()} ${esc(RX_NAMES[cfg[0]])} candles from Yahoo Finance via Zapier…</p>`;
     try{s=await rxBuild(lesson,tf);}catch(e){if(!document.body.contains(body))return;body.innerHTML=(zBlocking()?zCard(0):`<div class="callout bad small">${zMsg(e)} Nothing is drawn rather than inventing prices.</div><button class="btn sm" data-rxload="1">Try again</button>`)+rule;return;}}
   if(!document.body.contains(body))return;
-  if(s){paint(s,`Loaded ${zAgo(s.at)} · Yahoo Finance public feed · saved to your account, so your other devices show it too.${live?` <button class="btn sm ghost" data-rxload="1" style="margin-left:4px"><i class=ix-refresh></i> Reload</button>`:""}`);return;}
+  if(s){paint(s,`Loaded ${zAgo(s.at)} · Yahoo Finance via Zapier · saved to your account, so your other devices show it too.${live?` <button class="btn sm ghost" data-rxload="1" style="margin-left:4px"><i class=ix-refresh></i> Reload</button>`:""}`);return;}
   body.innerHTML=zCard(0)+rule;}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-rxtf],[data-rxload]");if(!t)return;const card=$("#rxCard");if(!card)return;
   if(t.dataset.rxtf){card.dataset.tf=t.dataset.rxtf;try{localStorage.setItem("td_rxtf",t.dataset.rxtf);}catch{}card.querySelectorAll("[data-rxtf]").forEach(b=>b.setAttribute("aria-pressed",b===t));rxMount(card.dataset.lesson);}
@@ -6045,7 +6046,7 @@ stateOf=function(q){if(!q||!q.ts)return "";return zNow()-q.ts<1200?"":"closed";}
 /* ---------- chart candles (one Yahoo chart call per symbol + timeframe, cached 10 min) ---------- */
 lmLoadChart=async function(keep,force){const tf=TFS.find(t=>t[0]===LM.tf),iv=tf[0]==="4h"?"1h":tf[0],want=LM.sym+LM.tf,meta=()=>$("#lmMeta");
   if(!(await zMcp())||zBlocking()){LM.bars=null;const m=meta();if(m)m.innerHTML=`<span>The chart draws from live candles, which need your Zapier connector (see above). Nothing is drawn rather than inventing prices.</span>`;lmPaintConn();return;}
-  const m0=meta();if(m0&&!keep)m0.innerHTML=`<span>Loading ${lmEsc(LM.sym)} ${lmEsc(tf[1])} candles from Yahoo Finance public feed…</span>`;
+  const m0=meta();if(m0&&!keep)m0.innerHTML=`<span>Loading ${lmEsc(LM.sym)} ${lmEsc(tf[1])} candles from Yahoo Finance via Zapier…</span>`;
   try{const r=await zGet(zChartUrl(LM.sym),{range:tf[2],interval:iv},{ttl:ZQ_TTL,force});if(want!==LM.sym+LM.tf)return;const j=r.v;
     const c=j&&j.chart&&j.chart.result&&j.chart.result[0];if(!c)throw {code:"bad_data"};
     const q=(c.indicators&&c.indicators.quote&&c.indicators.quote[0])||{},ts=c.timestamp||[];let bars=[];
@@ -6057,7 +6058,7 @@ lmLoadChart=async function(keep,force){const tf=TFS.find(t=>t[0]===LM.tf),iv=tf[
   catch(e){LM.err.chart=zMsg(e);const m=meta();if(m)m.innerHTML=`<span class="down-t">${LM.err.chart}</span><span>Nothing is drawn rather than inventing prices.</span>`;}
   lmPaintConn();lmDck();};
 {const _draw=lmDraw;lmDraw=function(keep){_draw(keep);const m=$("#lmMeta"),b=LM.bars||[];if(!m||!b.length)return;const md=LM.meta||{};
-  m.innerHTML=`<span>Source <b>Yahoo Finance public feed</b></span><span>Candles <b>${b.length}</b></span><span>Fetched <b>${zSyd(LM.chartAt)}</b> Syd (${zAgo(LM.chartAt)})</span><span>${/=F/.test(LM.sym)||md.instrumentType==="FUTURE"?"CME futures on Yahoo may be delayed by the exchange":"Exchange delays may apply"}</span>`;};}
+  m.innerHTML=`<span>Source <b>Yahoo Finance via Zapier</b></span><span>Candles <b>${b.length}</b></span><span>Fetched <b>${zSyd(LM.chartAt)}</b> Syd (${zAgo(LM.chartAt)})</span><span>${/=F/.test(LM.sym)||md.instrumentType==="FUTURE"?"CME futures on Yahoo may be delayed by the exchange":"Exchange delays may apply"}</span>`;};}
 
 /* ---------- news (Google News RSS, all categories in one call) ---------- */
 const ZNEWS=[["Gold","gold price OR XAUUSD OR gold futures","US"],["Nasdaq & US stocks","Nasdaq OR \"S&P 500\" OR Wall Street stocks","US"],["Forex","forex OR \"US dollar\" OR EURUSD OR USDJPY OR \"dollar index\"","US"],
@@ -6113,7 +6114,7 @@ async function zRefresh(btn){const pg=route.page;if(zBlocking()){zRetry();return
 lmNoBrowser=snap=>zCard(snap&&snap.at);
 lmPaintConn=function(){const c=$("#lmConn");if(!c)return;const busy=Z.busy>0,blk=zBlocking();
   c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching via Zapier…":blk?"Live data off":Z.state==="ok"?"Live via Zapier · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
-  const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance public feed"):"";};
+  const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance via Zapier"):"";};
 lmDck=function(){const el=$("#lmDck");if(!el)return;const row=(n,k,at)=>`<div><span>${n}</span><span class="${LM.err[k]?"no":at?"ok":""}">${LM.err[k]?lmEsc(LM.err[k]):at?"OK · "+zAgo(at):"not loaded"}</span></div>`;
   el.innerHTML=row("Prices · Yahoo Finance","quotes",LM.qAt)+row("Chart candles · Yahoo Finance","chart",LM.chartAt)+row("News · Google News","news",LM.nAt)+row("Odds · Polymarket","poly",LM.pAt)+
    `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side by your Zapier connector, so it works on phone and laptop and never opens a browser. Each fetch uses one Zapier task, so prices refresh when you open a page and they're more than 10 minutes old, or when you press Refresh. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
@@ -6193,7 +6194,7 @@ devCardHTML=function(){const k=DEV.kind,dv=S.devs||{},phone=k!=="desktop",live=D
    <p class="tiny muted" style="margin:0">${phone?"Best here: video lessons, flashcards, the trainer, your journal and quick price checks. Live data and real examples load here too.":"Best here: live charts, real chart examples and drawing tools. Lessons, journal, notes and live snapshots sync to your phone."}</p></div>`;};
 
 /* ---------- AI coach: Claude (sample) + Zapier-backed tools ---------- */
-const Z_COACH_RULES="\n\nLIVE DATA: you DO have tools that fetch real, current data through the user's Zapier connector: get_quotes (latest watchlist prices), get_quote_and_candles (Yahoo Finance quote plus recent candles for one symbol), get_news (Google News headlines by category or search) and get_polymarket (crowd odds). When asked about current prices, levels, structure, indicators, volatility, news, events or odds, call the tools first instead of guessing, and never invent numbers. Cite the source and Sydney time for every number, like: gold futures 3,898.9 (Yahoo Finance public feed, 2 Nov 10:42 Sydney). Compute indicators only from returned candles. Describe structure and possible scenarios, each with a clear invalidation level (the price that would prove the idea wrong). Never tell the learner to buy or sell, never predict prices. Futures quotes on Yahoo can be delayed. Each tool call uses one task from the user's Zapier plan, so usually call one or two tools. If a tool fails, say plainly that live data isn't available right now and keep teaching without current numbers.";
+const Z_COACH_RULES="\n\nLIVE DATA: you DO have tools that fetch real, current data through the user's Zapier connector: get_quotes (latest watchlist prices), get_quote_and_candles (Yahoo Finance quote plus recent candles for one symbol), get_news (Google News headlines by category or search) and get_polymarket (crowd odds). When asked about current prices, levels, structure, indicators, volatility, news, events or odds, call the tools first instead of guessing, and never invent numbers. Cite the source and Sydney time for every number, like: gold futures 3,898.9 (Yahoo Finance via Zapier, 2 Nov 10:42 Sydney). Compute indicators only from returned candles. Describe structure and possible scenarios, each with a clear invalidation level (the price that would prove the idea wrong). Never tell the learner to buy or sell, never predict prices. Futures quotes on Yahoo can be delayed. Each tool call uses one task from the user's Zapier plan, so usually call one or two tools. If a tool fails, say plainly that live data isn't available right now and keep teaching without current numbers.";
 {const _cr=coachRules;coachRules=function(){return _cr().replace("You have no live prices and cannot browse the internet; if asked for current prices, news or recent events, say so plainly and suggest their Market Terminal (live Twelve Data prices, news and economic calendar) or asking Claude directly in chat with web search.","You can't browse arbitrary websites or watch videos.");};}
 const zToolErr=e=>new Error((e&&e.code?zMsg(e):"Live data isn't available right now.")+" No live numbers are available for this answer.");
 const zQ=s=>{const q=LM.quotes[s],w=WLALL.find(x=>x[0]===s);return q?{symbol:s,name:w?w[2]:s,price:q.price,change_pct:q.pct!=null?+q.pct.toFixed(2):null,previous_close:q.prev,last_trade_sydney:q.ts?zSyd(q.ts):null}:null;};
@@ -6202,7 +6203,7 @@ async function liveToolsZ(){const mcp=await zMcp();if(!mcp||zBlocking())return [
       inputSchema:{type:"object",properties:{symbols:{type:"array",items:{type:"string"}}}},
       execute:async i=>{try{await zEnsure({quotes:1});}catch{}if(!LM.qAt)throw zToolErr({code:Z.code||"upstream_error"});
         const want=Array.isArray(i.symbols)&&i.symbols.length?i.symbols.map(String):["NQ=F","ES=F","GC=F","^VIX","DX-Y.NYB","^TNX","BTC-USD"];
-        return {source:"Yahoo Finance public feed",fetched_sydney:zSyd(LM.qAt),quotes:want.map(zQ).filter(Boolean),not_in_watchlist:want.filter(s=>!LM.quotes[s])};}},
+        return {source:"Yahoo Finance via Zapier",fetched_sydney:zSyd(LM.qAt),quotes:want.map(zQ).filter(Boolean),not_in_watchlist:want.filter(s=>!LM.quotes[s])};}},
     {name:"get_quote_and_candles",description:"Yahoo Finance quote and recent candles for ONE symbol (e.g. NQ=F, MNQ=F, ES=F, GC=F, ^GSPC, AAPL, EURUSD=X, BTC-USD). interval: 5m, 15m, 1h or 1d. Returns meta (price, previous close, day range, last trade Sydney time) and up to 80 candles as [unix time, open, high, low, close].",
       inputSchema:{type:"object",properties:{symbol:{type:"string"},interval:{type:"string",enum:["5m","15m","1h","1d"]}},required:["symbol"]},
       execute:async i=>{const iv=["5m","15m","1h","1d"].includes(i.interval)?i.interval:"1h",rg={"5m":"5d","15m":"5d","1h":"1mo","1d":"1y"}[iv];let r;
@@ -6210,7 +6211,7 @@ async function liveToolsZ(){const mcp=await zMcp();if(!mcp||zBlocking())return [
         const c=r.v&&r.v.chart&&r.v.chart.result&&r.v.chart.result[0];if(!c)throw new Error("Yahoo Finance has no data for "+i.symbol+". Check the symbol (futures end in =F, forex in =X).");
         const q=(c.indicators&&c.indicators.quote&&c.indicators.quote[0])||{},m=c.meta||{},rd=v=>+(+v).toPrecision(7);
         const rows=(c.timestamp||[]).map((t,k)=>[t,q.open&&q.open[k],q.high&&q.high[k],q.low&&q.low[k],q.close&&q.close[k]]).filter(x=>x.every(v=>v!=null&&isFinite(v))).slice(-80).map(x=>[x[0],...x.slice(1).map(rd)]);
-        return {source:"Yahoo Finance public feed",fetched_sydney:zSyd(r.at),interval:iv,meta:{symbol:m.symbol,name:m.shortName||m.longName,price:m.regularMarketPrice,previousClose:m.previousClose??m.chartPreviousClose,dayHigh:m.regularMarketDayHigh,dayLow:m.regularMarketDayLow,lastTradeSydney:m.regularMarketTime?zSyd(m.regularMarketTime):null,exchange:m.fullExchangeName,timezone:m.exchangeTimezoneName},candles:rows};}},
+        return {source:"Yahoo Finance via Zapier",fetched_sydney:zSyd(r.at),interval:iv,meta:{symbol:m.symbol,name:m.shortName||m.longName,price:m.regularMarketPrice,previousClose:m.previousClose??m.chartPreviousClose,dayHigh:m.regularMarketDayHigh,dayLow:m.regularMarketDayLow,lastTradeSydney:m.regularMarketTime?zSyd(m.regularMarketTime):null,exchange:m.fullExchangeName,timezone:m.exchangeTimezoneName},candles:rows};}},
     {name:"get_news",description:"Recent Google News headlines (title, source, Sydney time, high_impact flag for CPI/FOMC/NFP/Powell/rate decisions). Give a category (Gold, Nasdaq & US stocks, Forex, Economy & Fed, Crypto, Bonds & yields) or a free search query such as 'Nvidia earnings'.",
       inputSchema:{type:"object",properties:{category:{type:"string",enum:ZNEWS.map(x=>x[0])},query:{type:"string"}}},
       execute:async i=>{let list,at;const fmt=l=>l.slice(0,12).map(n=>({title:n.title,source:n.src,time_sydney:n.ts?zSyd(n.ts):null,high_impact:!!n.hi}));
@@ -7041,7 +7042,7 @@ MK_VIEW.pulse=()=>{const n=mkNarrative(),br=mkBreadth(),nq=MK.d.nq;
     bb=`<div class="mk-br"><div class="mk-brh"><b class="up-t">${br.a} advancing</b><b class="down-t">${br.d} declining</b></div><div class="mk-brbar" role="img" aria-label="${br.a} advancing, ${br.d} declining, ${br.u} unchanged"><i class="a" style="width:${pa}%"></i><i class="u" style="width:${100-pa-pd}%"></i><i class="d" style="width:${pd}%"></i></div>
      <p class="small muted">${pa>=65?"Broad buying: most large US names are up.":pd>=65?"Broad selling: most large US names are down.":"Split tape: buyers and sellers are evenly matched."} Measured on ${t} large US stocks and sector ETFs${nq.st?` · ${mkE(nq.st)}`:""}${nq.asOf?` · last trade ${mkE(nq.asOf)}`:""}.</p>
      <div class="mk-lead"><div><span class="tiny muted">Leading</span>${top.slice(0,4).map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div><div><span class="tiny muted">Lagging</span>${top.slice(-4).reverse().map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div></div></div>`;}
-  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance public feed",["q"],"Futures can be delayed about 10 min"))}
+  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance via Zapier",["q"],"Futures can be delayed about 10 min"))}
    ${mkCard("Market breadth","How many of the big names are actually moving with the index.",mkErr(["nq"])+bb,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Money Flow ----- */
@@ -7065,7 +7066,7 @@ MK_VIEW.flow=()=>{const nq=MK.d.nq;if(!nq)return mkErr(["nq"])+mkCard("Sector mo
   return `${mkErr(["nq","sec5"])}<div class="mk-rot"><span class="eyebrow">Where money is rotating</span><p>${mkE(rot)}</p></div>
    ${mkCard("Sector money flow (US$ millions)","Proxy: % move × shares traded × price. Positive means heavy volume on an up day. It's an estimate of pressure, not actual fund flows.",`<div class="mk-flow">${bars}</div>`,mkSrc("Nasdaq.com via Zapier",["nq"],nq.asOf?"Last trade "+mkE(nq.asOf):""))}
    ${mkCard("Sector heat map","Today's % change for each sector ETF.",`<div class="mk-sht">${sec.slice().sort((a,b)=>b.pct-a.pct).map(x=>`<div style="background:${mkHeat(x.pct)}"><b>${x.s}</b><span>${mkE(x.n)}</span><em>${mkSgn(x.pct)}</em></div>`).join("")}</div>`,mkSrc("Nasdaq.com via Zapier",["nq"]))}
-   ${mkCard("Sector relative performance, 5 days","Each sector ETF rebased to 0% five sessions ago; the dashed line is SPY.",mkSec5(),mkSrc("Yahoo Finance public feed",["sec5"],"Hourly closes"))}
+   ${mkCard("Sector relative performance, 5 days","Each sector ETF rebased to 0% five sessions ago; the dashed line is SPY.",mkSec5(),mkSrc("Yahoo Finance via Zapier",["sec5"],"Hourly closes"))}
    ${mkCard("Mega-cap heat map","Box size = dollar volume traded. Colour = % change against the previous close.",tmH,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Option Pulse ----- */
@@ -7134,7 +7135,7 @@ function mkGauge(v,label){const a=Math.PI*(1-(mkN(v)?v:50)/100),x=100+Math.cos(a
    <path d="M22 100 A78 78 0 0 1 178 100" fill="none" stroke="url(#mkGg)" stroke-width="14" stroke-linecap="round"/><line x1="100" y1="100" x2="${x}" y2="${y}" stroke="#1D232B" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="#1D232B"/></svg><b>${mkN(v)?Math.round(v)+" · ":""}${label}</b></div>`;}
 MK_VIEW.radar=()=>{const s=MK.radarSym,k="rad_"+s,d=MK.d[k];
   const sel=`<label class="mk-sel">Symbol <select id="mkRadSel" class="input">${MK_RAD.map(([g,l])=>`<optgroup label="${g}">${l.map(x=>`<option value="${mkE(x)}"${x===s?" selected":""}>${mkE(mkShort(x))}${mkWL(x)?" · "+mkE(mkWL(x)[2]):""}</option>`).join("")}</optgroup>`).join("")}</select></label>`;
-  if(!d)return sel+mkErr([k])+mkCard("Radar","",mkLoading(),mkSrc("Yahoo Finance public feed",[k]));
+  if(!d)return sel+mkErr([k])+mkCard("Radar","",mkLoading(),mkSrc("Yahoo Finance via Zapier",[k]));
   const r=mkRadarScore(d.b),tS=r.ax[0][1],comp=mkN(tS)&&mkN(r.rsi)?(tS+r.rsi)/2:tS??r.rsi;
   const lab=!mkN(comp)?"Not enough data":comp>=65?"Bullish trend":comp>=55?"Leaning bullish":comp>45?"Neutral":comp>35?"Leaning bearish":"Bearish trend";
   const txt=[`${mkShort(s)} is ${mkN(r.d50)?(r.d50>=0?"above":"below")+` its 50-day average by ${Math.abs(r.d50).toFixed(1)}%`:"too new for a 50-day average"}`,
@@ -7143,11 +7144,11 @@ MK_VIEW.radar=()=>{const s=MK.radarSym,k="rad_"+s,d=MK.d[k];
     mkN(r.vr)?`and the last session traded ${r.vr.toFixed(1)}× its 20-day average volume${r.vr>1.5?", so big players were active":r.vr<.7?", so conviction was low":""}`:""].filter(Boolean).join("; ")+".";
   return `${sel}${mkErr([k])}<div class="mk-g2">${mkCard(`${mkE(mkShort(s))} radar`,"Each axis is scored 0 to 100 from the last 6 months of daily candles.",mkSpider(r.ax),"")}
    ${mkCard("Trend strength","Trend and momentum combined.",mkGauge(comp,lab)+`<p class="mk-sum">${mkE(txt)}</p><div class="mk-kpis sm">${[["Last",lmPx(r.last)],["20-day avg",lmPx(r.s20)],["50-day avg",lmPx(r.s50)],["ATR %",mkN(r.atrp)?r.atrp.toFixed(2)+"%":"–"]].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>`,"")}</div>
-   ${mkSrc("Yahoo Finance public feed",[k],"Daily candles · education, not a signal")}`;};
+   ${mkSrc("Yahoo Finance via Zapier",[k],"Daily candles · education, not a signal")}`;};
 
 /* ----- Calm Zone ----- */
 function mkCalmPts(){const d=MK.d.s1d;if(!d||!d.c)return [];return MK_SCR.filter(s=>s!=="^TNX").map(s=>{const c=d.c[s];if(!c||c.length<25)return null;const rv=mkRV(c),ch=(c[c.length-1]/c[c.length-6]-1)*100;return mkN(rv)&&mkN(ch)?{s,rv,ch}:null;}).filter(Boolean);}
-MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard("Calm Zone","",mkLoading(),mkSrc("Yahoo Finance public feed",["s1d"]));
+MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard("Calm Zone","",mkLoading(),mkSrc("Yahoo Finance via Zapier",["s1d"]));
   const W=mkVW(640),H=Math.round(Math.min(380,W*.8)),L=48,B=40,T=16,Rr=16,xs=P.map(p=>p.rv),ys=P.map(p=>p.ch),x0=0,x1=Math.max(10,Math.ceil(Math.max(...xs)/10)*10),ym=Math.max(2,Math.ceil(Math.max(...ys.map(Math.abs)))),
     X=v=>L+(v-x0)/(x1-x0)*(W-L-Rr),Y=v=>T+(ym-v)/(2*ym)*(H-T-B),med=[...xs].sort((a,b)=>a-b)[Math.floor(xs.length/2)];
   const ticks=[];for(let v=0;v<=x1;v+=x1>60?20:10)ticks.push(v);
@@ -7159,7 +7160,7 @@ MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard(
    ${(()=>{const boxes=[];return P.map(p=>{const x=X(p.rv),y=Y(p.ch),lb=mkShort(p.s),bw=lb.length*6.4+4;let ly=null;for(const dy of [4,-8,16,-20,28]){const r=[x+8,y+dy-9,x+8+bw,y+dy+2];if(!boxes.some(b=>r[0]<b[2]&&r[2]>b[0]&&r[1]<b[3]&&r[3]>b[1])){boxes.push(r);ly=y+dy;break;}}
      return `<g><circle cx="${x}" cy="${y}" r="5.5" fill="${p.ch>=0?"#13945F":"#D24B59"}" fill-opacity=".85"><title>${lb}: ${p.rv.toFixed(0)}% vol, ${mkSgn(p.ch,1)}</title></circle>${ly!=null?`<text x="${x+8}" y="${ly}" class="mk-svk b">${lb}</text>`:""}</g>`;}).join("");})()}</svg></div><p class="tiny muted">Where dots crowd together some labels are hidden; tap or hover a dot for its name.</p>`;
   const calm=[...P].sort((a,b)=>a.rv-b.rv),q=P.length;
-  return `${mkErr(["s1d"])}${mkCard("Calm Zone: volatility vs recent move","Left = calm (small daily swings), right = wild. Up = gained over 5 days, down = lost.",svg,mkSrc("Yahoo Finance public feed",["s1d"],"Daily closes, 6 months"))}
+  return `${mkErr(["s1d"])}${mkCard("Calm Zone: volatility vs recent move","Left = calm (small daily swings), right = wild. Up = gained over 5 days, down = lost.",svg,mkSrc("Yahoo Finance via Zapier",["s1d"],"Daily closes, 6 months"))}
    <div class="mk-g2"><div class="card mk-card"><h3>Calmest</h3><ul class="mk-ul">${calm.slice(0,5).map(p=>`<li><b>${mkShort(p.s)}</b><span>${p.rv.toFixed(0)}% vol · <em class="${mkCls(p.ch)}">${mkSgn(p.ch,1)}</em></span></li>`).join("")}</ul></div>
    <div class="card mk-card"><h3>Wildest</h3><ul class="mk-ul">${calm.slice(-5).reverse().map(p=>`<li><b>${mkShort(p.s)}</b><span>${p.rv.toFixed(0)}% vol · <em class="${mkCls(p.ch)}">${mkSgn(p.ch,1)}</em></span></li>`).join("")}</ul></div></div>
    <p class="small muted">Why it matters: the same 1% risk needs a smaller position in a wild market (wider stops) than in a calm one. Calm markets that suddenly turn wild often mark the start of a bigger move. ${q} markets shown; the US 10-year yield is left out because it's a rate, not a price.</p>`;};
@@ -7178,9 +7179,9 @@ MK_VIEW.cx=()=>{const ok=MK.d.okx,d=MK.d.s1d;
       ${R.map((r,j)=>`<polyline fill="none" stroke="${col[j]}" stroke-width="2" points="${r.map((v,i)=>`${(40+i/(n-1)*(W-44)).toFixed(1)},${(10+(hi-v)/(hi-lo||1)*(H-30)).toFixed(1)}`).join(" ")}"/>`).join("")}</svg>
       <div class="mk-leg">${["Gold","Dollar index (DXY)","US 10Y yield"].map((l,j)=>`<span><i style="background:${col[j]}"></i>${l} ${mkSgn(R[j][n-1]-100,1)}</span>`).join("")}</div></div>
       <p class="small">Over the last 20 sessions gold's daily moves had a correlation of <b>${mkN(cd)?cd.toFixed(2):"–"}</b> with the dollar and <b>${mkN(cy)?cy.toFixed(2):"–"}</b> with the 10-year yield. ${mkN(cd)&&cd<-.3?"The usual inverse link with the dollar is holding.":mkN(cd)&&cd>.3?"Gold is rising and falling with the dollar, which is unusual and often points to safe-haven buying.":"The usual inverse link with the dollar is weak right now."} Normally a stronger dollar and higher real yields weigh on gold.</p>`;}}
-  return `${mkErr(["q","okx","s1d"])}<div class="mk-tiles three">${coins}</div>${mkSrc("Yahoo Finance public feed",["q"])}
+  return `${mkErr(["q","okx","s1d"])}<div class="mk-tiles three">${coins}</div>${mkSrc("Yahoo Finance via Zapier",["q"])}
    ${mkCard("Crypto futures positioning","Perpetual swaps on OKX: how much leverage is open and who pays whom to hold it.",`<div class="mk-g2 tight">${der}</div>`,mkSrc("OKX public API via Zapier",["okx"],"Funding settles every 8 hours"))}
-   ${mkCard("Gold vs dollar vs 10-year yield","Last 3 months, each rebased to 100 so you can compare direction.",rel,mkSrc("Yahoo Finance public feed",["s1d"]))}`;};
+   ${mkCard("Gold vs dollar vs 10-year yield","Last 3 months, each rebased to 100 so you can compare direction.",rel,mkSrc("Yahoo Finance via Zapier",["s1d"]))}`;};
 
 /* ----- Liquidity Map ----- */
 function mkLevels(d,sym){const b=d.b.map(x=>({t:x[0],o:x[1],h:x[2],l:x[3],c:x[4]})),px=d.px,L=[];if(b.length<30)return {L,px};
@@ -7208,14 +7209,14 @@ function mkLevels(d,sym){const b=d.b.map(x=>({t:x[0],o:x[1],h:x[2],l:x[3],c:x[4]
   const out=[];L.filter(x=>mkN(x.p)&&Math.abs(x.p/px-1)<.06).sort((a,c)=>rank(a.k)-rank(c.k)).forEach(x=>{if(!out.some(y=>Math.abs(y.p-x.p)<=tol*1.5))out.push(x);});
   return {L:out.sort((a,c)=>c.p-a.p),px};}
 const mkLiqPick=()=>`<div class="mk-seg" role="group" aria-label="Instrument">${[["NQ=F","NQ · Nasdaq-100 futures"],["GC=F","GC · Gold futures"]].map(([s,l])=>`<button class="chip" data-mkliq="${s}" aria-pressed="${MK.liqSym===s}">${l}</button>`).join("")}</div>`;
-MK_VIEW.liq=()=>{const s=MK.liqSym,k="liq_"+s,d=MK.d[k];if(!d)return mkLiqPick()+mkErr([k])+mkCard("Liquidity map","",mkLoading(),mkSrc("Yahoo Finance public feed",[k]));
+MK_VIEW.liq=()=>{const s=MK.liqSym,k="liq_"+s,d=MK.d[k];if(!d)return mkLiqPick()+mkErr([k])+mkCard("Liquidity map","",mkLoading(),mkSrc("Yahoo Finance via Zapier",[k]));
   const {L,px}=mkLevels(d,s),near=L.slice().sort((a,c)=>Math.abs(a.p-px)-Math.abs(c.p-px));
   const row=x=>{const dist=x.p-px;return `<li class="${x.s==="h"?"ab":"be"}${x.opt?" op":""}"><div class="mk-lvp"><b>${mkPx(s,x.p)}</b><span class="${dist>=0?"up-t":"down-t"}">${dist>=0?"+":MK_MINUS}${mkPx(s,Math.abs(dist))} (${mkSgn(dist/px*100)})</span></div><div class="mk-lvk"><b>${mkE(x.k)}</b><span>${mkE(x.w)}</span></div></li>`;};
   const ab=L.filter(x=>x.p>=px),be=L.filter(x=>x.p<px);
   return `${mkLiqPick()}${mkErr([k])}<div class="mk-liq"><div class="card mk-card"><div class="mk-ch"><div><h3>${mkE(mkShort(s))} · 1-hour candles</h3><p class="small muted">Dashed lines are the nearest levels from the ladder.</p></div></div><div class="mk-lc" id="mkLc" aria-label="${mkE(mkShort(s))} 1-hour candlestick chart"></div></div>
    <div class="card mk-card mk-lad"><h3>Level ladder</h3><p class="small muted">Price now <b>${mkPx(s,px)}</b>. Levels where stop orders likely rest: highs have buy stops above, lows have sell stops below.</p>
     <ol class="mk-lv">${ab.map(row).join("")}<li class="mk-now" aria-label="Current price"><span>Price ${mkPx(s,px)}</span></li>${be.map(row).join("")}</ol></div></div>
-   ${mkSrc("Yahoo Finance public feed",[k],"1-hour candles, last month · sessions in New York time")}
+   ${mkSrc("Yahoo Finance via Zapier",[k],"1-hour candles, last month · sessions in New York time")}
    <p class="tiny muted">Sessions use New York time: Asia 6 pm–2 am, London 2–8 am, New York 8 am–4 pm (${(()=>{try{const t=zoned(parts(new Date(),"America/New_York").y,parts(new Date(),"America/New_York").m,parts(new Date(),"America/New_York").d,8,0,"America/New_York");return "New York 8 am is "+tLocal(t)+" Sydney today";}catch{return "";}})()}). Levels are computed, not predictions: price can slice straight through any of them.</p>`;};
 MK_AFTER.liq=()=>{const s=MK.liqSym,d=MK.d["liq_"+s],host=$("#mkLc");if(!d||!host)return;if(!window.LightweightCharts){host.innerHTML=`<div class="callout bad small" style="margin:12px">The chart library didn't load, so the chart can't be drawn. The ladder is still computed from real candles.</div>`;return;}
   const ch=LightweightCharts.createChart(host,{autoSize:true,layout:{background:{type:"solid",color:"#FFFFFF"},textColor:"#5E6672",fontFamily:"IBM Plex Mono, monospace",fontSize:11},grid:{vertLines:{color:"#F1F3F7"},horzLines:{color:"#F1F3F7"}},rightPriceScale:{borderColor:"#E6EAF0"},timeScale:{borderColor:"#E6EAF0",timeVisible:true},crosshair:{mode:0},handleScroll:{vertTouchDrag:false}});
@@ -7225,13 +7226,13 @@ MK_AFTER.liq=()=>{const s=MK.liqSym,d=MK.d["liq_"+s],host=$("#mkLc");if(!d||!hos
   try{ch.timeScale().fitContent();}catch{}};
 
 /* ----- Screeners (RSI heat map) ----- */
-MK_VIEW.scr=()=>{const a=MK.d.s15,b=MK.d.s1h,c=MK.d.s1d;if(!a&&!b&&!c)return mkErr(["s15","s1h","s1d"])+mkCard("RSI heat map","",mkLoading(),mkSrc("Yahoo Finance public feed",["s15","s1h","s1d"]));
+MK_VIEW.scr=()=>{const a=MK.d.s15,b=MK.d.s1h,c=MK.d.s1d;if(!a&&!b&&!c)return mkErr(["s15","s1h","s1d"])+mkCard("RSI heat map","",mkLoading(),mkSrc("Yahoo Finance via Zapier",["s15","s1h","s1d"]));
   const cols=[["15m",a&&a.rsi],["1h",b&&b.rsi],["4h",b&&b.rsi4],["1d",c&&c.rsi]],val=(m,s)=>m&&mkN(m[s])?m[s]:null;
   let ob=0,os=0,allOB=0,allOS=0;MK_SCR.forEach(s=>{const v=cols.map(([,m])=>val(m,s)).filter(mkN);if(v.some(x=>x>=70))ob++;if(v.some(x=>x<=30))os++;if(v.length===4&&v.every(x=>x>=70))allOB++;if(v.length===4&&v.every(x=>x<=30))allOS++;});
   const cell=v=>{if(!mkN(v))return `<td class="na">–</td>`;const k=v>=70?Math.min(1,(v-70)/20):v<=30?Math.min(1,(30-v)/20):0,bg=v>=70?`color-mix(in srgb,#D24B59 ${Math.round(28+k*55)}%,var(--panel))`:v<=30?`color-mix(in srgb,#13945F ${Math.round(28+k*55)}%,var(--panel))`:v>=60?"color-mix(in srgb,#D24B59 9%,var(--panel))":v<=40?"color-mix(in srgb,#13945F 9%,var(--panel))":"var(--panel)";return `<td style="background:${bg}"><b>${v.toFixed(0)}</b></td>`;};
   const grid=`<div class="mk-hscroll"><table class="mk-rsi" data-g="1"><thead><tr><th>Symbol</th>${cols.map(([l])=>`<th>${l}</th>`).join("")}</tr></thead><tbody>${MK_SCR.map(s=>`<tr><th><b>${mkShort(s)}</b><span>${mkE((mkWL(s)||[,,s])[2])}</span></th>${cols.map(([,m])=>cell(val(m,s))).join("")}</tr>`).join("")}</tbody></table></div>`;
   return `${mkErr(["s15","s1h","s1d"])}<div class="mk-narr"><span class="mk-tone">RSI scan</span><p><b>${ob}</b> overbought on at least one timeframe, <b>${os}</b> oversold on at least one. ${allOB+allOS?`<b>${allOB+allOS}</b> agree on all four (${allOB} overbought, ${allOS} oversold).`:"None agree on all four timeframes."}</p></div>
-   ${mkCard("RSI(14) heat map","Red: overbought (70 or more). Green: oversold (30 or less). Agreement across timeframes matters more than one hot cell.",grid,mkSrc("Yahoo Finance public feed",["s15","s1h","s1d"],"3 calls: 15m, 1h (4h built from it), 1d"))}
+   ${mkCard("RSI(14) heat map","Red: overbought (70 or more). Green: oversold (30 or less). Agreement across timeframes matters more than one hot cell.",grid,mkSrc("Yahoo Finance via Zapier",["s15","s1h","s1d"],"3 calls: 15m, 1h (4h built from it), 1d"))}
    <p class="small muted">Overbought doesn't mean "sell": strong trends stay overbought for weeks. Use RSI extremes as a warning not to chase, and wait for price structure (a lower high, a break of a swing low) to confirm a turn.</p>`;};
 
 /* ---------- 4. ticker strip on every page ---------- */
@@ -7257,7 +7258,7 @@ function mkCarousel(hero){const s=jStats(),pct=typeof syPct==="function"?syPct()
   const pulseTiles=["NQ=F","ES=F","GC=F","^VIX","DX-Y.NYB","BTC-USD"].map(x=>{const v=mkQ(x);return `<div><span>${mkShort(x)}</span><b>${v?mkPx(x,v.price):"–"}</b><em class="${mkCls(v&&v.pct)}">${v?mkSgn(v.pct):""}</em></div>`;}).join("");
   const slides=[
    ["Continue learning",hero],
-   ["Market Pulse",`<a class="hc-card hc-mk" href="#intel"><span class="eyebrow">Market Pulse${LM.qAt?" · "+zAgo(LM.qAt):""}</span><h2>${n?mkE(n.tone):"Markets"}</h2><p>${n?mkE(n.txt)+".":"Prices load from the public market feed when Today or Markets opens."}</p><div class="hc-q">${pulseTiles}</div><span class="btn gold hero-btn">Open Market Intelligence${ix("chev",16)}</span></a>`],
+   ["Market Pulse",`<a class="hc-card hc-mk" href="#intel"><span class="eyebrow">Market Pulse${LM.qAt?" · "+zAgo(LM.qAt):""}</span><h2>${n?mkE(n.tone):"Markets"}</h2><p>${n?mkE(n.txt)+".":"Prices load through your Zapier connector when you open Today or Markets."}</p><div class="hc-q">${pulseTiles}</div><span class="btn gold hero-btn">Open Market Intelligence${ix("chev",16)}</span></a>`],
    ["Sessions",`<a class="hc-card" href="#markets"><span class="eyebrow">Today's sessions · Sydney time</span><h2>When the markets open</h2><div class="hc-ss">${ss.map(x=>`<div class="${x.open?"on":""}"><b>${x.n}</b><span>${x.open?"Open now · closes "+x.f:x.d+" "+x.s+" – "+x.f}</span></div>`).join("")}<div><b>CME futures (NQ, ES, GC)</b><span>Nearly 24 hours, Mon–Fri US time, with a 1-hour daily break</span></div></div>
      <div class="hc-ev"><span class="tiny muted">Key US events in the news</span>${ev.length?ev.map(x=>`<span><i class="zd-hi" aria-hidden="true"></i>${mkE(x.title)}</span>`).join(""):`<span class="small muted">No CPI, FOMC, payrolls or Powell headlines in the last day. Check the calendar before trading.</span>`}</div></a>`],
    ["Your progress",`<a class="hc-card" href="#path"><span class="eyebrow">Your progress</span><h2>${pct}% of the core course</h2><div class="hc-big"><div class="ring" style="--p:${pct}"><div>${pct}%</div></div><div><b>${st} day${st===1?"":"s"}</b><span>study streak (days you opened the Desk in a row)</span></div></div><span class="btn hero-btn">Open the learning path${ix("chev",16)}</span></a>`],
@@ -7296,7 +7297,7 @@ const mkFreshK=keys=>keys.every(k=>{const at=k==="q"?LM.qAt:(MK.d[k]||{}).at;ret
 const mkSig=()=>JSON.stringify([mkTabKeys().map(k=>k==="q"?[LM.qAt,LM.err.quotes]:[(MK.d[k]||{}).at,MK.err[k]]),Z.state,MK.tab]);
 function mkPaintIf(){if(route.page!=="intel")return;const s=mkSig();if(s===MK.sig)return;
   const key="ix_"+MK.ixSym+"_"+MK.ixTf,d=MK.d[key];
-  if(MK.tab==="chart"&&MK.lc&&MK.lcKey===key&&d&&MK.lcSe){try{mkIxSet(d);const sr=$("#mkBody .mk-src");if(sr)sr.outerHTML=mkSrc("Yahoo Finance public feed",[key],mkIxNote());MK.sig=s;return;}catch(e){}}
+  if(MK.tab==="chart"&&MK.lc&&MK.lcKey===key&&d&&MK.lcSe){try{mkIxSet(d);const sr=$("#mkBody .mk-src");if(sr)sr.outerHTML=mkSrc("Yahoo Finance via Zapier",[key],mkIxNote());MK.sig=s;return;}catch(e){}}
   mkPaint();}
 /* sector ETFs, 5 days of hourly closes (1 call) */
 async function mkFetchSec5(force){const syms=[...MK_SECT.map(x=>x[0]),"SPY"];const r=await zGet(Y_SPARK,{symbols:syms.join(","),range:"5d",interval:"1h"},{ttl:mkTTL("sec5"),force});const S=mkSparkSeries(r.v),o={c:{},t:{}};
@@ -7330,7 +7331,7 @@ function mkSessLegend(){try{const n=parts(new Date(),"America/New_York"),s=h=>tL
   return `<div class="mk-leg2"><span><i class="s0"></i>Asia ${s(18)}–${s(2)}</span><span><i class="s1"></i>London ${s(2)}–${s(8)}</span><span><i class="s2"></i>New York ${s(8)}–${s(17)}</span><span class="muted">Sydney time (New York 6 pm, 2 am, 8 am, 5 pm)</span></div>`;}catch{return "";}}
 MK_VIEW.chart=()=>{const k="ix_"+MK.ixSym+"_"+MK.ixTf,d=MK.d[k];
   return `${mkIxSel()}${mkErr([k])}<div class="card mk-card"><div class="mk-ch"><div><h3>${mkE(mkShort(MK.ixSym))} · ${MK.ixTf} candles</h3><p class="small muted">${d?`Last ${mkPx(MK.ixSym,d.px)} · ${d.b.length} candles`:""}</p></div></div>
-   ${d?`<div class="mk-lc mk-ixc" id="mkIx" aria-label="${mkE(mkShort(MK.ixSym))} candlestick chart"></div>${MK.ixTf!=="1d"?mkSessLegend():""}`:mkLoading()}${mkSrc("Yahoo Finance public feed",[k],mkIxNote())}</div>`;};
+   ${d?`<div class="mk-lc mk-ixc" id="mkIx" aria-label="${mkE(mkShort(MK.ixSym))} candlestick chart"></div>${MK.ixTf!=="1d"?mkSessLegend():""}`:mkLoading()}${mkSrc("Yahoo Finance via Zapier",[k],mkIxNote())}</div>`;};
 function mkIxSet(d){const B=d.b.slice(-300);MK.lcSe.setData(B.map(x=>({time:x[0],open:x[1],high:x[2],low:x[3],close:x[4]})));
   if(MK.lcSs)MK.lcSs.setData(MK.ixTf==="1d"?[]:B.map(x=>{const s=mkSessOf(x[0]);return {time:x[0],value:1,color:["rgba(122,92,196,.10)","rgba(59,120,196,.10)","rgba(184,134,47,.13)"][s]||"rgba(0,0,0,0)"};}));
   if(MK.lcVo)MK.lcVo.setData(B.map(x=>({time:x[0],value:x[5]||0,color:x[4]>=x[1]?"rgba(30,158,120,.35)":"rgba(224,81,95,.35)"})));}
@@ -7362,9 +7363,9 @@ MK_VIEW.vol=()=>{const v=MK.d.vol,s1=MK.d.s1d;let term=mkLoading();
   let tbl=mkLoading();if(s1&&s1.c){const rows=MK_SCR.map(s=>{const c=s1.c[s];if(!c||c.length<16)return null;const ch=c.slice(-15).slice(1).map((x,i)=>Math.abs(x/c.slice(-15)[i]-1)*100),am=ch.reduce((p,q)=>p+q,0)/ch.length,last=c[c.length-1];return {s,am,pts:am/100*last,rv:mkRV(c),last};}).filter(Boolean).sort((a,b)=>b.am-a.am);
     tbl=`<div class="mk-hscroll"><table class="mk-cot" data-g="1"><thead><tr><th>Market</th><th>Avg daily move</th><th>In price</th><th>20-day vol</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${mkShort(r.s)}</b><span>${mkE((mkWL(r.s)||[,,r.s])[2])}</span></td><td>${r.am.toFixed(2)}%</td><td>${mkPx(r.s,r.pts)}</td><td>${mkN(r.rv)?r.rv.toFixed(0)+"%":"–"}</td></tr>`).join("")}</tbody></table></div>
      <p class="tiny muted">Average absolute close-to-close move over the last 14 sessions: an ATR-style range from closing prices only (true ATR also uses highs and lows; Stock Radar shows it per symbol). Use it to set stops wider than normal noise.</p>`;}
-  return `${mkErr(["vol","s1d"])}${mkCard("VIX term structure","Expected S&P 500 volatility over 9 days, 30 days and 3 months.",term,mkSrc("Yahoo Finance public feed",["vol"],"Daily closes"))}
-   ${mkCard("Correlation matrix (20 days)","How the big markets have moved together recently.",corr,mkSrc("Yahoo Finance public feed",["s1d","vol"],"Daily closes"))}
-   ${mkCard("Average daily move","Which markets are moving the most right now.",tbl,mkSrc("Yahoo Finance public feed",["s1d"]))}`;};
+  return `${mkErr(["vol","s1d"])}${mkCard("VIX term structure","Expected S&P 500 volatility over 9 days, 30 days and 3 months.",term,mkSrc("Yahoo Finance via Zapier",["vol"],"Daily closes"))}
+   ${mkCard("Correlation matrix (20 days)","How the big markets have moved together recently.",corr,mkSrc("Yahoo Finance via Zapier",["s1d","vol"],"Daily closes"))}
+   ${mkCard("Average daily move","Which markets are moving the most right now.",tbl,mkSrc("Yahoo Finance via Zapier",["s1d"]))}`;};
 /* chart tab + vol tab events */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mkix]");if(!b||route.page!=="intel")return;MK.ixTf=b.dataset.mkix;mkPaint();mkLoadTab("chart");});
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="mkIxSel"){MK.ixSym=e.target.value;mkPaint();mkLoadTab("chart");}});
@@ -9469,4 +9470,49 @@ devApply();setTimeout(()=>{devStamp();devCheckLive();},1500);
 /* ---------------- init ---------------- */
 applyRegion();render();tick();setInterval(tick,20000);
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(route.page==="trainer")drawT();if(route.page==="journal")drawEquity(jFiltered());},150);});
+</script>
+
+
+<style id="kaushal-premium-overrides">
+:root{--gold:#d2b477;--up:#20c997;--down:#f06475}
+.topbar{z-index:80}.topbar .ka-auth-trigger{margin-left:auto;border:1px solid var(--line2);background:linear-gradient(135deg,rgba(210,180,119,.16),rgba(255,255,255,.025));color:var(--ink);border-radius:10px;padding:8px 13px;font:600 .76rem var(--f-body);cursor:pointer}
+.stage{position:relative}.market-ribbon{position:sticky;top:54px;z-index:60;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:rgba(10,13,18,.94);backdrop-filter:blur(18px);margin:0 0 14px;min-height:46px;display:flex;align-items:center}
+.market-ribbon .mr-label{flex:none;padding:0 14px;color:var(--gold);font:700 .65rem var(--f-mono);letter-spacing:.14em;border-right:1px solid var(--line)}
+.market-ribbon .mr-track{display:flex;white-space:nowrap;min-width:max-content;animation:mr-scroll 65s linear infinite;gap:0}.market-ribbon:hover .mr-track{animation-play-state:paused}
+.market-ribbon .mr-item{display:flex;align-items:center;gap:9px;padding:0 17px;border-right:1px solid var(--line);font:600 .72rem var(--f-mono)}.market-ribbon .mr-item b{color:var(--ink)}.market-ribbon .mr-item .up{color:var(--up)}.market-ribbon .mr-item .down{color:var(--down)}.market-ribbon .mr-state{margin-left:auto;flex:none;padding:0 12px;color:var(--muted);font:500 .62rem var(--f-mono)}
+@keyframes mr-scroll{to{transform:translateX(-50%)}}@media(prefers-reduced-motion:reduce){.market-ribbon .mr-track{animation:none}}
+.ka-intro{position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at 50% 35%,#20242b 0%,#090b0f 58%,#050607 100%);display:grid;place-items:center;opacity:1;transition:opacity .7s ease}.ka-intro.out{opacity:0;pointer-events:none}
+.ka-intro-inner{text-align:center;padding:28px;animation:ka-rise 1s cubic-bezier(.2,.7,.2,1) both}.ka-mark{width:76px;height:76px;margin:0 auto 22px;border:1px solid rgba(210,180,119,.55);border-radius:23px;display:grid;place-items:center;color:var(--gold);font:800 1.7rem var(--f-display);box-shadow:0 0 65px rgba(210,180,119,.14);transform:rotate(-5deg)}
+.ka-intro h1{font:800 clamp(2rem,6vw,3.8rem) var(--f-display);letter-spacing:.13em;color:#f4f0e8;margin:0}.ka-intro p{color:#a9aeb7;letter-spacing:.22em;text-transform:uppercase;font:500 .65rem var(--f-mono);margin:14px 0 0}.ka-intro .ka-line{width:150px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:24px auto 0;animation:ka-glow 1.5s ease-in-out infinite}
+@keyframes ka-rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}@keyframes ka-glow{50%{opacity:.35;transform:scaleX(.65)}}
+.ka-auth-modal{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.72);backdrop-filter:blur(12px);display:grid;place-items:center;padding:18px}.ka-auth-card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:26px;box-shadow:0 30px 90px #0009}
+.ka-auth-card h2{margin:0 0 6px;font:750 1.4rem var(--f-display)}.ka-auth-card p{color:var(--muted);font-size:.84rem;line-height:1.5}.ka-auth-card input{width:100%;margin:7px 0 12px;background:var(--sunk);color:var(--ink);border:1px solid var(--line2);border-radius:9px;padding:12px;font:500 .9rem var(--f-body)}
+.ka-auth-card button{cursor:pointer;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;background:var(--raised);color:var(--ink);font-weight:650}.ka-auth-card .ka-primary{background:var(--gold);color:#16130d;border-color:var(--gold);width:100%}.ka-auth-card .ka-google{width:100%;margin:12px 0 8px;background:#f7f7f7;color:#222;border-color:#ddd}.ka-auth-card .ka-close{float:right;padding:4px 9px}.ka-auth-card .ka-msg{min-height:20px;color:var(--gold);font-size:.78rem}
+.ka-view-count{position:absolute;right:14px;bottom:14px;background:#080b10d9;border:1px solid #ffffff20;color:#d8dce2;border-radius:7px;padding:5px 9px;font:500 .64rem var(--f-mono)}
+.ka-alert{position:fixed;right:18px;top:82px;z-index:9998;width:min(390px,calc(100vw - 36px));padding:15px 16px;background:#171d25;border:1px solid var(--gold);border-radius:13px;box-shadow:0 15px 50px #0009;animation:ka-rise .3s ease-out}.ka-alert b{display:block;color:var(--gold);font:700 .65rem var(--f-mono);letter-spacing:.12em;margin-bottom:6px}.ka-alert span{font-size:.86rem;line-height:1.4}
+.ka-sound-toggle{position:fixed;right:18px;bottom:18px;z-index:90;border:1px solid var(--line2);border-radius:999px;padding:9px 12px;background:var(--panel);color:var(--muted);font:.68rem var(--f-mono);cursor:pointer}.sidefoot span:last-child{color:var(--gold)}
+@media(max-width:700px){.market-ribbon{top:52px}.market-ribbon .mr-state{display:none}.market-ribbon .mr-label{padding:0 9px}.market-ribbon .mr-item{padding:0 12px}.ka-sound-toggle{bottom:12px;right:12px}}
+</style>
+<script>
+(()=>{"use strict";
+const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD"];
+let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
+function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
+function ribbonPaint(rows,delayed){const el=$("#kaMarketRibbon");if(!el)return;const items=(rows||[]).filter(x=>Number.isFinite(+x.price)).map(x=>{const pct=+x.changePercent||0,cl=pct>=0?"up":"down";return '<span class="mr-item"><b>'+safe(x.symbol)+'</b><span>'+safe((+x.price).toLocaleString("en-US",{maximumFractionDigits:4}))+'</span><span class="'+cl+'">'+(pct>0?"+":"")+pct.toFixed(2)+'%</span></span>';}).join("");if(!items){el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Waiting for verified market feed…</span>';return;}el.innerHTML='<span class="mr-label">MARKET PULSE</span><div class="mr-track">'+items+items+'</div><span class="mr-state">'+(delayed?"DELAYED PUBLIC FEED":"PUBLIC FEED")+' · AUTO REFRESH</span>';}
+async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
+function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
+function authMessage(s){const el=$("#kaAuthMsg");if(el)el.textContent=s;}
+function openAuth(){if($("#kaAuthModal"))return;const el=document.createElement("div");el.id="kaAuthModal";el.className="ka-auth-modal";el.innerHTML='<div class="ka-auth-card"><button class="ka-close" id="kaAuthClose">✕</button><h2>Welcome to Trading Desk</h2><p>Sign in or create an account to continue.</p><button class="ka-google" id="kaGoogle">Continue with Google</button><div style="text-align:center;color:var(--faint);font-size:.7rem;margin:5px 0 12px">OR CONTINUE WITH PHONE</div><label class="small muted">Phone number with country code</label><input id="kaPhone" type="tel" placeholder="+61412345678" autocomplete="tel"><button class="ka-primary" id="kaSend">Send verification code</button><div id="kaVerifyArea" hidden><label class="small muted">6-digit verification code</label><input id="kaCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"><button class="ka-primary" id="kaVerify">Verify and sign in</button></div><div class="ka-msg" id="kaAuthMsg" role="status"></div><p class="tiny muted">Phone verification requires SMS to be enabled in the authentication provider.</p></div>';document.body.appendChild(el);$("#kaAuthClose").onclick=()=>el.remove();el.addEventListener("click",e=>{if(e.target===el)el.remove();});$("#kaGoogle").onclick=()=>location.href="/api/auth/google";
+ $("#kaSend").onclick=async()=>{const phone=$("#kaPhone").value.trim();if(!/^\\+[1-9]\\d{7,14}$/.test(phone)){authMessage("Enter a valid international number, including country code.");return;}authMessage("Sending verification code…");try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"send",phone})});const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to send code.");$("#kaVerifyArea").hidden=false;authMessage("Verification code sent. Check your SMS.");}catch(e){authMessage(e.message);}};
+ $("#kaVerify").onclick=async()=>{const phone=$("#kaPhone").value.trim(),token=$("#kaCode").value.trim();authMessage("Verifying…");try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",phone,token})});const j=await r.json();if(!r.ok)throw Error(j.error||"Verification failed.");sessionStorage.setItem("kaAuthSession",JSON.stringify(j));$("#kaAuthTrigger").textContent="Account";authMessage("Signed in successfully.");setTimeout(()=>el.remove(),900);}catch(e){authMessage(e.message);}};}
+function authUI(){const top=$(".topbar");if(!top)return;if(!$("#kaAuthTrigger")){const b=document.createElement("button");b.id="kaAuthTrigger";b.className="ka-auth-trigger";b.textContent=sessionStorage.getItem("kaAuthSession")?"Account":"Sign in";b.onclick=openAuth;top.appendChild(b);}const p=new URLSearchParams(location.search);if(p.get("auth")==="google"){const h=new URLSearchParams(location.hash.slice(1));if(h.get("access_token")){sessionStorage.setItem("kaAuthSession",JSON.stringify({access_token:h.get("access_token"),refresh_token:h.get("refresh_token"),expires_at:h.get("expires_at")}));$("#kaAuthTrigger").textContent="Account";}history.replaceState({}, "", location.pathname+location.hash);}}
+function soundEnabled(){return localStorage.getItem("kaSoundAlerts")==="on";}
+function soundBeep(){if(!soundEnabled())return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.value=880;g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.08,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.24);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.26);}catch{}}
+function soundToggle(){let b=$("#kaSoundToggle");if(!b){b=document.createElement("button");b.id="kaSoundToggle";b.className="ka-sound-toggle";document.body.appendChild(b);b.onclick=()=>{localStorage.setItem("kaSoundAlerts",soundEnabled()?"off":"on");soundToggle();if(soundEnabled())soundBeep();};}b.textContent=soundEnabled()?"◖ Sound alerts on":"◖ Sound alerts off";}
+async function checkBreakingNews(){try{const r=await fetch("/api/news?q="+encodeURIComponent("stock market OR Federal Reserve OR inflation OR crypto OR gold"),{cache:"no-store"});if(!r.ok)return;const j=await r.json(),items=j.data||[],high=items.filter(n=>/fed|federal reserve|inflation|rate decision|crash|halt|war|sanction|bank failure|emergency/i.test(n.title||""));const fresh=high.find(n=>n.title&&!lastNews.has(n.title));items.forEach(n=>n.title&&lastNews.add(n.title));if(fresh&&lastNews.size>1){const a=document.createElement("div");a.className="ka-alert";a.innerHTML='<b>MARKET NEWS ALERT</b><span>'+safe(fresh.title)+'</span><div style="text-align:right;margin-top:8px"><button style="background:transparent;color:var(--gold);border:0;cursor:pointer">Dismiss</button></div>';document.body.appendChild(a);a.querySelector("button").onclick=()=>a.remove();soundBeep();setTimeout(()=>a.remove(),12000);}}catch{}}
+function viewCountWrap(){if(typeof Player!=="function"||Player.__kaWrapped)return;const original=Player;const wrapped=function(host,sc,opt){const off=original(host,sc,opt);try{const id=(opt&&opt.title)||sc.title||"lesson",key="kaLessonViews:"+id;let badge=host.querySelector(".ka-view-count");if(!badge){badge=document.createElement("span");badge.className="ka-view-count";badge.textContent=(+localStorage.getItem(key)||0)+" plays on this device";host.querySelector(".screen")?.appendChild(badge);}const count=()=>{if(host.dataset.kaCounted==="1")return;host.dataset.kaCounted="1";const n=(+localStorage.getItem(key)||0)+1;localStorage.setItem(key,String(n));badge.textContent=n+" plays on this device";};host.addEventListener("click",e=>{if(e.target.closest('[data-a="play"],.bigplay,canvas'))count();},{capture:true});}catch{}return off;};wrapped.__kaWrapped=true;Player=wrapped;}
+function start(){splash();authUI();soundToggle();ribbonInit();refreshRibbon();viewCountWrap();setInterval(()=>{ribbonInit();refreshRibbon();authUI();soundToggle();},30000);setInterval(checkBreakingNews,240000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshRibbon();});}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
+})();
 </script>
