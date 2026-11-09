@@ -2330,7 +2330,8 @@ const WL=[["Indices",[["^GSPC","SPX","S&P 500","500",0],["^NDX","NDQ","Nasdaq 10
  ["Futures",[["NQ=F","NQ1!","Nasdaq-100 E-mini","NQ",205],["MNQ=F","MNQ1!","Micro Nasdaq-100","MNQ",210],["ES=F","ES1!","S&P 500 E-mini","ES",350],["YM=F","YM1!","Dow E-mini","YM",190],["GC=F","GC1!","Gold","GC",42],["MGC=F","MGC1!","Micro gold","MGC",45],["CL=F","USOIL","WTI crude oil","OIL",20],["SI=F","SI1!","Silver","SI",220]]],
  ["Stocks",[["AAPL","AAPL","Apple","",0],["NVDA","NVDA","NVIDIA","N",120],["TSLA","TSLA","Tesla","T",0],["MSFT","MSFT","Microsoft","M",200],["META","META","Meta","M",215],["AMZN","AMZN","Amazon","A",30],["NFLX","NFLX","Netflix","N",0],["GOOGL","GOOGL","Alphabet","G",140]]],
  ["Forex",[["EURUSD=X","EURUSD","Euro / US Dollar","€$",215],["GBPUSD=X","GBPUSD","Pound / US Dollar","£$",260],["USDJPY=X","USDJPY","US Dollar / Yen","$¥",350]]],
- ["Crypto",[["BTC-USD","BTCUSD","Bitcoin","₿",35],["ETH-USD","ETHUSD","Ethereum","Ξ",250]]]];
+ ["Sectors",[["XLK","XLK","Technology","T",205],["XLF","XLF","Financials","F",210],["XLE","XLE","Energy","E",20],["XLY","XLY","Consumer discretionary","C",30],["XLP","XLP","Consumer staples","C",45],["XLI","XLI","Industrials","I",190],["XLV","XLV","Health care","H",215],["XLU","XLU","Utilities","U",260],["XLB","XLB","Materials","M",220],["XLRE","XLRE","Real estate","R",130],["XLC","XLC","Communication services","C",140]]],
+ ["Crypto",[["BTC-USD","BTCUSD","Bitcoin","₿",35],["ETH-USD","ETHUSD","Ethereum","Ξ",250],["SOL-USD","SOLUSD","Solana","S",210],["DOGE-USD","DOGEUSD","Dogecoin","D",130]]]];
 const WLALL=WL.flatMap(g=>g[1]);
 document.addEventListener("click",e=>{if(e.target.closest("[data-lmretry]")){LM.tab=null;LM.connected=null;LM.err={};LM.log=[];LM.paused=false;LM.userResume=true;render();}});
 const LM={tab:null,q:Promise.resolve(),quotes:{},err:{},ok:{},sym:"NQ=F",tf:"5m",type:"candle",chart:null,series:null,timers:[],news:null,newsF:"All",poly:null,polyF:"Markets",connected:null};
@@ -4832,10 +4833,10 @@ async function rxMount(lesson,force){const card=$("#rxCard");if(!card)return;con
   const honest=`<p class="tiny muted" style="margin:0">One past example picked by a fixed rule so you can see the idea on a real chart. It is not a signal, and one example proves nothing either way: some of these fail, and that's normal.</p>`;
   const paint=(s,from)=>{if(!s){return;}if(s.none){body.innerHTML=`<div class="callout info small">The rule found no clean example in the ${RX_TF[tf][0].toLowerCase()} data for any of NQ, gold, ES or EUR/USD. Try the other timeframe.</div>${rule}`;return;}
     body.innerHTML=`<div class="rx-chart" id="rxChart"></div>${rxFacts(s)}<p class="tiny muted" style="margin:0">${from}</p>${rule}${honest}`;const ch=rxChart($("#rxChart"),s);if(ch)cleanup.push(()=>{try{ch.remove();}catch{}});};
-  if((!s||force)&&live){body.innerHTML=`<p class="small muted" style="margin:0">Finding a real ${esc((L.t||"").toLowerCase())} example in ${RX_TF[tf][0].toLowerCase()} ${esc(RX_NAMES[cfg[0]])} candles from Yahoo Finance via Zapier…</p>`;
+  if((!s||force)&&live){body.innerHTML=`<p class="small muted" style="margin:0">Finding a real ${esc((L.t||"").toLowerCase())} example in ${RX_TF[tf][0].toLowerCase()} ${esc(RX_NAMES[cfg[0]])} candles from Yahoo Finance…</p>`;
     try{s=await rxBuild(lesson,tf);}catch(e){if(!document.body.contains(body))return;body.innerHTML=(zBlocking()?zCard(0):`<div class="callout bad small">${zMsg(e)} Nothing is drawn rather than inventing prices.</div><button class="btn sm" data-rxload="1">Try again</button>`)+rule;return;}}
   if(!document.body.contains(body))return;
-  if(s){paint(s,`Loaded ${zAgo(s.at)} · Yahoo Finance via Zapier · saved to your account, so your other devices show it too.${live?` <button class="btn sm ghost" data-rxload="1" style="margin-left:4px"><i class=ix-refresh></i> Reload</button>`:""}`);return;}
+  if(s){paint(s,`Loaded ${zAgo(s.at)} · Yahoo Finance · saved to your account, so your other devices show it too.${live?` <button class="btn sm ghost" data-rxload="1" style="margin-left:4px"><i class=ix-refresh></i> Reload</button>`:""}`);return;}
   body.innerHTML=zCard(0)+rule;}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-rxtf],[data-rxload]");if(!t)return;const card=$("#rxCard");if(!card)return;
   if(t.dataset.rxtf){card.dataset.tf=t.dataset.rxtf;try{localStorage.setItem("td_rxtf",t.dataset.rxtf);}catch{}card.querySelectorAll("[data-rxtf]").forEach(b=>b.setAttribute("aria-pressed",b===t));rxMount(card.dataset.lesson);}
@@ -5950,7 +5951,7 @@ brMcp=async()=>null;
 brTab=async()=>{throw {code:"no_browser"};};
 brGet=async()=>{throw {code:"no_browser"};};
 brJSON=async()=>{throw {code:"no_browser"};};
-lmTimer=()=>{};
+lmTimer=(fn,ms)=>{const id=setInterval(()=>{if(!document.hidden&&!LM.paused)fn();},ms);LM.timers.push(id);return id;};
 
 /* ---------- transport ---------- */
 function zMcp(){if(Z.mcp!==undefined)return Promise.resolve(Z.mcp);
@@ -6040,27 +6041,33 @@ function zSparkRows(j){const out={};if(!j||typeof j!=="object")return out;
   Object.entries(j).forEach(([s,r])=>one((r&&r.symbol)||s,r));return out;}
 lmQuotes=async function(force){const syms=WLALL.map(w=>w[0]);
   try{const r=await fetch(`/api/market?symbols=${encodeURIComponent(syms.join(","))}&t=${Date.now()}`,{cache:"no-store"});if(!r.ok)throw new Error(`Market feed returned ${r.status}`);const j=await r.json();const rows=j?.quoteResponse?.result||[];let got=0;
-    rows.forEach(q=>{const p=Number(q?.regularMarketPrice?.raw),chg=Number(q?.regularMarketChange?.raw),pct=Number(q?.regularMarketChangePercent?.raw);if(!q?.symbol||!Number.isFinite(p))return;LM.quotes[q.symbol]={price:p,prev:Number.isFinite(p-chg)?p-chg:null,chg:Number.isFinite(chg)?chg:null,pct:Number.isFinite(pct)?pct:null,ts:Number(q.regularMarketTime)||Date.now()/1000,spark:[],at:Date.now(),source:q.source||"Market snapshot",realtime:!!q.isRealTime};got++;});
-    if(got){LM.qAt=Date.now();LM.ok.quotes=LM.qAt;LM.err.quotes=null;}else throw new Error("The public market feed returned no verified quotes.");return got;
+    rows.forEach(q=>{const p=Number(q?.regularMarketPrice?.raw),chg=Number(q?.regularMarketChange?.raw),pct=Number(q?.regularMarketChangePercent?.raw);if(!q?.symbol||!Number.isFinite(p))return;LM.quotes[q.symbol]={price:p,prev:Number.isFinite(chg)?p-chg:(Number(q.regularMarketPreviousClose)||null),chg:Number.isFinite(chg)?chg:null,pct:Number.isFinite(pct)?pct:null,ts:Number(q.regularMarketTime)||Date.now()/1000,spark:[],at:Date.now(),source:q.source||"Yahoo Finance",realtime:!!q.isRealTime,currency:q.currency||"USD"};got++;});
+    if(got){LM.qAt=Math.floor(Date.now()/1000);LM.ok.quotes=LM.qAt;LM.err.quotes=null;LM.feedDelayed=Boolean(j.delayed)||rows.some(q=>!q.isRealTime);Z.state="ok";}else throw new Error("Yahoo Finance returned no verified quotes for the requested symbols.");return got;
   }catch(e){LM.err.quotes=zMsg(e);Z.failAt.quotes=zNow();return 0;}finally{lmPaintWL();lmPaintConn();}};
 stateOf=function(q){if(!q||!q.ts)return "";return zNow()-q.ts<1200?"":"closed";};
 
 /* ---------- chart candles (one Yahoo chart call per symbol + timeframe, cached 10 min) ---------- */
-lmLoadChart=async function(keep,force){const tf=TFS.find(t=>t[0]===LM.tf),iv=tf[0]==="4h"?"1h":tf[0],want=LM.sym+LM.tf,meta=()=>$("#lmMeta");
-  if(!(await zMcp())||zBlocking()){LM.bars=null;const m=meta();if(m)m.innerHTML=`<span>The chart draws from live candles, which need your Zapier connector (see above). Nothing is drawn rather than inventing prices.</span>`;lmPaintConn();return;}
-  const m0=meta();if(m0&&!keep)m0.innerHTML=`<span>Loading ${lmEsc(LM.sym)} ${lmEsc(tf[1])} candles from Yahoo Finance via Zapier…</span>`;
-  try{const r=await zGet(zChartUrl(LM.sym),{range:tf[2],interval:iv},{ttl:ZQ_TTL,force});if(want!==LM.sym+LM.tf)return;const j=r.v;
-    const c=j&&j.chart&&j.chart.result&&j.chart.result[0];if(!c)throw {code:"bad_data"};
-    const q=(c.indicators&&c.indicators.quote&&c.indicators.quote[0])||{},ts=c.timestamp||[];let bars=[];
-    ts.forEach((t,i)=>{const o=q.open&&q.open[i],h=q.high&&q.high[i],l=q.low&&q.low[i],cl=q.close&&q.close[i];if([o,h,l,cl].every(v=>v!=null&&isFinite(v)))bars.push({time:t,open:o,high:h,low:l,close:cl,volume:q.volume?q.volume[i]||0:0});});
-    if(bars.length>20){const rng=bars.map(b=>b.high-b.low).sort((x,y)=>x-y),med=rng[Math.floor(rng.length/2)]||0;if(med>0)bars=bars.filter((b,i)=>{const p=bars[i-1]||b;return (b.high-b.low)<=med*25&&Math.abs(b.open-p.close)<=med*40;});}
-    if(tf[0]==="4h"){const out=[];bars.forEach(b=>{const t=b.time-b.time%14400,L=out[out.length-1];if(L&&L.time===t){L.high=Math.max(L.high,b.high);L.low=Math.min(L.low,b.low);L.close=b.close;L.volume+=b.volume;}else out.push({...b,time:t});});bars=out;}
-    if(!bars.length)throw {code:"bad_data"};
-    LM.bars=bars;LM.meta=c.meta||{};LM.chartAt=r.at;LM.ok.chart=r.at;LM.err.chart=null;lmDraw(keep);}
-  catch(e){LM.err.chart=zMsg(e);const m=meta();if(m)m.innerHTML=`<span class="down-t">${LM.err.chart}</span><span>Nothing is drawn rather than inventing prices.</span>`;}
-  lmPaintConn();lmDck();};
+lmLoadChart=async function(keep,force){
+ const tf=TFS.find(t=>t[0]===LM.tf);if(!tf)return;
+ const iv=tf[0]==="4h"?"1h":tf[0],want=LM.sym+LM.tf,meta=()=>$("#lmMeta");
+ const m0=meta();if(m0&&!keep)m0.innerHTML=`<span>Loading ${lmEsc(LM.sym)} ${lmEsc(tf[1])} candles from Yahoo Finance…</span>`;
+ try{
+  const url=`/api/chart?symbol=${encodeURIComponent(LM.sym)}&interval=${encodeURIComponent(iv)}&range=${encodeURIComponent(tf[2])}&t=${Date.now()}`;
+  const response=await fetch(url,{cache:"no-store",headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("Yahoo chart returned "+response.status);
+  const j=await response.json();if(want!==LM.sym+LM.tf)return;
+  const c=j&&j.chart&&j.chart.result&&j.chart.result[0];if(!c)throw new Error(j?.chart?.error?.description||"No chart data returned");
+  const q=(c.indicators&&c.indicators.quote&&c.indicators.quote[0])||{},ts=c.timestamp||[];let bars=[];
+  ts.forEach((t,i)=>{const o=q.open&&q.open[i],h=q.high&&q.high[i],l=q.low&&q.low[i],cl=q.close&&q.close[i];if([o,h,l,cl].every(v=>v!=null&&isFinite(v)))bars.push({time:t,open:o,high:h,low:l,close:cl,volume:q.volume?q.volume[i]||0:0});});
+  if(bars.length>20){const rng=bars.map(b=>b.high-b.low).sort((x,y)=>x-y),med=rng[Math.floor(rng.length/2)]||0;if(med>0)bars=bars.filter((b,i)=>{const p=bars[i-1]||b;return (b.high-b.low)<=med*25&&Math.abs(b.open-p.close)<=med*40;});}
+  if(tf[0]==="4h"){const out=[];bars.forEach(b=>{const t=b.time-b.time%14400,L=out[out.length-1];if(L&&L.time===t){L.high=Math.max(L.high,b.high);L.low=Math.min(L.low,b.low);L.close=b.close;L.volume+=b.volume;}else out.push({...b,time:t});});bars=out;}
+  if(!bars.length)throw new Error("No valid candles returned");
+  LM.bars=bars;LM.meta=c.meta||{};LM.chartAt=Math.floor(Date.now()/1000);LM.ok.chart=LM.chartAt;LM.err.chart=null;lmDraw(keep);
+ }catch(e){LM.err.chart="Yahoo Finance chart unavailable: "+String(e.message||e);const m=meta();if(m)m.innerHTML=`<span class="down-t">${lmEsc(LM.err.chart)}</span><span>No chart is drawn when verified candles are unavailable.</span>`;}
+ lmPaintConn();lmDck();
+};
 {const _draw=lmDraw;lmDraw=function(keep){_draw(keep);const m=$("#lmMeta"),b=LM.bars||[];if(!m||!b.length)return;const md=LM.meta||{};
-  m.innerHTML=`<span>Source <b>Yahoo Finance via Zapier</b></span><span>Candles <b>${b.length}</b></span><span>Fetched <b>${zSyd(LM.chartAt)}</b> Syd (${zAgo(LM.chartAt)})</span><span>${/=F/.test(LM.sym)||md.instrumentType==="FUTURE"?"CME futures on Yahoo may be delayed by the exchange":"Exchange delays may apply"}</span>`;};}
+  m.innerHTML=`<span>Source <b>Yahoo Finance</b></span><span>Candles <b>${b.length}</b></span><span>Fetched <b>${zSyd(LM.chartAt)}</b> Syd (${zAgo(LM.chartAt)})</span><span>${/=F/.test(LM.sym)||md.instrumentType==="FUTURE"?"CME futures on Yahoo may be delayed by the exchange":"Exchange delays may apply"}</span>`;};}
 
 /* ---------- news (Google News RSS, all categories in one call) ---------- */
 const ZNEWS=[["Gold","gold price OR XAUUSD OR gold futures","US"],["Nasdaq & US stocks","Nasdaq OR \"S&P 500\" OR Wall Street stocks","US"],["Forex","forex OR \"US dollar\" OR EURUSD OR USDJPY OR \"dollar index\"","US"],
@@ -6073,37 +6080,44 @@ function zParseItems(items){const urls=ZNEWS.map(zNewsUrl),dec=u=>{try{return de
   return (items||[]).filter(it=>it&&it.title).map(it=>{let title=String(it.title).trim(),src=String(zSrcOf(it)||"").trim();const m=title.match(/^(.*) - ([^-]{2,60})$/);
     if(m&&(!src||m[2].trim()===src)){title=m[1].trim();src=src||m[2].trim();}
     const t=Date.parse(it.pubDate||it.pub_date||it.isoDate||"");return {title,src:src||"Google News",link:it.link||it.url||"",ts:isFinite(t)?Math.floor(t/1000):null,cat:catOf(it.feed_url),hi:Z_HI.test(title)};});}
-lmNews=async function(force){try{const r=await zRSS(ZNEWS.map(zNewsUrl),{ttl:ZN_TTL,force});const fresh=zParseItems(r.v);
-    const seen=new Set();LM.news=fresh.filter(n=>{const k=n.title.toLowerCase().replace(/[^a-z0-9]+/g," ").slice(0,80);if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,250);
-    LM.nAt=r.at;LM.ok.news=r.at;LM.err.news=null;return LM.news.length;}
-  catch(e){LM.err.news=zMsg(e);Z.failAt.news=zNow();return 0;}};
+lmNews=async function(force){
+ try{
+  const response=await fetch("/api/news?t="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("News endpoint returned "+response.status);
+  const payload=await response.json();
+  const rows=(payload.data||[]).map(item=>({title:item.title,src:item.source||"Market news",link:item.link,ts:item.published?Math.floor(Date.parse(item.published)/1000):null,summary:item.summary||"",symbols:item.symbols||[],cat:"Markets",hi:Z_HI.test(item.title||"")}));
+  const seen=new Set();LM.news=rows.filter(n=>n.title&&n.link&&!seen.has(n.title.toLowerCase())&&seen.add(n.title.toLowerCase())).sort((x,y)=>(y.ts||0)-(x.ts||0)).slice(0,250);
+  LM.nAt=Math.floor((payload.updatedAt||Date.now())/1000);LM.ok.news=LM.nAt;LM.err.news=null;Z.state="ok";return LM.news.length;
+ }catch(e){LM.err.news="Market headlines unavailable: "+String(e.message||e);Z.failAt.news=zNow();return 0;}
+};
 const zDot='<i class="zd-hi" title="High impact: scheduled data or Fed news" aria-label="High impact"></i>';
 newsHTML=function(list){return (list||[]).map(n=>`<a class="ni" href="${lmEsc(n.link)}" target="_blank" rel="noopener"><b>${n.hi?zDot:""}${lmEsc(n.title)}</b><span>${lmEsc(n.src)}${n.ts?" · "+zAgo(n.ts)+" · "+zSyd(n.ts)+" Syd":""} · ${lmEsc(n.cat)}</span></a>`).join("")||`<p class="small muted">No headlines in this filter yet.</p>`;};
 
 /* ---------- Polymarket (public Gamma API) ---------- */
-lmPoly=async function(force){try{const r=await zGet(PM_EVENTS,{active:"true",closed:"false",order:"volume24hr",ascending:"false",limit:"30"},{ttl:ZP_TTL,force});let a=r.v;
-    if(a&&!Array.isArray(a))a=Array.isArray(a.data)?a.data:Array.isArray(a.events)?a.events:a.title?[a]:[];if(a.length===1&&Array.isArray(a[0]))a=a[0];
-    /* the markets feed is ~8KB per item (the events feed is ~400KB per event); reshape markets into the event shape below */
-    a=a.map(m=>m&&m.question&&!m.markets?{title:(m.events&&m.events[0]&&m.events[0].title)||m.question,slug:(m.events&&m.events[0]&&m.events[0].slug)||m.slug,markets:[m],volume24hr:m.volume24hr,volume:m.volume,endDate:m.endDate}:m);
-    const arr=v=>{if(Array.isArray(v))return v;try{return JSON.parse(v||"[]");}catch{return [];}};
-    LM.poly=a.filter(e=>e&&e.title).map(e=>{const mks=(e.markets||[]).filter(m=>m&&m.closed!==true&&m.active!==false);
-      let best=null;mks.forEach(m=>{const pr=arr(m.outcomePrices).map(Number),oc=arr(m.outcomes);if(!pr.length||!isFinite(pr[0]))return;if(!best||pr[0]>best.yes)best={m,yes:pr[0],out:oc[0]||"Yes"};});
-      const mk=best?best.m:(e.markets||[])[0]||{};
-      return {title:e.title,slug:e.slug,q:mks.length>1&&mk.groupItemTitle?`${e.title}: ${mk.groupItemTitle}`:(mk.question||e.title),yes:best?best.yes:null,out:best?best.out:"Yes",vol24:+e.volume24hr||0,vol:+e.volume||0,end:e.endDate,n:mks.length||(e.markets||[]).length};});
-    LM.pAt=r.at;LM.ok.poly=r.at;LM.err.poly=null;return LM.poly.length;}
-  catch(e){LM.err.poly=zMsg(e);Z.failAt.poly=zNow();return 0;}};
+lmPoly=async function(force){
+ try{
+  const response=await fetch("/api/poly?t="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("Polymarket endpoint returned "+response.status);
+  const payload=await response.json(),arr=v=>{if(Array.isArray(v))return v;try{return JSON.parse(v||"[]");}catch{return [];}};
+  LM.poly=(payload.data||[]).map(m=>{const pr=arr(m.outcomePrices).map(Number),oc=arr(m.outcomes);return {title:(m.events&&m.events[0]&&m.events[0].title)||m.question,slug:(m.events&&m.events[0]&&m.events[0].slug)||m.slug,q:m.question,yes:pr[0],out:oc[0]||"Yes",vol24:+m.volume24hr||0,vol:+m.volume||0,end:m.endDate,n:1};}).filter(p=>p.title);
+  LM.pAt=Math.floor((payload.updatedAt||Date.now())/1000);LM.ok.poly=LM.pAt;LM.err.poly=null;Z.state="ok";return LM.poly.length;
+ }catch(e){LM.err.poly="Polymarket data unavailable: "+String(e.message||e);Z.failAt.poly=zNow();return 0;}
+};
 {const _ph=polyHTML;polyHTML=function(){return _ph().replace(/ markets in this event \(showing the first\)/g," outcomes (showing the most likely)");};}
 
 /* ---------- orchestration ---------- */
-async function zEnsure(want,force){await zSnapLoad();if(Z.retryForce){force=true;Z.retryForce=false;}
-  const mcp=await zMcp();if(!mcp||(zBlocking()&&!force))return false;
-  const now=zNow(),old=(k,at,ttl)=>force?now-(at||0)>Z_MIN_FORCE:now-(at||0)>ttl&&now-(Z.failAt[k]||0)>300,jobs=[];
-  if(want.quotes&&old("quotes",LM.qAt,ZQ_TTL))jobs.push(()=>lmQuotes(force));
-  if(want.news&&old("news",LM.nAt,ZN_TTL))jobs.push(()=>lmNews(force));
-  if(want.poly&&old("poly",LM.pAt,ZP_TTL))jobs.push(()=>lmPoly(force));
-  if(!jobs.length)return false;zBusyPaint(true);
-  let got=0;try{if(Z.state!=="ok"){got+=(await jobs.shift()())||0;if(zBlocking())return true;}const rs=await Promise.allSettled(jobs.map(f=>f()));rs.forEach(r=>{if(r.status==="fulfilled")got+=r.value||0;});}finally{zBusyPaint(false);}
-  if(got)lmSave();return true;}
+async function zEnsure(want,force){
+ await zSnapLoad();
+ const now=zNow(),due=(at,ttl)=>!!force||!at||now-(Number(at)||0)>ttl,jobs=[];
+ if(want.quotes&&due(LM.qAt,20))jobs.push(()=>lmQuotes(force));
+ if(want.news&&due(LM.nAt,300))jobs.push(()=>lmNews(force));
+ if(want.poly&&due(LM.pAt,300))jobs.push(()=>lmPoly(force));
+ if(!jobs.length){Z.state="ok";lmPaintConn();return true;}
+ Z.state="ok";Z.busy++;zBusyPaint(true);let got=0;
+ try{const rs=await Promise.allSettled(jobs.map(fn=>fn()));rs.forEach(r=>{if(r.status==="fulfilled")got+=Number(r.value)||0;});if(got)Z.state="ok";else if((want.quotes&&LM.err.quotes)||(want.news&&LM.err.news)||(want.poly&&LM.err.poly))Z.state="source";}
+ finally{Z.busy=Math.max(0,Z.busy-1);zBusyPaint(false);}
+ if(got)lmSave();return true;
+}
 function zBusyPaint(on){$$("[data-zrefresh]").forEach(b=>{b.disabled=on;b.classList.toggle("is-busy",on);b.lastChild.textContent=on?" Refreshing…":" Refresh";});lmPaintConn();}
 const zRefreshBtn=()=>`<button class="btn sm" data-zrefresh="1"><i class=ix-refresh></i> Refresh</button>`;
 async function zRefresh(btn){const pg=route.page;if(zBlocking()){zRetry();return;}
@@ -6112,19 +6126,35 @@ async function zRefresh(btn){const pg=route.page;if(zBlocking()){zRetry();return
   else if(pg==="poly"){await zEnsure({poly:1},true);AFTER.poly.paint&&AFTER.poly.paint();}
   else{await zEnsure({quotes:1,news:1},true);zHomePaint();}}
 
+function mountOptionsPanel(){
+ const host=document.querySelector(".lm");if(!host||$("#lmOptions"))return;
+ const card=document.createElement("section");card.id="lmOptions";card.className="card stack";card.style.marginTop="14px";
+ card.innerHTML='<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h3 style="margin:0">US options chain</h3><p class="small muted" style="margin:4px 0 0">Yahoo Finance listed calls and puts · delayed quotes may apply</p></div><div class="row" style="gap:8px"><select id="lmOptSymbol" class="input" aria-label="Options underlying"><option>SPY</option><option>QQQ</option><option>AAPL</option><option>NVDA</option><option>TSLA</option><option>MSFT</option><option>AMZN</option><option>META</option></select><select id="lmOptExpiry" class="input" aria-label="Options expiry"><option value="">Nearest expiry</option></select><button class="btn sm" id="lmOptReload">Refresh</button></div></div><div id="lmOptStatus" class="tiny muted">Loading listed options…</div><div class="grid g2" style="gap:12px"><div><h4>CALLS</h4><div style="overflow:auto;max-width:100%" id="lmOptCalls"></div></div><div><h4>PUTS</h4><div style="overflow:auto;max-width:100%" id="lmOptPuts"></div></div></div>';
+ host.after(card);
+ const symbol=$("#lmOptSymbol"),expiry=$("#lmOptExpiry"),status=$("#lmOptStatus");
+ const table=rows=>{if(!rows||!rows.length)return '<p class="small muted">No contracts returned for this expiry.</p>';return '<table class="data-table"><thead><tr><th>Strike</th><th>Bid</th><th>Ask</th><th>Last</th><th>Volume</th><th>Open interest</th><th>IV</th></tr></thead><tbody>'+rows.slice(0,40).map(o=>'<tr><td>'+lmEsc(o.strike)+'</td><td>'+lmEsc(o.bid)+'</td><td>'+lmEsc(o.ask)+'</td><td>'+lmEsc(o.lastPrice)+'</td><td>'+lmEsc(o.volume??"—")+'</td><td>'+lmEsc(o.openInterest??"—")+'</td><td>'+(Number.isFinite(Number(o.impliedVolatility))?(Number(o.impliedVolatility)*100).toFixed(1)+"%":"—")+'</td></tr>').join("")+'</tbody></table>';};
+ async function load(){status.textContent="Loading "+symbol.value+" options from Yahoo Finance…";try{
+  const query=new URLSearchParams({symbol:symbol.value});if(expiry.value)query.set("date",expiry.value);
+  const r=await fetch("/api/options?"+query.toString()+"&t="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("Options provider returned "+r.status);const j=await r.json();
+  if(!expiry.value&&Array.isArray(j.expirationDates)){expiry.innerHTML=j.expirationDates.map((d,i)=>'<option value="'+d+'" '+(i===0?"selected":"")+'>'+new Date(d*1000).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+'</option>').join("");}
+  const opt=(j.options&&j.options[0])||{};$("#lmOptCalls").innerHTML=table(opt.calls||[]);$("#lmOptPuts").innerHTML=table(opt.puts||[]);
+  status.textContent="Underlying "+symbol.value+" · "+(Number.isFinite(Number(j.underlyingPrice))?"$"+Number(j.underlyingPrice).toFixed(2)+" · ":"")+"Expiry "+(opt.expirationDate?new Date(opt.expirationDate*1000).toLocaleDateString("en-AU"):"selected")+" · Yahoo Finance · updated "+new Date(j.updatedAt||Date.now()).toLocaleTimeString("en-AU");
+ }catch(e){status.textContent="Options unavailable: "+String(e.message||e);$("#lmOptCalls").innerHTML="";$("#lmOptPuts").innerHTML="";}}
+ symbol.addEventListener("change",()=>{expiry.innerHTML='<option value="">Nearest expiry</option>';load();});expiry.addEventListener("change",load);$("#lmOptReload").addEventListener("click",load);load();
+}
 /* ---------- Live markets page ---------- */
 lmNoBrowser=snap=>zCard(snap&&snap.at);
 lmPaintConn=function(){const c=$("#lmConn");if(!c)return;const busy=Z.busy>0,blk=zBlocking();
-  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching via Zapier…":blk?"Live data off":Z.state==="ok"?"Live via Zapier · Yahoo Finance":LM.qAt?"Saved snapshot":"Not loaded yet";
-  const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance via Zapier"):"";};
+  c.className="lm-conn "+(busy?"":blk?"bad":Z.state==="ok"?"ok":"");c.lastChild.textContent=busy?"Fetching market data…":blk?"Live data off":Z.state==="ok"?"Yahoo Finance · provider feed":LM.qAt?"Saved snapshot":"Not loaded yet";
+  const a=$("#lmAt");if(a)a.textContent=LM.qAt?zFresh(LM.qAt,"Yahoo Finance"):"";};
 lmDck=function(){const el=$("#lmDck");if(!el)return;const row=(n,k,at)=>`<div><span>${n}</span><span class="${LM.err[k]?"no":at?"ok":""}">${LM.err[k]?lmEsc(LM.err[k]):at?"OK · "+zAgo(at):"not loaded"}</span></div>`;
   el.innerHTML=row("Prices · Yahoo Finance","quotes",LM.qAt)+row("Chart candles · Yahoo Finance","chart",LM.chartAt)+row("News · Google News","news",LM.nAt)+row("Odds · Polymarket","poly",LM.pAt)+
-   `<p class="tiny muted" style="margin:6px 0 0">Fetched server-side by your Zapier connector, so it works on phone and laptop and never opens a browser. Each fetch uses one Zapier task, so prices refresh when you open a page and they're more than 10 minutes old, or when you press Refresh. Yahoo's free data is unofficial and futures can be delayed by the exchange. If something fails it says so here rather than showing invented numbers.</p>`;};
+   `<p class="tiny muted" style="margin:6px 0 0">Fetched by the Trading Desk server from Yahoo Finance and public market sources. Quotes refresh while this page is open; Yahoo data is unofficial and exchange delays apply (US futures may be delayed around 10 minutes). Nothing is presented as an executable trading signal.</p>`;};
 {const _v=VIEWS.live;VIEWS.live=()=>_v()
-  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles from Yahoo Finance, fetched by your Zapier connector on phone or laptop. Every number shows its source and time. Nothing is simulated.")
+  .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles are fetched by the Trading Desk server from Yahoo Finance. Each quote shows its source and exchange timestamp. Delayed feeds are labelled; nothing is simulated.")
   .replace('<span class="small muted" id="lmAt"></span></div>',`<span class="zr"><span class="small muted" id="lmAt"></span>${zRefreshBtn()}</span></div>`)
   .replace('<button class="btn" id="lmRe">Refresh now</button>','');}
-function zLivePaint(){lmPaintWL();lmPaintConn();lmDck();const m=$("#lmNewsMini");if(m)m.innerHTML=LM.news?newsHTML(LM.news.slice(0,8)):`<p class="small muted">${zBlocking()?"Headlines need your Zapier connector.":"Loading…"}</p>`;
+function zLivePaint(){lmPaintWL();lmPaintConn();lmDck();const m=$("#lmNewsMini");if(m)m.innerHTML=LM.news?newsHTML(LM.news.slice(0,8)):`<p class="small muted">${zBlocking()?"Headlines are loading from the market news feed.":"Loading…"}</p>`;
   const top=$("#lmTop");if(top)top.innerHTML=zBlocking()?zCard(Z.snapAt):(LM.err.quotes&&!LM.qAt?`<div class="callout bad small">${lmEsc(LM.err.quotes)}</div>`:"");}
 AFTER.live=async()=>{lmStop();cleanup.push(lmStop);
   /* drawing tools, full screen and the bigger chart (same as before) */
@@ -6140,8 +6170,12 @@ AFTER.live=async()=>{lmStop();cleanup.push(lmStop);
   $$(".lm-tools [data-tf]").forEach(b=>b.onclick=()=>{LM.tf=b.dataset.tf;$$(".lm-tools [data-tf]").forEach(x=>x.setAttribute("aria-pressed",x===b));lmLoadChart(false);});
   $$(".lm-tools [data-ty]").forEach(b=>b.onclick=()=>{LM.type=b.dataset.ty;$$(".lm-tools [data-ty]").forEach(x=>x.setAttribute("aria-pressed",x===b));lmDraw(true);});
   const fit=$(".lm-tools [data-fit]");if(fit)fit.onclick=()=>LM.chart&&LM.chart.timeScale().fitContent();
-  zLivePaint();await zEnsure({quotes:1});if(!$("#lmWL"))return;zLivePaint();
-  await Promise.allSettled([lmLoadChart(false),zEnsure({news:1})]);if(!$("#lmWL"))return;zLivePaint();};
+  zLivePaint();await zEnsure({quotes:1,news:1});if(!$("#lmWL"))return;zLivePaint();
+  await lmLoadChart(false);if(!$("#lmWL"))return;mountOptionsPanel();
+  lmTimer(async()=>{await lmQuotes();zLivePaint();},20000);
+  lmTimer(async()=>{if(LM.sym)await lmLoadChart(true);},60000);
+  lmTimer(async()=>{await lmNews();zLivePaint();},300000);
+  lmTimer(async()=>{await lmPoly();},300000)};
 
 /* ---------- Live news page ---------- */
 VIEWS.news=()=>`${head("Live news","Everything moving the markets","Headlines from Google News for gold, Nasdaq and US stocks, forex, the economy and the Fed, crypto, and bonds and yields. All six feeds are fetched together by your Zapier connector. Tap a headline to read it at its source.")}
@@ -6152,7 +6186,7 @@ VIEWS.news=()=>`${head("Live news","Everything moving the markets","Headlines fr
   <div class="card stack"><h3 style="margin:0">How to use news</h3><ul class="small" style="margin:0;padding-left:1.1em;display:grid;gap:6px"><li>${zDot}<b>The coral dot</b> marks CPI, FOMC, NFP, Powell and rate decisions. These move NQ, ES, gold and the dollar most.</li><li>Check the <a href="#markets">economic calendar times</a>: most prop firms ban or restrict trading around tier-1 releases.</li><li>Trade the price reaction, not the headline.</li></ul><p class="tiny muted" id="nwSt" style="margin:0"></p></div></div>`;
 AFTER.news=async()=>{lmStop();cleanup.push(lmStop);if(!["All","High impact",...ZNEWS.map(x=>x[0])].includes(LM.newsF))LM.newsF="All";
   const paint=()=>{const q=(($("#nwQ")||{}).value||"").toLowerCase(),f=LM.newsF;let l=LM.news||[];if(f==="High impact")l=l.filter(n=>n.hi);else if(f!=="All")l=l.filter(n=>n.cat===f);if(q)l=l.filter(n=>n.title.toLowerCase().includes(q));
-    const el=$("#nwList");if(!el)return;el.innerHTML=LM.news?newsHTML(l.slice(0,150)):`<p class="small muted">${zBlocking()?"Headlines need your Zapier connector.":"Loading headlines…"}</p>`;
+    const el=$("#nwList");if(!el)return;el.innerHTML=LM.news?newsHTML(l.slice(0,150)):`<p class="small muted">${zBlocking()?"Headlines are loading from the market news feed.":"Loading headlines…"}</p>`;
     const top=$("#nwTop");if(top)top.innerHTML=zBlocking()?zCard(LM.nAt):"";
     const st=$("#nwSt");if(st)st.textContent=[LM.err.news,LM.nAt?`${(LM.news||[]).length} headlines · ${zFresh(LM.nAt,"Google News via Zapier")}`:""].filter(Boolean).join(" ");};
   AFTER.news.paint=paint;cleanup.push(()=>{AFTER.news.paint=null;});
@@ -6166,7 +6200,7 @@ VIEWS.poly=()=>`${head("Polymarket odds","What the crowd is betting on","The 30 
   <div class="zn-grid"><div class="card"><div id="pmList"><p class="small muted">Loading…</p></div></div>
   <div class="card stack"><h3 style="margin:0">Using odds as a trader</h3><ul class="small" style="margin:0;padding-left:1.1em;display:grid;gap:6px"><li>Odds on Fed decisions, recessions or tariffs show what's already "priced in". Surprises move markets; expected outcomes often don't.</li><li>Thin markets (low volume) can be wrong or moved by a few traders.</li><li>Polymarket may be restricted in your country. Viewing public prices here is read-only.</li></ul><p class="tiny muted" id="pmSt" style="margin:0"></p></div></div>`;
 AFTER.poly=async()=>{lmStop();cleanup.push(lmStop);if(LM.polyF&&!PMKW[LM.polyF])LM.polyF=null;
-  const paint=()=>{const el=$("#pmList");if(!el)return;el.innerHTML=LM.poly?polyHTML():`<p class="small muted">${zBlocking()?"Odds need your Zapier connector.":"Loading…"}</p>`;
+  const paint=()=>{const el=$("#pmList");if(!el)return;el.innerHTML=LM.poly?polyHTML():`<p class="small muted">${zBlocking()?"Odds are loading from Polymarket's public market feed.":"Loading…"}</p>`;
     const top=$("#pmTop");if(top)top.innerHTML=zBlocking()?zCard(LM.pAt):"";
     const st=$("#pmSt");if(st)st.textContent=[LM.err.poly,LM.pAt?zFresh(LM.pAt,"Polymarket via Zapier")+" · sorted by 24h volume":""].filter(Boolean).join(" ");};
   AFTER.poly.paint=paint;cleanup.push(()=>{AFTER.poly.paint=null;});
@@ -6196,7 +6230,7 @@ devCardHTML=function(){const k=DEV.kind,dv=S.devs||{},phone=k!=="desktop",live=D
    <p class="tiny muted" style="margin:0">${phone?"Best here: video lessons, flashcards, the trainer, your journal and quick price checks. Live data and real examples load here too.":"Best here: live charts, real chart examples and drawing tools. Lessons, journal, notes and live snapshots sync to your phone."}</p></div>`;};
 
 /* ---------- AI coach: Claude (sample) + Zapier-backed tools ---------- */
-const Z_COACH_RULES="\n\nLIVE DATA: you DO have tools that fetch real, current data through the user's Zapier connector: get_quotes (latest watchlist prices), get_quote_and_candles (Yahoo Finance quote plus recent candles for one symbol), get_news (Google News headlines by category or search) and get_polymarket (crowd odds). When asked about current prices, levels, structure, indicators, volatility, news, events or odds, call the tools first instead of guessing, and never invent numbers. Cite the source and Sydney time for every number, like: gold futures 3,898.9 (Yahoo Finance via Zapier, 2 Nov 10:42 Sydney). Compute indicators only from returned candles. Describe structure and possible scenarios, each with a clear invalidation level (the price that would prove the idea wrong). Never tell the learner to buy or sell, never predict prices. Futures quotes on Yahoo can be delayed. Each tool call uses one task from the user's Zapier plan, so usually call one or two tools. If a tool fails, say plainly that live data isn't available right now and keep teaching without current numbers.";
+const Z_COACH_RULES="\n\nLIVE DATA: you DO have tools that fetch real, current data through the user's Zapier connector: get_quotes (latest watchlist prices), get_quote_and_candles (Yahoo Finance quote plus recent candles for one symbol), get_news (Google News headlines by category or search) and get_polymarket (crowd odds). When asked about current prices, levels, structure, indicators, volatility, news, events or odds, call the tools first instead of guessing, and never invent numbers. Cite the source and Sydney time for every number, like: gold futures 3,898.9 (Yahoo Finance, 2 Nov 10:42 Sydney). Compute indicators only from returned candles. Describe structure and possible scenarios, each with a clear invalidation level (the price that would prove the idea wrong). Never tell the learner to buy or sell, never predict prices. Futures quotes on Yahoo can be delayed. Each tool call uses one task from the user's Zapier plan, so usually call one or two tools. If a tool fails, say plainly that live data isn't available right now and keep teaching without current numbers.";
 {const _cr=coachRules;coachRules=function(){return _cr().replace("You have no live prices and cannot browse the internet; if asked for current prices, news or recent events, say so plainly and suggest their Market Terminal (live Twelve Data prices, news and economic calendar) or asking Claude directly in chat with web search.","You can't browse arbitrary websites or watch videos.");};}
 const zToolErr=e=>new Error((e&&e.code?zMsg(e):"Live data isn't available right now.")+" No live numbers are available for this answer.");
 const zQ=s=>{const q=LM.quotes[s],w=WLALL.find(x=>x[0]===s);return q?{symbol:s,name:w?w[2]:s,price:q.price,change_pct:q.pct!=null?+q.pct.toFixed(2):null,previous_close:q.prev,last_trade_sydney:q.ts?zSyd(q.ts):null}:null;};
@@ -6205,7 +6239,7 @@ async function liveToolsZ(){const mcp=await zMcp();if(!mcp||zBlocking())return [
       inputSchema:{type:"object",properties:{symbols:{type:"array",items:{type:"string"}}}},
       execute:async i=>{try{await zEnsure({quotes:1});}catch{}if(!LM.qAt)throw zToolErr({code:Z.code||"upstream_error"});
         const want=Array.isArray(i.symbols)&&i.symbols.length?i.symbols.map(String):["NQ=F","ES=F","GC=F","^VIX","DX-Y.NYB","^TNX","BTC-USD"];
-        return {source:"Yahoo Finance via Zapier",fetched_sydney:zSyd(LM.qAt),quotes:want.map(zQ).filter(Boolean),not_in_watchlist:want.filter(s=>!LM.quotes[s])};}},
+        return {source:"Yahoo Finance",fetched_sydney:zSyd(LM.qAt),quotes:want.map(zQ).filter(Boolean),not_in_watchlist:want.filter(s=>!LM.quotes[s])};}},
     {name:"get_quote_and_candles",description:"Yahoo Finance quote and recent candles for ONE symbol (e.g. NQ=F, MNQ=F, ES=F, GC=F, ^GSPC, AAPL, EURUSD=X, BTC-USD). interval: 5m, 15m, 1h or 1d. Returns meta (price, previous close, day range, last trade Sydney time) and up to 80 candles as [unix time, open, high, low, close].",
       inputSchema:{type:"object",properties:{symbol:{type:"string"},interval:{type:"string",enum:["5m","15m","1h","1d"]}},required:["symbol"]},
       execute:async i=>{const iv=["5m","15m","1h","1d"].includes(i.interval)?i.interval:"1h",rg={"5m":"5d","15m":"5d","1h":"1mo","1d":"1y"}[iv];let r;
@@ -6213,7 +6247,7 @@ async function liveToolsZ(){const mcp=await zMcp();if(!mcp||zBlocking())return [
         const c=r.v&&r.v.chart&&r.v.chart.result&&r.v.chart.result[0];if(!c)throw new Error("Yahoo Finance has no data for "+i.symbol+". Check the symbol (futures end in =F, forex in =X).");
         const q=(c.indicators&&c.indicators.quote&&c.indicators.quote[0])||{},m=c.meta||{},rd=v=>+(+v).toPrecision(7);
         const rows=(c.timestamp||[]).map((t,k)=>[t,q.open&&q.open[k],q.high&&q.high[k],q.low&&q.low[k],q.close&&q.close[k]]).filter(x=>x.every(v=>v!=null&&isFinite(v))).slice(-80).map(x=>[x[0],...x.slice(1).map(rd)]);
-        return {source:"Yahoo Finance via Zapier",fetched_sydney:zSyd(r.at),interval:iv,meta:{symbol:m.symbol,name:m.shortName||m.longName,price:m.regularMarketPrice,previousClose:m.previousClose??m.chartPreviousClose,dayHigh:m.regularMarketDayHigh,dayLow:m.regularMarketDayLow,lastTradeSydney:m.regularMarketTime?zSyd(m.regularMarketTime):null,exchange:m.fullExchangeName,timezone:m.exchangeTimezoneName},candles:rows};}},
+        return {source:"Yahoo Finance",fetched_sydney:zSyd(r.at),interval:iv,meta:{symbol:m.symbol,name:m.shortName||m.longName,price:m.regularMarketPrice,previousClose:m.previousClose??m.chartPreviousClose,dayHigh:m.regularMarketDayHigh,dayLow:m.regularMarketDayLow,lastTradeSydney:m.regularMarketTime?zSyd(m.regularMarketTime):null,exchange:m.fullExchangeName,timezone:m.exchangeTimezoneName},candles:rows};}},
     {name:"get_news",description:"Recent Google News headlines (title, source, Sydney time, high_impact flag for CPI/FOMC/NFP/Powell/rate decisions). Give a category (Gold, Nasdaq & US stocks, Forex, Economy & Fed, Crypto, Bonds & yields) or a free search query such as 'Nvidia earnings'.",
       inputSchema:{type:"object",properties:{category:{type:"string",enum:ZNEWS.map(x=>x[0])},query:{type:"string"}}},
       execute:async i=>{let list,at;const fmt=l=>l.slice(0,12).map(n=>({title:n.title,source:n.src,time_sydney:n.ts?zSyd(n.ts):null,high_impact:!!n.hi}));
@@ -6979,7 +7013,7 @@ ICON.intel='<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.4"/><pat
 try{renderNav();}catch(e){}
 
 const mkSrc=(src,keys,extra)=>{const ats=keys.map(k=>k==="q"?LM.qAt:(MK.d[k]||{}).at).filter(Boolean),at=ats.length?Math.min(...ats):0,busy=keys.some(k=>k==="q"?Z.busy>0:MK.busy[k]);
-  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching via Zapier…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
+  return `<div class="mk-src"><span>Source <b>${src}</b></span><span>${busy?"Fetching market data…":at?`<span class="mk-live"><i class="mk-dot${mkFreshK(keys)?" on":""}"></i>Updated <span data-ago="${at}">${mkAgo(at)}</span></span> · ${mkSyd(at)} Syd`:"Not loaded yet"}</span>${extra?`<span>${extra}</span>`:""}<button class="btn sm" data-mkref="1"${busy?" disabled":""}><i class=ix-refresh></i> ${busy?"Refreshing…":"Refresh"}</button></div>`;};
 const MK_SRCN={ix:"Yahoo Finance candles",sec5:"Yahoo Finance sector closes",vol:"Yahoo Finance VIX series",q:"Yahoo Finance prices",nq:"Nasdaq.com quotes",opt:"Nasdaq.com option chain",cot:"CFTC positioning",okx:"OKX futures data",s15:"Yahoo Finance 15-minute closes",s1h:"Yahoo Finance hourly closes",s1d:"Yahoo Finance daily closes",liq:"Yahoo Finance candles",rad:"Yahoo Finance daily candles"};
 const mkErrOf=k=>k==="q"?LM.err.quotes:MK.err[k];
 const mkErr=keys=>{const e=keys.map(k=>[k,mkErrOf(k)]).filter(x=>x[1]);if(!e.length)return "";const by=new Map();e.forEach(([k,m])=>{const n=MK_SRCN[k.split("_")[0]]||"Source";by.set(m,[...(by.get(m)||[]),n]);});
@@ -7044,7 +7078,7 @@ MK_VIEW.pulse=()=>{const n=mkNarrative(),br=mkBreadth(),nq=MK.d.nq;
     bb=`<div class="mk-br"><div class="mk-brh"><b class="up-t">${br.a} advancing</b><b class="down-t">${br.d} declining</b></div><div class="mk-brbar" role="img" aria-label="${br.a} advancing, ${br.d} declining, ${br.u} unchanged"><i class="a" style="width:${pa}%"></i><i class="u" style="width:${100-pa-pd}%"></i><i class="d" style="width:${pd}%"></i></div>
      <p class="small muted">${pa>=65?"Broad buying: most large US names are up.":pd>=65?"Broad selling: most large US names are down.":"Split tape: buyers and sellers are evenly matched."} Measured on ${t} large US stocks and sector ETFs${nq.st?` · ${mkE(nq.st)}`:""}${nq.asOf?` · last trade ${mkE(nq.asOf)}`:""}.</p>
      <div class="mk-lead"><div><span class="tiny muted">Leading</span>${top.slice(0,4).map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div><div><span class="tiny muted">Lagging</span>${top.slice(-4).reverse().map(([s,x])=>`<span><b>${s}</b><em class="${mkCls(x.pct)}">${mkSgn(x.pct)}</em></span>`).join("")}</div></div></div>`;}
-  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance via Zapier",["q"],"Futures can be delayed about 10 min"))}
+  return `${narr}${mkErr(["q"])}${mkCard("Futures, indices, rates, metals and crypto","Change against the previous close. Sparkline: today's 15-minute closes.",tiles,mkSrc("Yahoo Finance",["q"],"Futures can be delayed about 10 min"))}
    ${mkCard("Market breadth","How many of the big names are actually moving with the index.",mkErr(["nq"])+bb,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Money Flow ----- */
@@ -7068,7 +7102,7 @@ MK_VIEW.flow=()=>{const nq=MK.d.nq;if(!nq)return mkErr(["nq"])+mkCard("Sector mo
   return `${mkErr(["nq","sec5"])}<div class="mk-rot"><span class="eyebrow">Where money is rotating</span><p>${mkE(rot)}</p></div>
    ${mkCard("Sector money flow (US$ millions)","Proxy: % move × shares traded × price. Positive means heavy volume on an up day. It's an estimate of pressure, not actual fund flows.",`<div class="mk-flow">${bars}</div>`,mkSrc("Nasdaq.com via Zapier",["nq"],nq.asOf?"Last trade "+mkE(nq.asOf):""))}
    ${mkCard("Sector heat map","Today's % change for each sector ETF.",`<div class="mk-sht">${sec.slice().sort((a,b)=>b.pct-a.pct).map(x=>`<div style="background:${mkHeat(x.pct)}"><b>${x.s}</b><span>${mkE(x.n)}</span><em>${mkSgn(x.pct)}</em></div>`).join("")}</div>`,mkSrc("Nasdaq.com via Zapier",["nq"]))}
-   ${mkCard("Sector relative performance, 5 days","Each sector ETF rebased to 0% five sessions ago; the dashed line is SPY.",mkSec5(),mkSrc("Yahoo Finance via Zapier",["sec5"],"Hourly closes"))}
+   ${mkCard("Sector relative performance, 5 days","Each sector ETF rebased to 0% five sessions ago; the dashed line is SPY.",mkSec5(),mkSrc("Yahoo Finance",["sec5"],"Hourly closes"))}
    ${mkCard("Mega-cap heat map","Box size = dollar volume traded. Colour = % change against the previous close.",tmH,mkSrc("Nasdaq.com via Zapier",["nq"]))}`;};
 
 /* ----- Option Pulse ----- */
@@ -7137,7 +7171,7 @@ function mkGauge(v,label){const a=Math.PI*(1-(mkN(v)?v:50)/100),x=100+Math.cos(a
    <path d="M22 100 A78 78 0 0 1 178 100" fill="none" stroke="url(#mkGg)" stroke-width="14" stroke-linecap="round"/><line x1="100" y1="100" x2="${x}" y2="${y}" stroke="#1D232B" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="#1D232B"/></svg><b>${mkN(v)?Math.round(v)+" · ":""}${label}</b></div>`;}
 MK_VIEW.radar=()=>{const s=MK.radarSym,k="rad_"+s,d=MK.d[k];
   const sel=`<label class="mk-sel">Symbol <select id="mkRadSel" class="input">${MK_RAD.map(([g,l])=>`<optgroup label="${g}">${l.map(x=>`<option value="${mkE(x)}"${x===s?" selected":""}>${mkE(mkShort(x))}${mkWL(x)?" · "+mkE(mkWL(x)[2]):""}</option>`).join("")}</optgroup>`).join("")}</select></label>`;
-  if(!d)return sel+mkErr([k])+mkCard("Radar","",mkLoading(),mkSrc("Yahoo Finance via Zapier",[k]));
+  if(!d)return sel+mkErr([k])+mkCard("Radar","",mkLoading(),mkSrc("Yahoo Finance",[k]));
   const r=mkRadarScore(d.b),tS=r.ax[0][1],comp=mkN(tS)&&mkN(r.rsi)?(tS+r.rsi)/2:tS??r.rsi;
   const lab=!mkN(comp)?"Not enough data":comp>=65?"Bullish trend":comp>=55?"Leaning bullish":comp>45?"Neutral":comp>35?"Leaning bearish":"Bearish trend";
   const txt=[`${mkShort(s)} is ${mkN(r.d50)?(r.d50>=0?"above":"below")+` its 50-day average by ${Math.abs(r.d50).toFixed(1)}%`:"too new for a 50-day average"}`,
@@ -7146,11 +7180,11 @@ MK_VIEW.radar=()=>{const s=MK.radarSym,k="rad_"+s,d=MK.d[k];
     mkN(r.vr)?`and the last session traded ${r.vr.toFixed(1)}× its 20-day average volume${r.vr>1.5?", so big players were active":r.vr<.7?", so conviction was low":""}`:""].filter(Boolean).join("; ")+".";
   return `${sel}${mkErr([k])}<div class="mk-g2">${mkCard(`${mkE(mkShort(s))} radar`,"Each axis is scored 0 to 100 from the last 6 months of daily candles.",mkSpider(r.ax),"")}
    ${mkCard("Trend strength","Trend and momentum combined.",mkGauge(comp,lab)+`<p class="mk-sum">${mkE(txt)}</p><div class="mk-kpis sm">${[["Last",lmPx(r.last)],["20-day avg",lmPx(r.s20)],["50-day avg",lmPx(r.s50)],["ATR %",mkN(r.atrp)?r.atrp.toFixed(2)+"%":"–"]].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>`,"")}</div>
-   ${mkSrc("Yahoo Finance via Zapier",[k],"Daily candles · education, not a signal")}`;};
+   ${mkSrc("Yahoo Finance",[k],"Daily candles · education, not a signal")}`;};
 
 /* ----- Calm Zone ----- */
 function mkCalmPts(){const d=MK.d.s1d;if(!d||!d.c)return [];return MK_SCR.filter(s=>s!=="^TNX").map(s=>{const c=d.c[s];if(!c||c.length<25)return null;const rv=mkRV(c),ch=(c[c.length-1]/c[c.length-6]-1)*100;return mkN(rv)&&mkN(ch)?{s,rv,ch}:null;}).filter(Boolean);}
-MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard("Calm Zone","",mkLoading(),mkSrc("Yahoo Finance via Zapier",["s1d"]));
+MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard("Calm Zone","",mkLoading(),mkSrc("Yahoo Finance",["s1d"]));
   const W=mkVW(640),H=Math.round(Math.min(380,W*.8)),L=48,B=40,T=16,Rr=16,xs=P.map(p=>p.rv),ys=P.map(p=>p.ch),x0=0,x1=Math.max(10,Math.ceil(Math.max(...xs)/10)*10),ym=Math.max(2,Math.ceil(Math.max(...ys.map(Math.abs)))),
     X=v=>L+(v-x0)/(x1-x0)*(W-L-Rr),Y=v=>T+(ym-v)/(2*ym)*(H-T-B),med=[...xs].sort((a,b)=>a-b)[Math.floor(xs.length/2)];
   const ticks=[];for(let v=0;v<=x1;v+=x1>60?20:10)ticks.push(v);
@@ -7162,7 +7196,7 @@ MK_VIEW.calm=()=>{const P=mkCalmPts();if(!P.length)return mkErr(["s1d"])+mkCard(
    ${(()=>{const boxes=[];return P.map(p=>{const x=X(p.rv),y=Y(p.ch),lb=mkShort(p.s),bw=lb.length*6.4+4;let ly=null;for(const dy of [4,-8,16,-20,28]){const r=[x+8,y+dy-9,x+8+bw,y+dy+2];if(!boxes.some(b=>r[0]<b[2]&&r[2]>b[0]&&r[1]<b[3]&&r[3]>b[1])){boxes.push(r);ly=y+dy;break;}}
      return `<g><circle cx="${x}" cy="${y}" r="5.5" fill="${p.ch>=0?"#13945F":"#D24B59"}" fill-opacity=".85"><title>${lb}: ${p.rv.toFixed(0)}% vol, ${mkSgn(p.ch,1)}</title></circle>${ly!=null?`<text x="${x+8}" y="${ly}" class="mk-svk b">${lb}</text>`:""}</g>`;}).join("");})()}</svg></div><p class="tiny muted">Where dots crowd together some labels are hidden; tap or hover a dot for its name.</p>`;
   const calm=[...P].sort((a,b)=>a.rv-b.rv),q=P.length;
-  return `${mkErr(["s1d"])}${mkCard("Calm Zone: volatility vs recent move","Left = calm (small daily swings), right = wild. Up = gained over 5 days, down = lost.",svg,mkSrc("Yahoo Finance via Zapier",["s1d"],"Daily closes, 6 months"))}
+  return `${mkErr(["s1d"])}${mkCard("Calm Zone: volatility vs recent move","Left = calm (small daily swings), right = wild. Up = gained over 5 days, down = lost.",svg,mkSrc("Yahoo Finance",["s1d"],"Daily closes, 6 months"))}
    <div class="mk-g2"><div class="card mk-card"><h3>Calmest</h3><ul class="mk-ul">${calm.slice(0,5).map(p=>`<li><b>${mkShort(p.s)}</b><span>${p.rv.toFixed(0)}% vol · <em class="${mkCls(p.ch)}">${mkSgn(p.ch,1)}</em></span></li>`).join("")}</ul></div>
    <div class="card mk-card"><h3>Wildest</h3><ul class="mk-ul">${calm.slice(-5).reverse().map(p=>`<li><b>${mkShort(p.s)}</b><span>${p.rv.toFixed(0)}% vol · <em class="${mkCls(p.ch)}">${mkSgn(p.ch,1)}</em></span></li>`).join("")}</ul></div></div>
    <p class="small muted">Why it matters: the same 1% risk needs a smaller position in a wild market (wider stops) than in a calm one. Calm markets that suddenly turn wild often mark the start of a bigger move. ${q} markets shown; the US 10-year yield is left out because it's a rate, not a price.</p>`;};
@@ -7181,9 +7215,9 @@ MK_VIEW.cx=()=>{const ok=MK.d.okx,d=MK.d.s1d;
       ${R.map((r,j)=>`<polyline fill="none" stroke="${col[j]}" stroke-width="2" points="${r.map((v,i)=>`${(40+i/(n-1)*(W-44)).toFixed(1)},${(10+(hi-v)/(hi-lo||1)*(H-30)).toFixed(1)}`).join(" ")}"/>`).join("")}</svg>
       <div class="mk-leg">${["Gold","Dollar index (DXY)","US 10Y yield"].map((l,j)=>`<span><i style="background:${col[j]}"></i>${l} ${mkSgn(R[j][n-1]-100,1)}</span>`).join("")}</div></div>
       <p class="small">Over the last 20 sessions gold's daily moves had a correlation of <b>${mkN(cd)?cd.toFixed(2):"–"}</b> with the dollar and <b>${mkN(cy)?cy.toFixed(2):"–"}</b> with the 10-year yield. ${mkN(cd)&&cd<-.3?"The usual inverse link with the dollar is holding.":mkN(cd)&&cd>.3?"Gold is rising and falling with the dollar, which is unusual and often points to safe-haven buying.":"The usual inverse link with the dollar is weak right now."} Normally a stronger dollar and higher real yields weigh on gold.</p>`;}}
-  return `${mkErr(["q","okx","s1d"])}<div class="mk-tiles three">${coins}</div>${mkSrc("Yahoo Finance via Zapier",["q"])}
+  return `${mkErr(["q","okx","s1d"])}<div class="mk-tiles three">${coins}</div>${mkSrc("Yahoo Finance",["q"])}
    ${mkCard("Crypto futures positioning","Perpetual swaps on OKX: how much leverage is open and who pays whom to hold it.",`<div class="mk-g2 tight">${der}</div>`,mkSrc("OKX public API via Zapier",["okx"],"Funding settles every 8 hours"))}
-   ${mkCard("Gold vs dollar vs 10-year yield","Last 3 months, each rebased to 100 so you can compare direction.",rel,mkSrc("Yahoo Finance via Zapier",["s1d"]))}`;};
+   ${mkCard("Gold vs dollar vs 10-year yield","Last 3 months, each rebased to 100 so you can compare direction.",rel,mkSrc("Yahoo Finance",["s1d"]))}`;};
 
 /* ----- Liquidity Map ----- */
 function mkLevels(d,sym){const b=d.b.map(x=>({t:x[0],o:x[1],h:x[2],l:x[3],c:x[4]})),px=d.px,L=[];if(b.length<30)return {L,px};
@@ -7211,14 +7245,14 @@ function mkLevels(d,sym){const b=d.b.map(x=>({t:x[0],o:x[1],h:x[2],l:x[3],c:x[4]
   const out=[];L.filter(x=>mkN(x.p)&&Math.abs(x.p/px-1)<.06).sort((a,c)=>rank(a.k)-rank(c.k)).forEach(x=>{if(!out.some(y=>Math.abs(y.p-x.p)<=tol*1.5))out.push(x);});
   return {L:out.sort((a,c)=>c.p-a.p),px};}
 const mkLiqPick=()=>`<div class="mk-seg" role="group" aria-label="Instrument">${[["NQ=F","NQ · Nasdaq-100 futures"],["GC=F","GC · Gold futures"]].map(([s,l])=>`<button class="chip" data-mkliq="${s}" aria-pressed="${MK.liqSym===s}">${l}</button>`).join("")}</div>`;
-MK_VIEW.liq=()=>{const s=MK.liqSym,k="liq_"+s,d=MK.d[k];if(!d)return mkLiqPick()+mkErr([k])+mkCard("Liquidity map","",mkLoading(),mkSrc("Yahoo Finance via Zapier",[k]));
+MK_VIEW.liq=()=>{const s=MK.liqSym,k="liq_"+s,d=MK.d[k];if(!d)return mkLiqPick()+mkErr([k])+mkCard("Liquidity map","",mkLoading(),mkSrc("Yahoo Finance",[k]));
   const {L,px}=mkLevels(d,s),near=L.slice().sort((a,c)=>Math.abs(a.p-px)-Math.abs(c.p-px));
   const row=x=>{const dist=x.p-px;return `<li class="${x.s==="h"?"ab":"be"}${x.opt?" op":""}"><div class="mk-lvp"><b>${mkPx(s,x.p)}</b><span class="${dist>=0?"up-t":"down-t"}">${dist>=0?"+":MK_MINUS}${mkPx(s,Math.abs(dist))} (${mkSgn(dist/px*100)})</span></div><div class="mk-lvk"><b>${mkE(x.k)}</b><span>${mkE(x.w)}</span></div></li>`;};
   const ab=L.filter(x=>x.p>=px),be=L.filter(x=>x.p<px);
   return `${mkLiqPick()}${mkErr([k])}<div class="mk-liq"><div class="card mk-card"><div class="mk-ch"><div><h3>${mkE(mkShort(s))} · 1-hour candles</h3><p class="small muted">Dashed lines are the nearest levels from the ladder.</p></div></div><div class="mk-lc" id="mkLc" aria-label="${mkE(mkShort(s))} 1-hour candlestick chart"></div></div>
    <div class="card mk-card mk-lad"><h3>Level ladder</h3><p class="small muted">Price now <b>${mkPx(s,px)}</b>. Levels where stop orders likely rest: highs have buy stops above, lows have sell stops below.</p>
     <ol class="mk-lv">${ab.map(row).join("")}<li class="mk-now" aria-label="Current price"><span>Price ${mkPx(s,px)}</span></li>${be.map(row).join("")}</ol></div></div>
-   ${mkSrc("Yahoo Finance via Zapier",[k],"1-hour candles, last month · sessions in New York time")}
+   ${mkSrc("Yahoo Finance",[k],"1-hour candles, last month · sessions in New York time")}
    <p class="tiny muted">Sessions use New York time: Asia 6 pm–2 am, London 2–8 am, New York 8 am–4 pm (${(()=>{try{const t=zoned(parts(new Date(),"America/New_York").y,parts(new Date(),"America/New_York").m,parts(new Date(),"America/New_York").d,8,0,"America/New_York");return "New York 8 am is "+tLocal(t)+" Sydney today";}catch{return "";}})()}). Levels are computed, not predictions: price can slice straight through any of them.</p>`;};
 MK_AFTER.liq=()=>{const s=MK.liqSym,d=MK.d["liq_"+s],host=$("#mkLc");if(!d||!host)return;if(!window.LightweightCharts){host.innerHTML=`<div class="callout bad small" style="margin:12px">The chart library didn't load, so the chart can't be drawn. The ladder is still computed from real candles.</div>`;return;}
   const ch=LightweightCharts.createChart(host,{autoSize:true,layout:{background:{type:"solid",color:"#FFFFFF"},textColor:"#5E6672",fontFamily:"IBM Plex Mono, monospace",fontSize:11},grid:{vertLines:{color:"#F1F3F7"},horzLines:{color:"#F1F3F7"}},rightPriceScale:{borderColor:"#E6EAF0"},timeScale:{borderColor:"#E6EAF0",timeVisible:true},crosshair:{mode:0},handleScroll:{vertTouchDrag:false}});
@@ -7228,13 +7262,13 @@ MK_AFTER.liq=()=>{const s=MK.liqSym,d=MK.d["liq_"+s],host=$("#mkLc");if(!d||!hos
   try{ch.timeScale().fitContent();}catch{}};
 
 /* ----- Screeners (RSI heat map) ----- */
-MK_VIEW.scr=()=>{const a=MK.d.s15,b=MK.d.s1h,c=MK.d.s1d;if(!a&&!b&&!c)return mkErr(["s15","s1h","s1d"])+mkCard("RSI heat map","",mkLoading(),mkSrc("Yahoo Finance via Zapier",["s15","s1h","s1d"]));
+MK_VIEW.scr=()=>{const a=MK.d.s15,b=MK.d.s1h,c=MK.d.s1d;if(!a&&!b&&!c)return mkErr(["s15","s1h","s1d"])+mkCard("RSI heat map","",mkLoading(),mkSrc("Yahoo Finance",["s15","s1h","s1d"]));
   const cols=[["15m",a&&a.rsi],["1h",b&&b.rsi],["4h",b&&b.rsi4],["1d",c&&c.rsi]],val=(m,s)=>m&&mkN(m[s])?m[s]:null;
   let ob=0,os=0,allOB=0,allOS=0;MK_SCR.forEach(s=>{const v=cols.map(([,m])=>val(m,s)).filter(mkN);if(v.some(x=>x>=70))ob++;if(v.some(x=>x<=30))os++;if(v.length===4&&v.every(x=>x>=70))allOB++;if(v.length===4&&v.every(x=>x<=30))allOS++;});
   const cell=v=>{if(!mkN(v))return `<td class="na">–</td>`;const k=v>=70?Math.min(1,(v-70)/20):v<=30?Math.min(1,(30-v)/20):0,bg=v>=70?`color-mix(in srgb,#D24B59 ${Math.round(28+k*55)}%,var(--panel))`:v<=30?`color-mix(in srgb,#13945F ${Math.round(28+k*55)}%,var(--panel))`:v>=60?"color-mix(in srgb,#D24B59 9%,var(--panel))":v<=40?"color-mix(in srgb,#13945F 9%,var(--panel))":"var(--panel)";return `<td style="background:${bg}"><b>${v.toFixed(0)}</b></td>`;};
   const grid=`<div class="mk-hscroll"><table class="mk-rsi" data-g="1"><thead><tr><th>Symbol</th>${cols.map(([l])=>`<th>${l}</th>`).join("")}</tr></thead><tbody>${MK_SCR.map(s=>`<tr><th><b>${mkShort(s)}</b><span>${mkE((mkWL(s)||[,,s])[2])}</span></th>${cols.map(([,m])=>cell(val(m,s))).join("")}</tr>`).join("")}</tbody></table></div>`;
   return `${mkErr(["s15","s1h","s1d"])}<div class="mk-narr"><span class="mk-tone">RSI scan</span><p><b>${ob}</b> overbought on at least one timeframe, <b>${os}</b> oversold on at least one. ${allOB+allOS?`<b>${allOB+allOS}</b> agree on all four (${allOB} overbought, ${allOS} oversold).`:"None agree on all four timeframes."}</p></div>
-   ${mkCard("RSI(14) heat map","Red: overbought (70 or more). Green: oversold (30 or less). Agreement across timeframes matters more than one hot cell.",grid,mkSrc("Yahoo Finance via Zapier",["s15","s1h","s1d"],"3 calls: 15m, 1h (4h built from it), 1d"))}
+   ${mkCard("RSI(14) heat map","Red: overbought (70 or more). Green: oversold (30 or less). Agreement across timeframes matters more than one hot cell.",grid,mkSrc("Yahoo Finance",["s15","s1h","s1d"],"3 calls: 15m, 1h (4h built from it), 1d"))}
    <p class="small muted">Overbought doesn't mean "sell": strong trends stay overbought for weeks. Use RSI extremes as a warning not to chase, and wait for price structure (a lower high, a break of a swing low) to confirm a turn.</p>`;};
 
 /* ---------- 4. ticker strip on every page ---------- */
@@ -7299,7 +7333,7 @@ const mkFreshK=keys=>keys.every(k=>{const at=k==="q"?LM.qAt:(MK.d[k]||{}).at;ret
 const mkSig=()=>JSON.stringify([mkTabKeys().map(k=>k==="q"?[LM.qAt,LM.err.quotes]:[(MK.d[k]||{}).at,MK.err[k]]),Z.state,MK.tab]);
 function mkPaintIf(){if(route.page!=="intel")return;const s=mkSig();if(s===MK.sig)return;
   const key="ix_"+MK.ixSym+"_"+MK.ixTf,d=MK.d[key];
-  if(MK.tab==="chart"&&MK.lc&&MK.lcKey===key&&d&&MK.lcSe){try{mkIxSet(d);const sr=$("#mkBody .mk-src");if(sr)sr.outerHTML=mkSrc("Yahoo Finance via Zapier",[key],mkIxNote());MK.sig=s;return;}catch(e){}}
+  if(MK.tab==="chart"&&MK.lc&&MK.lcKey===key&&d&&MK.lcSe){try{mkIxSet(d);const sr=$("#mkBody .mk-src");if(sr)sr.outerHTML=mkSrc("Yahoo Finance",[key],mkIxNote());MK.sig=s;return;}catch(e){}}
   mkPaint();}
 /* sector ETFs, 5 days of hourly closes (1 call) */
 async function mkFetchSec5(force){const syms=[...MK_SECT.map(x=>x[0]),"SPY"];const r=await zGet(Y_SPARK,{symbols:syms.join(","),range:"5d",interval:"1h"},{ttl:mkTTL("sec5"),force});const S=mkSparkSeries(r.v),o={c:{},t:{}};
@@ -7333,7 +7367,7 @@ function mkSessLegend(){try{const n=parts(new Date(),"America/New_York"),s=h=>tL
   return `<div class="mk-leg2"><span><i class="s0"></i>Asia ${s(18)}–${s(2)}</span><span><i class="s1"></i>London ${s(2)}–${s(8)}</span><span><i class="s2"></i>New York ${s(8)}–${s(17)}</span><span class="muted">Sydney time (New York 6 pm, 2 am, 8 am, 5 pm)</span></div>`;}catch{return "";}}
 MK_VIEW.chart=()=>{const k="ix_"+MK.ixSym+"_"+MK.ixTf,d=MK.d[k];
   return `${mkIxSel()}${mkErr([k])}<div class="card mk-card"><div class="mk-ch"><div><h3>${mkE(mkShort(MK.ixSym))} · ${MK.ixTf} candles</h3><p class="small muted">${d?`Last ${mkPx(MK.ixSym,d.px)} · ${d.b.length} candles`:""}</p></div></div>
-   ${d?`<div class="mk-lc mk-ixc" id="mkIx" aria-label="${mkE(mkShort(MK.ixSym))} candlestick chart"></div>${MK.ixTf!=="1d"?mkSessLegend():""}`:mkLoading()}${mkSrc("Yahoo Finance via Zapier",[k],mkIxNote())}</div>`;};
+   ${d?`<div class="mk-lc mk-ixc" id="mkIx" aria-label="${mkE(mkShort(MK.ixSym))} candlestick chart"></div>${MK.ixTf!=="1d"?mkSessLegend():""}`:mkLoading()}${mkSrc("Yahoo Finance",[k],mkIxNote())}</div>`;};
 function mkIxSet(d){const B=d.b.slice(-300);MK.lcSe.setData(B.map(x=>({time:x[0],open:x[1],high:x[2],low:x[3],close:x[4]})));
   if(MK.lcSs)MK.lcSs.setData(MK.ixTf==="1d"?[]:B.map(x=>{const s=mkSessOf(x[0]);return {time:x[0],value:1,color:["rgba(122,92,196,.10)","rgba(59,120,196,.10)","rgba(184,134,47,.13)"][s]||"rgba(0,0,0,0)"};}));
   if(MK.lcVo)MK.lcVo.setData(B.map(x=>({time:x[0],value:x[5]||0,color:x[4]>=x[1]?"rgba(30,158,120,.35)":"rgba(224,81,95,.35)"})));}
@@ -7365,9 +7399,9 @@ MK_VIEW.vol=()=>{const v=MK.d.vol,s1=MK.d.s1d;let term=mkLoading();
   let tbl=mkLoading();if(s1&&s1.c){const rows=MK_SCR.map(s=>{const c=s1.c[s];if(!c||c.length<16)return null;const ch=c.slice(-15).slice(1).map((x,i)=>Math.abs(x/c.slice(-15)[i]-1)*100),am=ch.reduce((p,q)=>p+q,0)/ch.length,last=c[c.length-1];return {s,am,pts:am/100*last,rv:mkRV(c),last};}).filter(Boolean).sort((a,b)=>b.am-a.am);
     tbl=`<div class="mk-hscroll"><table class="mk-cot" data-g="1"><thead><tr><th>Market</th><th>Avg daily move</th><th>In price</th><th>20-day vol</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${mkShort(r.s)}</b><span>${mkE((mkWL(r.s)||[,,r.s])[2])}</span></td><td>${r.am.toFixed(2)}%</td><td>${mkPx(r.s,r.pts)}</td><td>${mkN(r.rv)?r.rv.toFixed(0)+"%":"–"}</td></tr>`).join("")}</tbody></table></div>
      <p class="tiny muted">Average absolute close-to-close move over the last 14 sessions: an ATR-style range from closing prices only (true ATR also uses highs and lows; Stock Radar shows it per symbol). Use it to set stops wider than normal noise.</p>`;}
-  return `${mkErr(["vol","s1d"])}${mkCard("VIX term structure","Expected S&P 500 volatility over 9 days, 30 days and 3 months.",term,mkSrc("Yahoo Finance via Zapier",["vol"],"Daily closes"))}
-   ${mkCard("Correlation matrix (20 days)","How the big markets have moved together recently.",corr,mkSrc("Yahoo Finance via Zapier",["s1d","vol"],"Daily closes"))}
-   ${mkCard("Average daily move","Which markets are moving the most right now.",tbl,mkSrc("Yahoo Finance via Zapier",["s1d"]))}`;};
+  return `${mkErr(["vol","s1d"])}${mkCard("VIX term structure","Expected S&P 500 volatility over 9 days, 30 days and 3 months.",term,mkSrc("Yahoo Finance",["vol"],"Daily closes"))}
+   ${mkCard("Correlation matrix (20 days)","How the big markets have moved together recently.",corr,mkSrc("Yahoo Finance",["s1d","vol"],"Daily closes"))}
+   ${mkCard("Average daily move","Which markets are moving the most right now.",tbl,mkSrc("Yahoo Finance",["s1d"]))}`;};
 /* chart tab + vol tab events */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mkix]");if(!b||route.page!=="intel")return;MK.ixTf=b.dataset.mkix;mkPaint();mkLoadTab("chart");});
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="mkIxSel"){MK.ixSym=e.target.value;mkPaint();mkLoadTab("chart");}});
@@ -9500,7 +9534,7 @@ let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>
 <script>
 (()=>{"use strict";
 const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD"];
+const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD","SOL-USD","DOGE-USD"];
 let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
 function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
 function ribbonPaint(rows,delayed){
@@ -9695,7 +9729,7 @@ setInterval(run,1200);
 </script>
 <script id="kaushal-coinbase-live-stream">
 (()=>{"use strict";
-const products=["BTC-USD","ETH-USD"];
+const products=["BTC-USD","ETH-USD","SOL-USD","DOGE-USD"];
 let socket=null,retry=1000,retryTimer=null,closed=false;
 const money=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits: n>=1000?2:4});
 function paint(t){
