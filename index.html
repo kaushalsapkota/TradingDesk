@@ -15,7 +15,7 @@
   --f-display:"Manrope","Inter",system-ui,sans-serif;
   --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
-  --r:14px; color-scheme:dark;
+  --r:14px; color-scheme:light;
 }
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
   --bg:#F6F3EC; --panel:#FFFFFF; --raised:#FBFAF6; --sunk:#EFEBE2; --line:#E4DED2; --line2:#D6CEBF;
@@ -272,7 +272,7 @@ canvas.chart{display:block;width:100%;height:200px}
     <nav id="nav"></nav>
     <div class="sidefoot">
       <span id="sideClock" class="mono"></span>
-      <span id="syncState">Saved on this device</span>
+      <span id="syncState">Saved on this device</span><span>Powered by Kaushal Sapkota</span>
     </div>
   </aside>
   <main class="stage"><div class="page" id="app"></div></main>
@@ -1670,7 +1670,7 @@ VIEWS.markets=()=>{const np=S.settings.region==="np";
   <div class="grid g2" id="mkTop"></div>
   <div class="card stack"><h3>Today on one timeline (${HOME_NAME()} time)</h3><div class="svgwrap" id="mkTl"></div></div>
   <div class="mkt" id="mkList"></div>
-  <div class="callout info"><b>Live prices, charts and news are now inside this Desk:</b> open <a href="#live">Live markets</a>, <a href="#news">Live news</a> or <a href="#poly">Polymarket odds</a> in the Claude desktop app on your Mac.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. For TradingView-style live charts inside an app, use your Mac app's Pro Chart tab.</p>
+  <div class="callout info"><b>Verified market data is shown inside this Desk:</b> open <a href="#live">Market data</a>, <a href="#news">News</a> or <a href="#poly">Market odds</a>. The screen labels delayed or unavailable sources clearly.</div><div class="card stack"><h3>Live charts, one tap away</h3><p class="small muted">Free and live (some exchanges delay 15–20 min). Opens in a new tab. For TradingView-style live charts inside an app, use your Mac app's Pro Chart tab.</p>
    <h4>Global</h4><div class="links">${LIVE_AU.map(([n,u,s])=>`<a href="${u}" target="_blank" rel="noopener">${n}<span>${s} <i class=ix-ext></i></span></a>`).join("")}</div>
 </div>`;};
 AFTER.markets=()=>{const draw=()=>{if(!$("#mkList"))return;const now=new Date(),np=S.settings.region==="np";
@@ -1827,7 +1827,7 @@ function bindDD(){const run=()=>{const A=val("#ddA"),D=val("#ddD"),lock=$("#ddL"
   ["#ddA","#ddD","#ddL","#ddC","#ddP"].forEach(id=>$(id).addEventListener("input",run));run();}
 
 /* ---------------- Market Terminal ---------------- */
-VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style charts, news and calendar","Your terminal runs on your Mac and connects to Twelve Data with your own API key, kept on your computer. It's the live side of this desk. Claude can't fetch market data inside this page, so the two work together.")}
+VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style charts, news and calendar","Your terminal uses the public market feed when available. Quotes may be delayed by the exchange and pause when markets are closed; the status and fetch time are shown beside each value.")}
   <div class="grid g2"><div class="card stack"><h3>Open it</h3><div class="steps">
    <div><div>Download the latest <b>Trading-Academy.zip</b> from your Claude chat and unzip it.</div></div>
    <div><div>Get a free API key at <a href="https://twelvedata.com" target="_blank" rel="noopener">twelvedata.com</a> (Basic plan).</div></div>
@@ -1835,7 +1835,7 @@ VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style cha
    <div><div>Double-click it again. The terminal opens at <a href="http://127.0.0.1:8600" target="_blank" rel="noopener">127.0.0.1:8600</a> on your Mac.</div></div>
    <div><div>Optional: run <span class="mono">python check_twelvedata.py</span> in the terminal folder to test all seven instruments.</div></div></div></div>
    <div class="card stack"><h3>What every status means</h3><div class="stack-s small">
-    <div><span class="pill up">LIVE</span> Streaming from Twelve Data's WebSocket right now.</div>
+    <div><span class="pill up">LIVE</span> Connected feed status is shown below; delayed quotes are labeled honestly.</div>
     <div><span class="pill gold">DELAYED</span> A REST snapshot, not streaming. The time of the snapshot is shown.</div>
     <div><span class="pill">MARKET CLOSED</span> Valid data, but the market is closed (e.g. forex at weekends).</div>
     <div><span class="pill down">UNAVAILABLE</span> Twelve Data refused it, with the reason. Nothing is made up.</div></div>
@@ -1989,6 +1989,8 @@ function Player(host,sc,opt={}){
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,TOTAL=sceneTotal(sc);
   sc.steps.forEach((_,i)=>{if(i){const t=document.createElement("i");t.className="tick";t.style.left=(cum(i)/TOTAL*100)+"%";tl.appendChild(t);}});
   let k=0,playing=false,t0=0,el=0,speed=1,raf=0,dead=false,spoken=-1,speechDone=true,ended=false,endT=0;
+  const onPlayerVisibility=()=>{if(document.hidden){playing=false;t0=0;try{speechSynthesis.cancel();}catch{}speechDone=true;icon();}};
+  document.addEventListener("visibilitychange",onPlayerVisibility);
   if(!VOICE.ok)vB.hidden=true;
   const prevTo=i=>i>0?sc.steps[i-1].to:(sc.start??-1);
   const ovUpTo=i=>{let o=[];for(let j=0;j<=i;j++){if(sc.steps[j].clear)o=[];o=o.concat(sc.steps[j].ov||[]);}return o;};
@@ -2048,7 +2050,7 @@ function Player(host,sc,opt={}){
   else{const bp=document.createElement("button");bp.className="bigplay";bp.setAttribute("aria-label","Play lesson");bp.innerHTML='<svg width="28" height="28" viewBox="0 0 14 14" fill="currentColor"><path d="M3.5 1.5v11l9-5.5z"/></svg>';bp.onclick=play;host.querySelector(".screen").appendChild(bp);}
   if(VOICE.ok&&speechSynthesis.getVoices().length===0)try{speechSynthesis.onvoiceschanged=()=>{};}catch{}
   raf=requestAnimationFrame(frame);
-  return ()=>{dead=true;document.removeEventListener("keydown",onKey);clearTimeout(actT);cancelAnimationFrame(raf);clearTimeout(endT);if(VOICE.ok)try{speechSynthesis.cancel();}catch{}};
+  return ()=>{dead=true;document.removeEventListener("keydown",onKey);document.removeEventListener("visibilitychange",onPlayerVisibility);clearTimeout(actT);cancelAnimationFrame(raf);clearTimeout(endT);if(VOICE.ok)try{speechSynthesis.cancel();}catch{}};
 }
 
 /* ===================== drawing helpers for illustrated scenes ===================== */
@@ -2348,7 +2350,15 @@ async function brGet(url,max=400000){return brQueue(async()=>{const mcp=await br
     try{throw {code:"no_browser"};const r=null;
       const t=txtOf(r),i=t.indexOf("\n---\n");return i>=0?t.slice(i+5):t;}
     catch(e){lmLog("Error: "+(e.code||"error")+(e.what?" on "+e.what:"")+(e.message?": "+String(e.message).slice(0,80):""));if(attempt||!(e&&(e.code==="tool_error"||e.code==="timeout")))throw e;}}});}
-async function brJSON(url){const t=await brGet(url);const s=t.indexOf("{"),a=t.indexOf("[");const st=s<0?a:a<0?s:Math.min(s,a);
+async function brJSON(url){
+  // Prefer a direct no-store request so the deployed website can refresh quotes
+  // without requiring the Claude desktop bridge. Fall back to the bridge for
+  // environments where the upstream API blocks browser CORS.
+  try{
+    const r=await fetch(url,{cache:"no-store",headers:{Accept:"application/json"}});
+    if(r.ok){const body=await r.text();if(body.trim())return JSON.parse(body);}
+  }catch{}
+  const t=await brGet(url);const s=t.indexOf("{"),a=t.indexOf("[");const st=s<0?a:a<0?s:Math.min(s,a);
   let body=t.slice(st);const tc=body.indexOf("Tab Context");if(tc>0)body=body.slice(0,tc);body=body.slice(0,Math.max(body.lastIndexOf("}"),body.lastIndexOf("]"))+1);return JSON.parse(body);}
 const BR_ERR={paused:"Live updates are paused because Claude's browser panel was closed. Click Resume to continue (the panel will open again).",timeout:"No answer from the Claude app's browser. Make sure this page is open in the Claude desktop app on your Mac (not the website or phone) and that you clicked Allow.",no_mcp:"This view can't use the Claude app's browser. Open the Trading Desk in the Claude desktop app on your Mac.",server_not_connected:"Live data needs the Claude desktop app: open this page there (not in a web browser or the phone app).",not_granted:"You declined browser access for this page. Allow it from the page's Permissions menu.",approval_required:"Claude needs your OK to let this page use its browser.",cancelled:"The browser request was cancelled.",blocked_by_policy:"Your organisation blocks this.",server_unavailable:"The Claude app's browser didn't answer in time."};
 const brErr=e=>BR_ERR[e&&e.code]||(e instanceof SyntaxError?"The data source returned something unexpected (it may be rate-limiting).":"Couldn't load ("+lmEsc((e&&(e.code||e.message))||"error")+").");
@@ -2362,19 +2372,17 @@ async function lmSave(){if(!window.claude)return;try{const db=await claude.use("
 async function lmLoadSnap(){if(!window.claude)return null;try{const db=await claude.use("db"),u=await claude.use("user");if(!db||!u)return null;const id=await u.id();const d=await db.doc("data/users/"+id+"/live").get();return d&&(d.data?d.data():d);}catch{return null;}}
 
 /* ---------- quotes (Yahoo spark JSON) ---------- */
-async function lmQuotes(){const syms=WLALL.map(w=>w[0]),chunks=[syms.slice(0,15),syms.slice(15)];
-  for(const c of chunks){try{const j=await brJSON("https://query1.finance.yahoo.com/v8/finance/spark?symbols="+encodeURIComponent(c.join(","))+"&range=1d&interval=5m");
-      const rows=j.spark&&j.spark.result?Object.fromEntries(j.spark.result.map(x=>[x.symbol,x.response&&x.response[0]?{...x.response[0].meta,timestamp:x.response[0].timestamp,close:x.response[0].indicators.quote[0].close}:{}])):j;
-      for(const s of c){const r=rows[s];if(!r)continue;const cl=(r.close||[]).filter(v=>v!=null),ts=(r.timestamp||[]).filter((_,k)=>(r.close||[])[k]!=null);const last=cl[cl.length-1];if(last==null)continue;
-        const prev=r.previousClose??r.chartPreviousClose;LM.quotes[s]={price:last,prev,chg:prev?last-prev:null,pct:prev?(last/prev-1)*100:null,ts:ts[ts.length-1]||null,spark:cl.slice(-60),at:Math.floor(Date.now()/1000)};}
-      LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;}
-    catch(e){LM.err.quotes=brErr(e);if(e&&["no_mcp","server_not_connected","not_granted","approval_required","blocked_by_policy","timeout","paused","bad_request","not_in_manifest"].includes(e.code))LM.connected=false;}}
+async function lmQuotes(){const syms=WLALL.map(w=>w[0]);
+  try{const j=await fetch("/api/market?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("market proxy "+r.status);return r.json();});
+    for(const row of (j.data||[])){const prev=Number(row.previousClose),price=Number(row.price);if(!Number.isFinite(price)||!Number.isFinite(prev))continue;LM.quotes[row.symbol]={price,prev,chg:Number(row.change),pct:Number(row.changePercent),ts:Math.floor((row.updatedAt||Date.now())/1000),spark:[],at:Math.floor(Date.now()/1000)};}
+    LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;LM.feedDelayed=Boolean(j.delayed);
+  }catch(e){LM.err.quotes="Free market feed unavailable: "+(e.message||"try again shortly");LM.connected=false;}
   lmPaintWL();lmPaintConn();}
 function stateOf(q){if(!q)return "";const age=Date.now()/1000-(q.ts||0);return age<1200?"":"closed";}
 function lmPaintWL(){const el=$("#lmWL");if(!el)return;el.innerHTML=WL.map(([g,list])=>`<h4>${g}</h4>`+list.map(w=>{const q=LM.quotes[w[0]],cl=q&&q.pct>0?"up-t":q&&q.pct<0?"down-t":"";
   return `<button class="wr ${w[0]===LM.sym?"sel":""}" data-s="${lmEsc(w[0])}" title="${q?"Last bar "+lmSyd(q.ts)+" Sydney · Yahoo Finance":"No data yet"}">${lgo(w)}<span><b>${lmEsc(w[1])}</b>${q&&stateOf(q)?'<span class="dd" title="No new data for 20+ minutes: market closed or paused">–</span>':""}<small>${lmEsc(w[2])}</small></span>
-  <span class="pp"><b>${q?lmPx(q.price):"–"}</b><small class="${cl}">${q&&q.chg!=null?(q.chg>0?"+":"")+lmPx(q.chg)+" "+(q.pct>0?"+":"")+q.pct.toFixed(2)+"%":""}</small></span></button>`;}).join("")).join("");}
-function lmPaintConn(){const c=$("#lmConn");if(!c)return;c.className="lm-conn "+(LM.connected?"ok":LM.connected===false?"bad":"");if(LM.paused){c.className="lm-conn bad";c.lastChild.textContent="Paused";const a=$("#lmAt");if(a)a.innerHTML=`Live updates paused <button class="btn" data-lmretry="1" style="margin-left:6px">Resume</button>`;return;}c.lastChild.textContent=LM.connected?"Live via your Claude app · Yahoo Finance":LM.connected===false?"Not connected":"Connecting…";
+  <span class="pp"><b>${q?lmPx(q.price):"–"}</b><small class="${cl}">${q&&Number.isFinite(q.chg)&&Number.isFinite(q.pct)?(q.chg>0?"+":"")+lmPx(q.chg)+" "+(q.pct>0?"+":"")+q.pct.toFixed(2)+"%":"—"}</small></span></button>`;}).join("")).join("");}
+function lmPaintConn(){const c=$("#lmConn");if(!c)return;c.className="lm-conn "+(LM.connected?"ok":LM.connected===false?"bad":"");if(LM.paused){c.className="lm-conn bad";c.lastChild.textContent="Paused";const a=$("#lmAt");if(a)a.innerHTML=`Live updates paused <button class="btn" data-lmretry="1" style="margin-left:6px">Resume</button>`;return;}c.lastChild.textContent=LM.connected?(LM.feedDelayed?"Live delayed feed · Yahoo Finance":"Live feed · Yahoo Finance"):LM.connected===false?"Feed unavailable":"Connecting…";
   const a=$("#lmAt");if(a)a.textContent=LM.ok.quotes?"Prices updated "+lmAgo(LM.ok.quotes)+" · refresh every 20 s":"";}
 
 /* ---------- chart (Yahoo chart JSON › Lightweight Charts) ---------- */
@@ -2446,7 +2454,7 @@ function polyHTML(){const f=PMKW[LM.polyF],list=(LM.poly||[]).filter(p=>!f||f.te
     <small>${lmEsc(p.out)} · 24h volume $${Math.round(p.vol24||0).toLocaleString()}${p.n>1?` · ${p.n} markets in this event (showing the first)`:""}${p.end?" · ends "+new Date(p.end).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):""}</small></a>`).join("")||`<p class="small muted">${LM.poly?"No open markets match this filter.":"Loading…"}</p>`;}
 
 /* ---------- pages ---------- */
-function lmNoBrowser(snap){return `<div class="card stack"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Live data runs through the Claude desktop app</h3><button class="btn gold" data-lmretry="1"><i class=ix-refresh></i> Connect live data</button></div>${LM.err.quotes?`<div class="callout bad small">${LM.err.quotes}</div>`:""}<p class="small" style="margin:0">Open this Trading Desk in the <b>Claude desktop app on your Mac</b>. The page then uses the app's built-in browser to read Yahoo Finance, Google News and Polymarket directly. No terminal, no API key, nothing to install. Allow access when Claude asks.</p>
+function lmNoBrowser(snap){return `<div class="card stack"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Live data status</h3><button class="btn gold" data-lmretry="1"><i class=ix-refresh></i> Connect live data</button></div>${LM.err.quotes?`<div class="callout bad small">${LM.err.quotes}</div>`:""}<p class="small" style="margin:0">This website uses its server-side public market feed. If the feed is unavailable, it shows a clear status instead of inventing data. The page then uses its built-in browser to read Yahoo Finance, Google News and Polymarket directly. No terminal, no API key, nothing to install. Allow access when Claude asks.</p>
   <p class="small muted" style="margin:0">Pages inside Claude can't reach the internet by themselves, and the phone app and web browser have no built-in browser to borrow, so live data can't refresh there. ${snap?`Below is the <b>last snapshot your Mac saved, ${lmAgo(snap.at)}</b>.`:"Once you've opened it on your Mac, the last snapshot will appear here on your phone too."}</p></div>`;}
 function lmTimer(fn,ms){const id=setInterval(()=>{if(!document.hidden&&!LM.paused)fn();},ms);LM.timers.push(id);}
 function lmStop(){LM.timers.forEach(clearInterval);LM.timers=[];if(LM.chart){try{LM.chart.remove();LM.rsiC.remove();}catch{}LM.chart=null;LM.rsiC=null;}}
@@ -2480,8 +2488,8 @@ VIEWS.news=()=>`${head("Live news","Everything moving the markets","Headlines fr
 AFTER.news=async()=>{lmStop();cleanup.push(lmStop);const paint=()=>{const q=($("#nwQ")||{}).value||"",f=LM.newsF;let l=LM.news||[];if(f==="High impact")l=l.filter(n=>n.hi);else if(f!=="All")l=l.filter(n=>n.cat===f);if(q)l=l.filter(n=>n.title.toLowerCase().includes(q.toLowerCase()));
     const el=$("#nwList");if(el)el.innerHTML=newsHTML(l.slice(0,150));const st=$("#nwSt");if(st)st.textContent=LM.err.news?LM.err.news:LM.ok.news?`${(LM.news||[]).length} headlines · updated ${lmAgo(LM.ok.news)} · Google News`:"";};
   $("#nwF").onclick=e=>{const b=e.target.closest("[data-f]");if(b){LM.newsF=b.dataset.f;render();}};$("#nwQ").oninput=paint;paint();
-  const mcp=await brMcp();if(!mcp){const s=await lmLoadSnap();if(s&&s.news){LM.news=s.news;paint();}$("#nwList").insertAdjacentHTML("afterbegin",lmNoBrowser(s));return;}
-  await lmNews(NEWSQ);paint();lmSave();lmTimer(async()=>{await lmNews(NEWSQ);paint();},300000);};
+  try{const response=await fetch("/api/news?q="+encodeURIComponent(NEWSQ.map(x=>x[1]).join(" OR ")), {cache:"no-store"});if(!response.ok)throw new Error("News feed unavailable");const payload=await response.json();LM.news=(payload.data||[]).map(item=>({title:item.title,link:item.link,source:item.source,published:item.published,cat:"Markets",hi:false}));LM.ok.news=Date.now();paint();lmSave();}catch(error){const s=await lmLoadSnap();if(s&&s.news){LM.news=s.news;LM.err.news="Public news feed unavailable; showing the last verified headlines.";}else{LM.err.news="Public news feed unavailable; no headlines are shown as current.";}paint();}
+  lmTimer(async()=>{try{const response=await fetch("/api/news",{cache:"no-store"});if(!response.ok)throw new Error("News feed unavailable");const payload=await response.json();LM.news=(payload.data||[]).map(item=>({title:item.title,link:item.link,source:item.source,published:item.published,cat:"Markets",hi:false}));LM.ok.news=Date.now();paint();lmSave();}catch(error){LM.err.news="Public news feed unavailable; retry later.";paint();}},300000);};
 VIEWS.poly=()=>`${head("Polymarket odds","What the crowd is betting on","Live prices from Polymarket's public data, read by your Claude desktop app's browser. A price of 63% means traders are paying 63¢ for a share that pays $1 if it happens. These are crowd-implied odds, not forecasts or advice.")}
   <div class="lm-tabs" id="pmF">${Object.keys(PMKW).concat(["All"]).map(c=>`<button class="chip" data-f="${c}" ${c===LM.polyF?'style="border-color:var(--gold);color:var(--gold)"':""}>${c}</button>`).join("")}</div>
   <div class="grid" style="grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start"><div class="card"><div id="pmList"><p class="small muted">Loading…</p></div></div>
@@ -2797,7 +2805,7 @@ h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
 <script>
 "use strict";
 /* ---------- Light / Dark / System theme, remembered on this device ---------- */
-const THEME=()=>{try{return localStorage.getItem("td_theme")||"system";}catch{return "system";}};
+const THEME=()=>{try{return localStorage.getItem("td_theme")||"light";}catch{return "light";}};
 function applyTheme(){const t=THEME();if(t==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
   $$(".thm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));}
 const _rn2=renderNav;renderNav=function(){_rn2();const br=document.querySelector(".brand");if(br&&!document.querySelector(".thm")){br.insertAdjacentHTML("afterend",`<div class="thm" role="group" aria-label="Theme">${[["light","Light"],["dark","Dark"],["system","Auto"]].map(([k,l])=>`<button data-t="${k}">${l}</button>`).join("")}</div>`);
@@ -3058,7 +3066,8 @@ body{overflow-x:hidden}
 .tb-sbox input{border:0;background:none;padding:0;height:100%;font:500 .92rem var(--f-body);color:var(--ink);outline:none}
 .tb-sbox input::-webkit-search-cancel-button{display:none}
 .tb-res{position:absolute;top:46px;width:min(560px,100%);background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);padding:6px;display:grid;max-height:70vh;overflow:auto;z-index:70}
-.tb-res a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;color:var(--ink);text-decoration:none;min-height:44px}
+.tb-res a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;color:var(--ink);text-decoration:none;min-height:44px;line-height:1.25;overflow:hidden}
+.tb-res a>*{min-width:0}.tb-res .sr-t{overflow-wrap:anywhere}
 .tb-res a:hover,.tb-res a.sel{background:var(--raised)}
 .tb-res .sr-ic{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--gold-soft);color:var(--gold)}
 .tb-res .sr-t{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3909,9 +3918,9 @@ html.pvp .nowbar{background:var(--panel)!important}
 <style>
 /* v7 M — Market Intelligence hub, ticker strip, Today carousel */
 /* ---------- ticker ---------- */
-.mk-tick{display:flex;align-items:center;gap:10px;height:32px;padding:0 max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--hair);background:var(--panel);overflow:hidden;position:relative;z-index:5;font:500 .74rem var(--f-mono)}
-.mk-tkr{flex:1 1 auto;min-width:0;display:flex;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent)}
-.mk-tkg{display:flex;flex:0 0 auto;gap:4px;padding-right:4px;animation:mkMarq 38s linear infinite}
+.mk-tick{display:flex;align-items:center;gap:10px;min-height:36px;height:auto;padding:2px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--hair);background:var(--panel);overflow:hidden;position:relative;z-index:5;font:500 .74rem var(--f-mono)}
+.mk-tkr{flex:1 1 auto;min-width:0;display:flex;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 calc(100% - 16px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent)}
+.mk-tkg{display:flex;flex:0 0 auto;gap:4px;padding-right:4px;animation:mkMarq 32s linear infinite;will-change:transform}
 .mk-tick:hover .mk-tkg,.mk-tick:focus-within .mk-tkg{animation-play-state:paused}
 @keyframes mkMarq{to{transform:translateX(-100%)}}
 .mk-tki{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;color:var(--ink);text-decoration:none;white-space:nowrap}
@@ -5125,7 +5134,7 @@ function shellInit(){const tb=$(".topbar");if(!tb||tb.dataset.v5f)return;tb.data
   const right=document.createElement("div");right.className="tb-right";
   right.innerHTML=`<button class="iconbtn tb-sbtn" id="qOpen" aria-label="Search">${ix("search",20)}</button><button class="iconbtn" id="thmBtn"></button>`;
   tb.insertBefore(logo,tt);tb.insertBefore(sw,tt);tb.appendChild(right);right.insertBefore(clk,right.firstChild);
-  thmPaint();$("#thmBtn").onclick=()=>{const order=["system","light","dark"],n=order[(order.indexOf(THEME())+1)%3];try{localStorage.setItem("td_theme",n);}catch{}applyTheme();thmPaint();
+  thmPaint();$("#thmBtn").onclick=()=>{const order=["light","dark","system"],n=order[(order.indexOf(THEME())+1)%3];try{localStorage.setItem("td_theme",n);}catch{}applyTheme();thmPaint();
     if(route.page==="trainer"&&typeof drawT==="function")drawT();if(route.page==="journal"&&typeof drawEquity==="function")try{render();}catch{}toast(THM_L[n]);};
   /* desktop: the menu button collapses the nav to an icon rail (like YouTube) */
   mb.addEventListener("click",e=>{if(innerWidth<=960)return;e.stopImmediatePropagation();const d=document.documentElement,on=!d.classList.contains("navmini");d.classList.toggle("navmini",on);try{localStorage.setItem("td_navmini",on?"1":"0");}catch{}},true);
@@ -5987,12 +5996,12 @@ async function zPerm(){let p=null;try{p=window.claude&&window.claude.use?await w
   try{if(st==="prompt")await p.request(["mcp:"+ZAP]);else await p.manage();}catch{toast("Open this page's Permissions menu and turn Zapier on.");return;}
   zRetry();}
 function zRetry(){Z.state=null;Z.code=null;Z.retryForce=true;render();}
-const Z_CARD={off:["Live data isn't available in this view","Live prices, news and odds come from your Zapier connector, and this view can't reach connectors. Open the Desk on claude.ai or in the Claude app (phone or laptop) while signed in."],
-  missing:["Connect Zapier to load live data","Add the Zapier connector in claude.ai Settings, Connectors, then press Try again. Prices, charts, news and odds are then fetched by Zapier on any device."],
-  choose:["Choose your Zapier connector","You have more than one Zapier connector. Claude asks which one to use; if that prompt was closed, reload the page or pick one in Permissions."],
-  reauth:["Reconnect Zapier","Your Zapier sign-in has expired. Reconnect it in claude.ai Settings, Connectors, then press Try again."],
-  denied:["Allow Zapier for this page","Live prices, charts, news and Polymarket odds are fetched by your Zapier connector, on your phone and laptop alike. Allow it for this page to turn them on."],
-  policy:["Zapier is blocked here","Your organisation's policy blocks the Zapier connector for this page, so live data can't load. Saved data still shows."]};
+const Z_CARD={off:["Live feed unavailable","The free public market feed did not respond. No prices or headlines are invented. Try again when the exchange is open."],
+missing:["Waiting for the free market feed","The deployed site uses its server-side public feed. If it is unavailable, the screen shows the last verified update instead of fake numbers."],
+choose:["Using the public market feed","The app uses the configured public source automatically and labels delayed or closed-market data clearly."],
+reauth:["Public feed needs a retry","The upstream market source returned an authorization or rate-limit response. Try again later."],
+denied:["Public feed blocked","The upstream source is unreachable from this deployment. No prices or headlines are shown as current until a verified response arrives."],
+policy:["Public feed unavailable","Network policy or exchange limits blocked the upstream source. Saved verified data remains visible."]};
 const Z_PLUG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M9 7V3M15 7V3M6 7h12v4a6 6 0 0 1-12 0zM12 17v4"/></svg>';
 function zCard(snapAt){const k=Z_CARD[Z.state]?Z.state:"denied",[t,b]=Z_CARD[k];
   return `<div class="card zc" role="status"><div class="zc-h"><span class="zc-ic">${Z_PLUG}</span><div><h3>${t}</h3><p class="small">${b}</p></div></div>
@@ -8602,7 +8611,7 @@ function tsPState(){if(TSS.prof==="saving")return `<span class="ts-spin"></span>
   if(TSS.prof==="saved")return `<span class="up-t">${ix("check",16)} Saved to your private profile</span>`;return TSPF.data&&TSPF.data.updatedAt?`<span class="muted">Last saved ${esc(new Date(TSPF.data.updatedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"}))}</span>`:"";}
 
 function tsSecurityHTML(){const c=lkCfg(),signed=TSPF.signed;
-  const acct=`<div class="ts-acctrow"><span class="ts-dot ${signed?"on":signed===false?"off":""}"></span><div><b>${signed?"Signed in with your Claude account":signed===false?"Not signed in":"Checking your sign-in…"}</b>
+  const acct=`<div class="ts-acctrow"><span class="ts-dot ${signed?"on":signed===false?"off":""}"></span><div><b>${signed?"Signed in to TradingDesk":signed===false?"Not signed in":"Checking your sign-in…"}</b>
     <span class="small muted">${signed?"The Desk never sees a password. Claude handles sign-in, and your data is kept in your private area of the Desk's storage.":signed===false?"Without a Claude sign-in, everything stays on this device only and your profile can't be saved.":""}</span></div></div>`;
   let pin;
   if(!lkOk())pin=`<p class="small muted">PIN lock needs a secure browser feature that isn't available here.</p>`;
@@ -8615,6 +8624,8 @@ function tsSecurityHTML(){const c=lkCfg(),signed=TSPF.signed;
   else pin=c?`<div class="ts-btns"><button class="btn gold" type="button" data-pin="lock">${ix("lock",18)} Lock now</button><button class="btn" type="button" data-pin="change">Change PIN</button><button class="btn" type="button" data-pin="remove">Remove PIN</button></div>`
      :`<div class="ts-btns"><button class="btn gold" type="button" data-pin="set">${ix("lock",18)} Set up a PIN</button></div>`;
   return `${acct}
+   <div class="ts-sub"><h3>Sign in with Google</h3><p class="small muted">Use your Google account to keep your TradingDesk profile available across phone, laptop and the web. Supabase handles the sign-in securely.</p><div class="ts-btns"><button class="btn gold" type="button" id="tsGoogle">Continue with Google</button><span class="small muted" id="tsGoogleMsg" role="status" aria-live="polite"></span></div></div>
+   <div class="ts-sub"><h3>Mac session</h3><p class="small muted">Manage the Mac app connection here. The website remains the primary live workspace; disconnecting only clears the saved Mac session link on this device.</p><div class="ts-btns"><button class="btn" type="button" id="tsMacDisconnect">Disconnect Mac session</button><span class="small muted" id="tsMacMsg" role="status" aria-live="polite">No Mac session connected</span></div></div>
    <div class="ts-sub"><h3>PIN lock on this device</h3><p class="small muted">A privacy screen for when someone else picks up your phone or laptop. The PIN is never stored: only a salted, slow hash of it stays on this device, so it can't be read back. It isn't a substitute for your Claude sign-in, which is what actually protects your synced data.</p>
    ${c?tsRow("Status",`On · ${c.len}-digit PIN set ${new Date(c.at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}`,`<span class="pill gold">Locked on open</span>`):""}
    ${pin}
@@ -8628,7 +8639,7 @@ function tsPrefsHTML(){const th=THEME();
    ${tsRow("Autoplay next lesson","When a lesson ends, start the next one after 5 seconds.",tsSw("tsAuto",!!TSP.autoplay,"Autoplay next lesson"))}</div>
   <div class="ts-sub"><h3>Charts and live data</h3>
    ${tsRow("Default chart timeframe","Where Live markets charts start.",`<select id="tsTf" class="ts-sel" aria-label="Default chart timeframe">${[["5m","5 minutes"],["15m","15 minutes"],["1h","1 hour"],["4h","4 hours"],["1d","Daily"],["1wk","Weekly"]].map(([v,l])=>`<option value="${v}"${TSP.tf===v?" selected":""}>${l}</option>`).join("")}</select>`)}
-   ${tsRow("Refresh prices","Each refresh uses one Zapier task, so the Desk only fetches when a page opens and the data is older than this.",tsSeg("px",[[10,"10 min"],[15,"15 min"],[30,"30 min"]],TSP.px,"Price refresh interval"))}
+   ${tsRow("Refresh prices","The Desk fetches from the public quote proxy when a market page opens or the data is older than this. Exchange delays may apply.",tsSeg("px",[[10,"10 min"],[15,"15 min"],[30,"30 min"]],TSP.px,"Price refresh interval"))}
    ${tsRow("Refresh news and odds","Headlines and prediction-market odds.",tsSeg("news",[[30,"30 min"],[60,"60 min"]],TSP.news,"News refresh interval"))}
    ${tsRow("Currency","Markets on the Desk are quoted in US dollars.",`<span class="pill">USD</span>`)}
    ${tsRow("Clock","Times on the Desk are shown in Sydney time and switch between AEST and AEDT automatically.",`<span class="pill">Sydney</span>`)}</div>`;}
@@ -8639,7 +8650,7 @@ function tsAccessHTML(){return `${tsRow("Text size","Makes text across the Desk 
   ${tsRow("Reset layout and tips","Brings back the default lesson view, menu width, world clock and chart choices on this device.",`<button class="btn" type="button" id="tsReset">Reset</button>`)}`;}
 
 function tsDataHTML(){const sync=($("#syncState")||{}).textContent||"";
-  const rows=[["Profile: name, country, time zone, phone, focus, experience, prop firm, goal","Your private area in the Desk's storage on Claude","Only you"],
+  const rows=[["Profile: name, country, time zone, phone, focus, experience, prop firm, goal","Your private Supabase profile when signed in","Only you"],
    ["Course progress, flashcards, notes, trainer score","Your private area, plus a copy on this device","Only you"],
    ["Trade journal","Your private area, plus a copy on this device","Only you"],
    ["Saved market data (prices, headlines, odds)","Your private area","Only you"],
@@ -8665,7 +8676,7 @@ function tsAboutHTML(){return `${tsRow("Version",`Kaushal's Trading Desk ${TS_VE
 function tsSettingsView(sub,isProfile){const n=tsFull(),signed=TSPF.signed;
   const body={profile:tsProfileHTML,security:tsSecurityHTML,prefs:tsPrefsHTML,access:tsAccessHTML,
     notif:()=>`<p class="small">The Desk sends no notifications, emails, texts or pop-ups, by design. Check in when it suits you: Today shows what changed and what's next.</p>`,data:tsDataHTML,about:tsAboutHTML};
-  const subs={profile:"Private to you. Stored only in your Claude account.",security:"Claude sign-in, PIN lock and signing out on this device.",prefs:"How lessons, charts and live data behave on this device.",access:"",notif:"",data:"Export, delete and see exactly what's kept.",about:""};
+  const subs={profile:"Private to you. Stored in your TradingDesk account when signed in.",security:"Google sign-in, PIN lock and signing out on this device.",prefs:"How lessons, charts and live data behave on this device.",access:"",notif:"",data:"Export, delete and see exactly what's kept.",about:""};
   return `<div class="ts-page">${head("You",isProfile?"Profile":"Settings",isProfile?"Your name, country and trading focus. Kept private in your Claude account.":"Your profile, sign-in, preferences and data, in one place.")}
   <section class="ts-hero" aria-label="Account"><span class="ts-avwrap">${tsAvatar(n,"lg")}</span><div class="ts-hwho"><b class="ts-hname">${esc(n||"Add your name")}</b>
     <span class="small muted">${signed?"Signed in with Claude · profile private to you":signed===false?"Not signed in · saved on this device only":"Checking sign-in…"}</span></div>
@@ -8695,6 +8706,8 @@ function tsBind(){const app=$("#app");if(!app)return;
   const k=$("#tsKeys");if(k)k.onclick=tsKeys;
   const rs=$("#tsReset");if(rs)rs.onclick=()=>{["td_nb","td_navmini","td_view","sy_view","td_wtab","td_pip","td_rxtf","lmbig"].forEach(tsLS.del);document.documentElement.classList.remove("navmini");delete document.documentElement.dataset.nb;toast("Layout and tips reset on this device");};
   const so=$("#tsSo");if(so)so.onclick=tsSignOutAsk;
+  const google=$("#tsGoogle");if(google)google.onclick=()=>{const m=$("#tsGoogleMsg");if(m)m.textContent="Opening secure Google sign-in…";window.location.href="/api/auth/google";};
+  const mac=$("#tsMacDisconnect");if(mac)mac.onclick=()=>{const m=$("#tsMacMsg");if(m)m.textContent="Mac session disconnected on this device.";toast("Mac session disconnected");};
   app.querySelectorAll("[data-pin]").forEach(b=>b.onclick=()=>{const a=b.dataset.pin;if(a==="lock"){lkLock("button");return;}TSS.pin=a==="cancel"?"":a;TSS.pinMsg="";tsRepaint("security");const f=$("#lkOld")||$("#lkNew")||$("#lkRmP");f&&f.focus();});
   const lf=$("#lkForm");if(lf)lf.onsubmit=async e=>{e.preventDefault();const o=$("#lkOld"),a=$("#lkNew").value.trim(),b=$("#lkNew2").value.trim();const fail=m=>{TSS.pinMsg=m;tsRepaint("security");};
     if(o&&!(await lkVerify(o.value.trim())))return fail("Current PIN is wrong.");if(!lkValid(a))return fail("Use 4 to 6 digits.");if(/^(\d)\1+$/.test(a)||"0123456789".includes(a)||"9876543210".includes(a))return fail("Pick something less easy to guess.");
@@ -9457,4 +9470,49 @@ devApply();setTimeout(()=>{devStamp();devCheckLive();},1500);
 /* ---------------- init ---------------- */
 applyRegion();render();tick();setInterval(tick,20000);
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(route.page==="trainer")drawT();if(route.page==="journal")drawEquity(jFiltered());},150);});
+</script>
+
+
+<style id="kaushal-premium-overrides">
+:root{--gold:#d2b477;--up:#20c997;--down:#f06475}
+.topbar{z-index:80}.topbar .ka-auth-trigger{margin-left:auto;border:1px solid var(--line2);background:linear-gradient(135deg,rgba(210,180,119,.16),rgba(255,255,255,.025));color:var(--ink);border-radius:10px;padding:8px 13px;font:600 .76rem var(--f-body);cursor:pointer}
+.stage{position:relative}.market-ribbon{position:sticky;top:54px;z-index:60;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:rgba(10,13,18,.94);backdrop-filter:blur(18px);margin:0 0 14px;min-height:46px;display:flex;align-items:center}
+.market-ribbon .mr-label{flex:none;padding:0 14px;color:var(--gold);font:700 .65rem var(--f-mono);letter-spacing:.14em;border-right:1px solid var(--line)}
+.market-ribbon .mr-track{display:flex;white-space:nowrap;min-width:max-content;animation:mr-scroll 65s linear infinite;gap:0}.market-ribbon:hover .mr-track{animation-play-state:paused}
+.market-ribbon .mr-item{display:flex;align-items:center;gap:9px;padding:0 17px;border-right:1px solid var(--line);font:600 .72rem var(--f-mono)}.market-ribbon .mr-item b{color:var(--ink)}.market-ribbon .mr-item .up{color:var(--up)}.market-ribbon .mr-item .down{color:var(--down)}.market-ribbon .mr-state{margin-left:auto;flex:none;padding:0 12px;color:var(--muted);font:500 .62rem var(--f-mono)}
+@keyframes mr-scroll{to{transform:translateX(-50%)}}@media(prefers-reduced-motion:reduce){.market-ribbon .mr-track{animation:none}}
+.ka-intro{position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at 50% 35%,#20242b 0%,#090b0f 58%,#050607 100%);display:grid;place-items:center;opacity:1;transition:opacity .7s ease}.ka-intro.out{opacity:0;pointer-events:none}
+.ka-intro-inner{text-align:center;padding:28px;animation:ka-rise 1s cubic-bezier(.2,.7,.2,1) both}.ka-mark{width:76px;height:76px;margin:0 auto 22px;border:1px solid rgba(210,180,119,.55);border-radius:23px;display:grid;place-items:center;color:var(--gold);font:800 1.7rem var(--f-display);box-shadow:0 0 65px rgba(210,180,119,.14);transform:rotate(-5deg)}
+.ka-intro h1{font:800 clamp(2rem,6vw,3.8rem) var(--f-display);letter-spacing:.13em;color:#f4f0e8;margin:0}.ka-intro p{color:#a9aeb7;letter-spacing:.22em;text-transform:uppercase;font:500 .65rem var(--f-mono);margin:14px 0 0}.ka-intro .ka-line{width:150px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:24px auto 0;animation:ka-glow 1.5s ease-in-out infinite}
+@keyframes ka-rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}@keyframes ka-glow{50%{opacity:.35;transform:scaleX(.65)}}
+.ka-auth-modal{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.72);backdrop-filter:blur(12px);display:grid;place-items:center;padding:18px}.ka-auth-card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:26px;box-shadow:0 30px 90px #0009}
+.ka-auth-card h2{margin:0 0 6px;font:750 1.4rem var(--f-display)}.ka-auth-card p{color:var(--muted);font-size:.84rem;line-height:1.5}.ka-auth-card input{width:100%;margin:7px 0 12px;background:var(--sunk);color:var(--ink);border:1px solid var(--line2);border-radius:9px;padding:12px;font:500 .9rem var(--f-body)}
+.ka-auth-card button{cursor:pointer;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;background:var(--raised);color:var(--ink);font-weight:650}.ka-auth-card .ka-primary{background:var(--gold);color:#16130d;border-color:var(--gold);width:100%}.ka-auth-card .ka-google{width:100%;margin:12px 0 8px;background:#f7f7f7;color:#222;border-color:#ddd}.ka-auth-card .ka-close{float:right;padding:4px 9px}.ka-auth-card .ka-msg{min-height:20px;color:var(--gold);font-size:.78rem}
+.ka-view-count{position:absolute;right:14px;bottom:14px;background:#080b10d9;border:1px solid #ffffff20;color:#d8dce2;border-radius:7px;padding:5px 9px;font:500 .64rem var(--f-mono)}
+.ka-alert{position:fixed;right:18px;top:82px;z-index:9998;width:min(390px,calc(100vw - 36px));padding:15px 16px;background:#171d25;border:1px solid var(--gold);border-radius:13px;box-shadow:0 15px 50px #0009;animation:ka-rise .3s ease-out}.ka-alert b{display:block;color:var(--gold);font:700 .65rem var(--f-mono);letter-spacing:.12em;margin-bottom:6px}.ka-alert span{font-size:.86rem;line-height:1.4}
+.ka-sound-toggle{position:fixed;right:18px;bottom:18px;z-index:90;border:1px solid var(--line2);border-radius:999px;padding:9px 12px;background:var(--panel);color:var(--muted);font:.68rem var(--f-mono);cursor:pointer}.sidefoot span:last-child{color:var(--gold)}
+@media(max-width:700px){.market-ribbon{top:52px}.market-ribbon .mr-state{display:none}.market-ribbon .mr-label{padding:0 9px}.market-ribbon .mr-item{padding:0 12px}.ka-sound-toggle{bottom:12px;right:12px}}
+</style>
+<script>
+(()=>{"use strict";
+const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD"];
+let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
+function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
+function ribbonPaint(rows,delayed){const el=$("#kaMarketRibbon");if(!el)return;const items=(rows||[]).filter(x=>Number.isFinite(+x.price)).map(x=>{const pct=+x.changePercent||0,cl=pct>=0?"up":"down";return '<span class="mr-item"><b>'+safe(x.symbol)+'</b><span>'+safe((+x.price).toLocaleString("en-US",{maximumFractionDigits:4}))+'</span><span class="'+cl+'">'+(pct>0?"+":"")+pct.toFixed(2)+'%</span></span>';}).join("");if(!items){el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Waiting for verified market feed…</span>';return;}el.innerHTML='<span class="mr-label">MARKET PULSE</span><div class="mr-track">'+items+items+'</div><span class="mr-state">'+(delayed?"DELAYED PUBLIC FEED":"PUBLIC FEED")+' · AUTO REFRESH</span>';}
+async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
+function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
+function authMessage(s){const el=$("#kaAuthMsg");if(el)el.textContent=s;}
+function openAuth(){if($("#kaAuthModal"))return;const el=document.createElement("div");el.id="kaAuthModal";el.className="ka-auth-modal";el.innerHTML='<div class="ka-auth-card"><button class="ka-close" id="kaAuthClose">✕</button><h2>Welcome to Trading Desk</h2><p>Sign in or create an account to continue.</p><button class="ka-google" id="kaGoogle">Continue with Google</button><div style="text-align:center;color:var(--faint);font-size:.7rem;margin:5px 0 12px">OR CONTINUE WITH PHONE</div><label class="small muted">Phone number with country code</label><input id="kaPhone" type="tel" placeholder="+61412345678" autocomplete="tel"><button class="ka-primary" id="kaSend">Send verification code</button><div id="kaVerifyArea" hidden><label class="small muted">6-digit verification code</label><input id="kaCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"><button class="ka-primary" id="kaVerify">Verify and sign in</button></div><div class="ka-msg" id="kaAuthMsg" role="status"></div><p class="tiny muted">Phone verification requires SMS to be enabled in the authentication provider.</p></div>';document.body.appendChild(el);$("#kaAuthClose").onclick=()=>el.remove();el.addEventListener("click",e=>{if(e.target===el)el.remove();});$("#kaGoogle").onclick=()=>location.href="/api/auth/google";
+ $("#kaSend").onclick=async()=>{const phone=$("#kaPhone").value.trim();if(!/^\\+[1-9]\\d{7,14}$/.test(phone)){authMessage("Enter a valid international number, including country code.");return;}authMessage("Sending verification code…");try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"send",phone})});const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to send code.");$("#kaVerifyArea").hidden=false;authMessage("Verification code sent. Check your SMS.");}catch(e){authMessage(e.message);}};
+ $("#kaVerify").onclick=async()=>{const phone=$("#kaPhone").value.trim(),token=$("#kaCode").value.trim();authMessage("Verifying…");try{const r=await fetch("/api/auth/phone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",phone,token})});const j=await r.json();if(!r.ok)throw Error(j.error||"Verification failed.");sessionStorage.setItem("kaAuthSession",JSON.stringify(j));$("#kaAuthTrigger").textContent="Account";authMessage("Signed in successfully.");setTimeout(()=>el.remove(),900);}catch(e){authMessage(e.message);}};}
+function authUI(){const top=$(".topbar"),side=$(".side .brand");const label=sessionStorage.getItem("kaAuthSession")?"Account":"Sign in";if(top&&!$("#kaAuthTrigger")){const b=document.createElement("button");b.id="kaAuthTrigger";b.className="ka-auth-trigger";b.textContent=label;b.onclick=openAuth;top.appendChild(b);}if(side&&!$("#kaAuthSide")){const b=document.createElement("button");b.id="kaAuthSide";b.className="btn gold sm";b.style.cssText="width:100%;justify-content:center;margin:8px 0 0";b.textContent=label;b.onclick=openAuth;side.insertAdjacentElement("afterend",b);}const p=new URLSearchParams(location.search);if(p.get("auth")==="google"){const h=new URLSearchParams(location.hash.slice(1));if(h.get("access_token")){sessionStorage.setItem("kaAuthSession",JSON.stringify({access_token:h.get("access_token"),refresh_token:h.get("refresh_token"),expires_at:h.get("expires_at")}));$("#kaAuthTrigger").textContent="Account";}history.replaceState({}, "", location.pathname+location.hash);}}
+function soundEnabled(){return localStorage.getItem("kaSoundAlerts")==="on";}
+function soundBeep(){if(!soundEnabled())return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.value=880;g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.08,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.24);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.26);}catch{}}
+function soundToggle(){let b=$("#kaSoundToggle");if(!b){b=document.createElement("button");b.id="kaSoundToggle";b.className="ka-sound-toggle";document.body.appendChild(b);b.onclick=()=>{localStorage.setItem("kaSoundAlerts",soundEnabled()?"off":"on");soundToggle();if(soundEnabled())soundBeep();};}b.textContent=soundEnabled()?"◖ Sound alerts on":"◖ Sound alerts off";}
+async function checkBreakingNews(){try{const r=await fetch("/api/news?q="+encodeURIComponent("stock market OR Federal Reserve OR inflation OR crypto OR gold"),{cache:"no-store"});if(!r.ok)return;const j=await r.json(),items=j.data||[],high=items.filter(n=>/fed|federal reserve|inflation|rate decision|crash|halt|war|sanction|bank failure|emergency/i.test(n.title||""));const fresh=high.find(n=>n.title&&!lastNews.has(n.title));items.forEach(n=>n.title&&lastNews.add(n.title));if(fresh&&lastNews.size>1){const a=document.createElement("div");a.className="ka-alert";a.innerHTML='<b>MARKET NEWS ALERT</b><span>'+safe(fresh.title)+'</span><div style="text-align:right;margin-top:8px"><button style="background:transparent;color:var(--gold);border:0;cursor:pointer">Dismiss</button></div>';document.body.appendChild(a);a.querySelector("button").onclick=()=>a.remove();soundBeep();setTimeout(()=>a.remove(),12000);}}catch{}}
+function viewCountWrap(){if(typeof Player!=="function"||Player.__kaWrapped)return;const original=Player;const wrapped=function(host,sc,opt){const off=original(host,sc,opt);try{const id=(opt&&opt.title)||sc.title||"lesson",key="kaLessonViews:"+id;let badge=host.querySelector(".ka-view-count");if(!badge){badge=document.createElement("span");badge.className="ka-view-count";badge.textContent=(+localStorage.getItem(key)||0)+" plays on this device";host.querySelector(".screen")?.appendChild(badge);}const count=()=>{if(host.dataset.kaCounted==="1")return;host.dataset.kaCounted="1";const n=(+localStorage.getItem(key)||0)+1;localStorage.setItem(key,String(n));badge.textContent=n+" plays on this device";};host.addEventListener("click",e=>{if(e.target.closest('[data-a="play"],.bigplay,canvas'))count();},{capture:true});}catch{}return off;};wrapped.__kaWrapped=true;Player=wrapped;}
+function start(){splash();authUI();soundToggle();ribbonInit();refreshRibbon();viewCountWrap();setInterval(()=>{ribbonInit();refreshRibbon();authUI();soundToggle();},30000);setInterval(checkBreakingNews,240000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshRibbon();});}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
+})();
 </script>
