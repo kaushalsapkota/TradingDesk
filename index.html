@@ -9524,7 +9524,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 
 <style id="kaushal-live-polish">
 :root{--kaushal-warm:#c7a46b}
-.market-ribbon{position:sticky!important;top:0!important;margin:0 0 12px!important;min-height:42px!important;border-radius:11px!important;z-index:100!important}
+#mkTick{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;overflow:hidden!important;border:0!important;padding:0!important;margin:0!important}\n.market-ribbon{position:sticky!important;top:0!important;margin:0 0 12px!important;min-height:42px!important;border-radius:11px!important;z-index:100!important}
 .market-ribbon .mr-label{width:auto!important;min-width:104px!important;letter-spacing:.12em!important}
 .market-ribbon .mr-track{animation-duration:42s!important}
 .market-ribbon .mr-item{padding-inline:13px!important}
@@ -9557,6 +9557,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 .ka-side-toggle{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--raised);color:var(--ink);cursor:pointer;display:grid;place-items:center;flex:none}
 .ka-side-toggle svg{width:16px;height:16px}
 @media(max-width:960px){.market-ribbon{top:0!important;margin-top:0!important}.ka-profile-wrap{margin-left:auto}.ka-profile-menu{position:fixed;right:14px;top:60px}}
+<style id="kaushal-single-market-ticker">#mkTick{display:none!important}</style>
 </style>
 <script id="kaushal-live-polish-script">
 (()=>{if(window.__kaLivePolish)return;window.__kaLivePolish=true;
@@ -9601,7 +9602,7 @@ function run(){
   setInterval(()=>{if(document.hidden)return;const el=$("#kaMarketRibbon");if(!el)return;
    fetch("/api/market?symbols="+encodeURIComponent("AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD"),{cache:"no-store"})
     .then(r=>{if(!r.ok)throw Error("feed");return r.json();})
-    .then(j=>{if(typeof ribbonPaint==="function")ribbonPaint(j.data,!(j.realtime===true));ribbonLabel();})
+    .then(j=>{if(typeof ribbonPaint==="function")ribbonPaint(j.data,j.realtime!==true);ribbonLabel();})
     .catch(()=>{const s=el.querySelector(".mr-state");if(s)s.textContent="FEED RETRYING · LAST VERIFIED QUOTE";});
   },1000);
  }
