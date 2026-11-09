@@ -6037,13 +6037,11 @@ function zSparkRows(j){const out={};if(!j||typeof j!=="object")return out;
     out[s]={price:+last,prev:prev!=null&&isFinite(prev)?+prev:null,ts:(ts.length?ts[ts.length-1]:null)||r.regularMarketTime||null,spark:cl.slice(-60)};};
   if(j.spark&&Array.isArray(j.spark.result)){j.spark.result.forEach(x=>{const rr=x&&x.response&&x.response[0];if(!rr)return;const q=rr.indicators&&rr.indicators.quote&&rr.indicators.quote[0];one(x.symbol,{...rr.meta,timestamp:rr.timestamp,close:q&&q.close});});return out;}
   Object.entries(j).forEach(([s,r])=>one((r&&r.symbol)||s,r));return out;}
-lmQuotes=async function(force){const syms=WLALL.map(w=>w[0]),chunks=[];for(let i=0;i<syms.length;i+=20)chunks.push(syms.slice(i,i+20));
-  let got=0,err=null,at=0;
-  for(const c of chunks){try{const r=await zGet(Y_SPARK,{symbols:c.join(","),range:"1d",interval:"15m"},{ttl:ZQ_TTL,force});const rows=zSparkRows(r.v);at=Math.max(at,r.at);
-      for(const s of c){const q=rows[s];if(!q)continue;LM.quotes[s]={price:q.price,prev:q.prev,chg:q.prev!=null?q.price-q.prev:null,pct:q.prev?(q.price/q.prev-1)*100:null,ts:q.ts,spark:q.spark,at:r.at};got++;}}
-    catch(e){err=e;if(zBlocking())break;}}
-  if(got){LM.qAt=at;LM.ok.quotes=at;LM.err.quotes=null;}else{Z.failAt.quotes=zNow();LM.err.quotes=err?zMsg(err):"No prices came back for the watchlist.";}
-  lmPaintWL();lmPaintConn();return got;};
+lmQuotes=async function(force){const syms=WLALL.map(w=>w[0]);
+  try{const r=await fetch(`/api/market?symbols=${encodeURIComponent(syms.join(","))}&t=${Date.now()}`,{cache:"no-store"});if(!r.ok)throw new Error(`Market feed returned ${r.status}`);const j=await r.json();const rows=j?.quoteResponse?.result||[];let got=0;
+    rows.forEach(q=>{const p=Number(q?.regularMarketPrice?.raw),chg=Number(q?.regularMarketChange?.raw),pct=Number(q?.regularMarketChangePercent?.raw);if(!q?.symbol||!Number.isFinite(p))return;LM.quotes[q.symbol]={price:p,prev:Number.isFinite(p-chg)?p-chg:null,chg:Number.isFinite(chg)?chg:null,pct:Number.isFinite(pct)?pct:null,ts:Number(q.regularMarketTime)||Date.now()/1000,spark:[],at:Date.now()};got++;});
+    if(got){LM.qAt=Date.now();LM.ok.quotes=LM.qAt;LM.err.quotes=null;}else throw new Error("The public market feed returned no verified quotes.");return got;
+  }catch(e){LM.err.quotes=zMsg(e);Z.failAt.quotes=zNow();return 0;}finally{lmPaintWL();lmPaintConn();}};
 stateOf=function(q){if(!q||!q.ts)return "";return zNow()-q.ts<1200?"":"closed";};
 
 /* ---------- chart candles (one Yahoo chart call per symbol + timeframe, cached 10 min) ---------- */
@@ -6184,7 +6182,7 @@ function zHomePaint(){const a=$("#tMk");if(a&&typeof homeMkHTML==="function")a.i
 {const _g=VIEWS.guide;if(_g)VIEWS.guide=sub=>_g(sub)
   .replace("<td><b>Mac app</b> (Pro Chart tab), or the TradingView links in World markets</td><td>Claude pages are blocked from price feeds; the Mac app connects directly</td>","<td><b>Live markets</b> here, or the TradingView links in World markets</td><td>Yahoo Finance data fetched by your Zapier connector, on phone or laptop</td>")
   .replace("<td>Mac app's <b>Network URL</b> on the same Wi-Fi</td><td>Your Mac does the fetching; your phone views it</td>","<td><b>Live markets</b> on your phone</td><td>Zapier fetches the data, so the phone refreshes by itself</td>");}
-devCheckLive=async function(){const m=await zMcp();DEV.live=!!m&&!zBlocking();DEV.checked=true;devBadges();if(route.page==="home")devCardPaint();};
+devCheckLive=async function(){try{await lmQuotes(true);DEV.live=Object.keys(LM.quotes||{}).length>0;}catch{DEV.live=false;}DEV.checked=true;devBadges();if(route.page==="home")devCardPaint();};
 devCardHTML=function(){const k=DEV.kind,dv=S.devs||{},phone=k!=="desktop",live=DEV.live;
   const liveTxt=live?`<span class="ok">On</span>: this device fetches Yahoo Finance, Google News and Polymarket through your Zapier connector.`
     :live===false?`<span class="no">Off here.</span> Live data needs the Zapier connector allowed for this page. <a href="#live">Live markets</a> shows how.`:"Checking…";
