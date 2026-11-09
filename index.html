@@ -9505,21 +9505,54 @@ let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
 function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
 function ribbonPaint(rows,delayed){
  const el=$("#kaMarketRibbon");if(!el)return;
- let label=el.querySelector(".mr-label");if(!label){label=document.createElement("span");label.className="mr-label";label.textContent="LIVE MARKETS";el.prepend(label);}
+ let label=el.querySelector(".mr-label");
+ if(!label){label=document.createElement("span");label.className="mr-label";label.textContent="LIVE MARKETS";el.prepend(label);}
+ let state=el.querySelector(".mr-state");
+ if(!state){state=document.createElement("span");state.className="mr-state";el.append(state);}
+ let viewport=el.querySelector(".mr-viewport");
  let track=el.querySelector(".mr-track");
- if(!track){track=document.createElement("div");track.className="mr-track";el.insertBefore(track,el.querySelector(".mr-state"));}
- let state=el.querySelector(".mr-state");if(!state){state=document.createElement("span");state.className="mr-state";el.append(state);}
- const valid=(rows||[]).filter(x=>Number.isFinite(Number(x.price)));
+ if(!viewport){
+  viewport=document.createElement("div");viewport.className="mr-viewport";
+  if(track){el.insertBefore(viewport,track);viewport.append(track);}
+  else el.insertBefore(viewport,state);
+ }
+ if(!track){track=document.createElement("div");track.className="mr-track";viewport.append(track);}
+ const valid=(rows||[]).filter(x=>x&&x.symbol&&Number.isFinite(Number(x.price)));
  if(!valid.length){state.textContent="FEED UNAVAILABLE · RETRYING";return;}
- const makeItem=q=>{const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=q.symbol;const name=document.createElement("b");name.textContent=q.symbol;const price=document.createElement("span");price.className="mr-price";const change=document.createElement("span");change.className="mr-change";item.append(name,price,change);return item;};
- const update=(item,q)=>{const price=item.querySelector(".mr-price"),change=item.querySelector(".mr-change"),next=Number(q.price),previous=Number(item.dataset.lastPrice),pct=Number(q.changePercent);if(Number.isFinite(previous)&&previous!==next){price.classList.remove("tick-up","tick-down");void price.offsetWidth;price.classList.add(next>previous?"tick-up":"tick-down");}price.textContent=next.toLocaleString("en-US",{maximumFractionDigits:4});change.textContent=Number.isFinite(pct)?(pct>0?"+":"")+pct.toFixed(2)+"%":"—";change.classList.toggle("up",Number.isFinite(pct)&&pct>=0);change.classList.toggle("down",Number.isFinite(pct)&&pct<0);item.dataset.lastPrice=String(next);item.title=(q.source||"Market data")+" · Updated "+(q.updatedAt?new Date(q.updatedAt).toLocaleTimeString():"time unavailable");};
+ const makeItem=q=>{
+  const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=q.symbol;
+  const name=document.createElement("b");name.textContent=q.symbol;
+  const price=document.createElement("span");price.className="mr-price";
+  const change=document.createElement("span");change.className="mr-change";
+  item.append(name,price,change);return item;
+ };
+ const update=(item,q)=>{
+  const price=item.querySelector(".mr-price"),change=item.querySelector(".mr-change");
+  if(!price||!change)return;
+  const next=Number(q.price),previous=Number(item.dataset.lastPrice),pct=Number(q.changePercent);
+  if(Number.isFinite(previous)&&previous!==next){
+   price.classList.remove("tick-up","tick-down");void price.offsetWidth;
+   price.classList.add(next>previous?"tick-up":"tick-down");
+  }
+  price.textContent=next.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:4});
+  change.textContent=Number.isFinite(pct)?(pct>0?"+":"")+pct.toFixed(2)+"%":"—";
+  change.classList.toggle("up",Number.isFinite(pct)&&pct>=0);
+  change.classList.toggle("down",Number.isFinite(pct)&&pct<0);
+  item.dataset.lastPrice=String(next);
+  item.title=(q.source||"Market data")+" · Updated "+(q.updatedAt?new Date(q.updatedAt).toLocaleTimeString():"time unavailable");
+ };
  const current=new Map([...track.querySelectorAll(".mr-item")].map(n=>[n.dataset.symbol,n]));
- const firstSet=valid.map(q=>{let n=current.get(q.symbol);if(!n)n=makeItem(q);update(n,q);return n;});
- const signature=firstSet.map(n=>n.dataset.symbol).join("|");
- if(track.dataset.symbols!==signature){track.replaceChildren(...firstSet,...firstSet.map(n=>n.cloneNode(true)));track.dataset.symbols=signature;}
- else{const nodes=[...track.querySelectorAll(".mr-item")];nodes.forEach((n,i)=>{const q=valid[i%valid.length];if(q)update(n,q);});}
- state.textContent=delayed?"STOCKS · DELAYED / SNAPSHOT FEED":"STOCKS · LIVE PROVIDER QUOTES";
- state.title="Prices update when the market-data provider publishes a new quote. Crypto trades stream separately from Coinbase.";
+ const items=valid.map(q=>{const item=current.get(q.symbol)||makeItem(q);update(item,q);return item;});
+ const signature=items.map(n=>n.dataset.symbol).join("|");
+ if(track.dataset.symbols!==signature){
+  track.replaceChildren(...items,...items.map(n=>n.cloneNode(true)));
+  track.dataset.symbols=signature;
+ }else{
+  const bySymbol=new Map(valid.map(q=>[q.symbol,q]));
+  track.querySelectorAll(".mr-item").forEach(item=>{const q=bySymbol.get(item.dataset.symbol);if(q)update(item,q);});
+ }
+ state.textContent=delayed?"STOCKS · DELAYED / SNAPSHOT":"STOCKS · PROVIDER QUOTES";
+ state.title="Stock quotes use the available provider feed and may be delayed. Bitcoin and Ether receive live Coinbase trade updates.";
 }
 async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
 function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
@@ -9662,7 +9695,7 @@ setInterval(run,1200);
 </script>
 <script id="kaushal-coinbase-live-stream">
 (()=>{"use strict";
-const products=["BTC-USD","ETH-USD","SOL-USD","DOGE-USD"];
+const products=["BTC-USD","ETH-USD"];
 let socket=null,retry=1000,retryTimer=null,closed=false;
 const money=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits: n>=1000?2:4});
 function paint(t){
@@ -9711,44 +9744,73 @@ setInterval(restore,500);
 })();
 </script>
 <style id="kaushal-full-width-market-ribbon">
-/* Full-width strip inside the dashboard content column, aligned with its true edges. */
+/* Stable ticker: fixed label + clipped viewport + independently moving content. */
 .topbar{border-bottom:0!important;box-shadow:none!important}
 .topbar::after{display:none!important}
 .stage{padding-top:0!important;min-width:0!important}
 #kaMarketRibbon.market-ribbon{
  position:sticky!important;top:var(--tb,58px)!important;z-index:59!important;
  box-sizing:border-box!important;width:calc(100% + 40px)!important;max-width:none!important;
- min-height:48px!important;margin:0 0 12px -20px!important;padding:0!important;
+ min-height:50px!important;margin:0 0 12px -20px!important;padding:0!important;
  border:0!important;border-top:1px solid color-mix(in srgb,var(--line) 45%,transparent)!important;
  border-bottom:1px solid var(--line)!important;border-radius:0!important;box-shadow:none!important;
  background:color-mix(in srgb,var(--panel) 96%,var(--gold))!important;
- display:flex!important;align-items:stretch!important;gap:0!important;overflow:hidden!important;
+ display:flex!important;flex-flow:row nowrap!important;align-items:stretch!important;gap:0!important;overflow:hidden!important;
 }
-#kaMarketRibbon .mr-label{display:flex!important;align-items:center!important;justify-content:center!important;
- flex:0 0 132px!important;width:132px!important;min-width:132px!important;padding:0 12px!important;
- border:0!important;border-right:1px solid var(--line)!important;background:transparent!important;
- color:var(--gold)!important;font:700 .68rem var(--f-mono)!important;letter-spacing:.12em!important;white-space:nowrap!important}
-#kaMarketRibbon .mr-track{display:flex!important;flex:1 1 0!important;min-width:0!important;width:auto!important;
- overflow:visible!important;align-items:center!important;white-space:nowrap!important;animation:mr-scroll 48s linear infinite!important;will-change:transform!important}
-#kaMarketRibbon .mr-item{display:flex!important;flex:0 0 auto!important;align-items:center!important;min-height:48px!important;
- padding:0 20px!important;border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;gap:10px!important;font-size:.74rem!important}
-#kaMarketRibbon .mr-item .mr-price{font-variant-numeric:tabular-nums}
+#kaMarketRibbon .mr-label{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 136px!important;width:136px!important;min-width:136px!important;box-sizing:border-box!important;
+ padding:0 10px!important;border:0!important;border-right:1px solid var(--line)!important;
+ background:transparent!important;color:var(--gold)!important;
+ font:700 .66rem var(--f-mono)!important;letter-spacing:.10em!important;white-space:nowrap!important;
+}
+#kaMarketRibbon .mr-viewport{
+ position:relative!important;display:block!important;flex:1 1 0!important;min-width:0!important;
+ width:0!important;overflow:hidden!important;contain:paint!important;
+}
+#kaMarketRibbon .mr-track{
+ display:flex!important;flex-flow:row nowrap!important;align-items:center!important;
+ width:max-content!important;min-width:max-content!important;max-width:none!important;flex:0 0 auto!important;
+ white-space:nowrap!important;gap:0!important;will-change:transform!important;
+ animation:mr-scroll 52s linear infinite!important;
+}
+#kaMarketRibbon .mr-viewport:hover .mr-track{animation-play-state:paused!important}
+#kaMarketRibbon .mr-item{
+ display:inline-flex!important;flex:0 0 auto!important;flex-flow:row nowrap!important;align-items:center!important;
+ justify-content:flex-start!important;gap:9px!important;min-height:50px!important;
+ padding:0 19px!important;box-sizing:border-box!important;
+ border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;
+ font:600 .72rem var(--f-mono)!important;white-space:nowrap!important;
+}
+#kaMarketRibbon .mr-item b{display:inline-block!important;flex:none!important;min-width:42px!important;color:var(--ink)!important}
+#kaMarketRibbon .mr-item .mr-price{display:inline-block!important;flex:none!important;min-width:62px!important;text-align:right!important;font-variant-numeric:tabular-nums!important}
+#kaMarketRibbon .mr-item .mr-change{display:inline-block!important;flex:none!important;min-width:54px!important;text-align:right!important;font-variant-numeric:tabular-nums!important}
 #kaMarketRibbon .mr-item .up{color:var(--up)!important}
 #kaMarketRibbon .mr-item .down{color:var(--down)!important}
 #kaMarketRibbon .mr-item .tick-up{animation:kaQuoteUp .65s ease}
 #kaMarketRibbon .mr-item .tick-down{animation:kaQuoteDown .65s ease}
-#kaMarketRibbon .mr-state{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;
- min-width:160px!important;padding:0 14px!important;margin:0!important;border-left:1px solid var(--line)!important;
- background:color-mix(in srgb,var(--panel) 80%,transparent)!important;color:var(--muted)!important;
- font:500 .59rem var(--f-mono)!important;letter-spacing:.03em!important;white-space:nowrap!important}
+#kaMarketRibbon .mr-state{
+ display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 166px!important;
+ min-width:166px!important;box-sizing:border-box!important;padding:0 10px!important;margin:0!important;
+ border-left:1px solid var(--line)!important;background:color-mix(in srgb,var(--panel) 80%,transparent)!important;
+ color:var(--muted)!important;font:500 .56rem var(--f-mono)!important;letter-spacing:.02em!important;white-space:nowrap!important;
+}
+@keyframes mr-scroll{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
 @keyframes kaQuoteUp{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #20c99799}100%{text-shadow:0 0 0 transparent}}
 @keyframes kaQuoteDown{0%{text-shadow:0 0 0 transparent}45%{text-shadow:0 0 10px #f0647599}100%{text-shadow:0 0 0 transparent}}
 @media(max-width:960px){
  #kaMarketRibbon.market-ribbon{width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:46px!important;top:var(--tb,54px)!important}
- #kaMarketRibbon .mr-label{flex-basis:108px!important;width:108px!important;min-width:108px!important;padding:0 8px!important;font-size:.6rem!important}
+ #kaMarketRibbon .mr-label{flex-basis:112px!important;width:112px!important;min-width:112px!important;font-size:.59rem!important}
  #kaMarketRibbon .mr-item{min-height:46px!important;padding:0 13px!important}
- #kaMarketRibbon .mr-state{min-width:0!important;padding:0 9px!important;font-size:.54rem!important}
+ #kaMarketRibbon .mr-state{flex-basis:130px!important;min-width:130px!important;font-size:.51rem!important}
 }
-@media(max-width:560px){#kaMarketRibbon .mr-state{display:none!important}#kaMarketRibbon .mr-label{flex-basis:96px!important;width:96px!important;min-width:96px!important}}
+@media(max-width:700px){
+ #kaMarketRibbon .mr-state{display:none!important}
+ #kaMarketRibbon .mr-label{flex-basis:100px!important;width:100px!important;min-width:100px!important}
+ #kaMarketRibbon .mr-item{gap:7px!important;padding:0 11px!important}
+ #kaMarketRibbon .mr-item b{min-width:38px!important}
+ #kaMarketRibbon .mr-item .mr-price{min-width:55px!important}
+ #kaMarketRibbon .mr-item .mr-change{min-width:48px!important}
+}
 @media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
 </style>
