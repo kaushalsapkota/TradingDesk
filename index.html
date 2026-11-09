@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Kaushal's Trading Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2372,11 +2373,13 @@ async function lmSave(){if(!window.claude)return;try{const db=await claude.use("
 async function lmLoadSnap(){if(!window.claude)return null;try{const db=await claude.use("db"),u=await claude.use("user");if(!db||!u)return null;const id=await u.id();const d=await db.doc("data/users/"+id+"/live").get();return d&&(d.data?d.data():d);}catch{return null;}}
 
 /* ---------- quotes (Yahoo spark JSON) ---------- */
+async function lmDirectQuotes(syms){
+  const rows=await Promise.all(syms.map(async symbol=>{const j=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(symbol)+"?range=1d&interval=1m&includePrePost=true",{cache:"no-store",headers:{Accept:"application/json"}}).then(r=>{if(!r.ok)throw new Error("Yahoo "+r.status);return r.json();});const m=j?.chart?.result?.[0]?.meta||{},price=Number(m.regularMarketPrice??m.postMarketPrice??m.previousClose),prev=Number(m.previousClose??m.chartPreviousClose);if(!Number.isFinite(price)||!Number.isFinite(prev))throw new Error("No quote");return {symbol,price,previousClose:prev,change:price-prev,changePercent:(price-prev)/prev*100,updatedAt:Date.now(),delayed:true};}));return rows;}
 async function lmQuotes(){const syms=WLALL.map(w=>w[0]);
-  try{const j=await fetch("/api/market?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("market proxy "+r.status);return r.json();});
+  try{let j;try{j=await fetch("/api/market?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("market proxy "+r.status);return r.json();});}catch{j={data:await lmDirectQuotes(syms),delayed:true};}
     for(const row of (j.data||[])){const prev=Number(row.previousClose),price=Number(row.price);if(!Number.isFinite(price)||!Number.isFinite(prev))continue;LM.quotes[row.symbol]={price,prev,chg:Number(row.change),pct:Number(row.changePercent),ts:Math.floor((row.updatedAt||Date.now())/1000),spark:[],at:Math.floor(Date.now()/1000)};}
-    LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;LM.feedDelayed=Boolean(j.delayed);
-  }catch(e){LM.err.quotes="Free market feed unavailable: "+(e.message||"try again shortly");LM.connected=false;}
+    if(Object.keys(LM.quotes).length){LM.ok.quotes=Date.now()/1000;LM.err.quotes=null;LM.connected=true;LM.feedDelayed=Boolean(j.delayed);}else throw new Error("No valid quotes returned");
+  }catch(e){LM.err.quotes="Market feed unavailable. The public feed may be closed or rate-limited.";LM.connected=false;}
   lmPaintWL();lmPaintConn();}
 function stateOf(q){if(!q)return "";const age=Date.now()/1000-(q.ts||0);return age<1200?"":"closed";}
 function lmPaintWL(){const el=$("#lmWL");if(!el)return;el.innerHTML=WL.map(([g,list])=>`<h4>${g}</h4>`+list.map(w=>{const q=LM.quotes[w[0]],cl=q&&q.pct>0?"up-t":q&&q.pct<0?"down-t":"";
