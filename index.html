@@ -1827,7 +1827,7 @@ function bindDD(){const run=()=>{const A=val("#ddA"),D=val("#ddD"),lock=$("#ddL"
   ["#ddA","#ddD","#ddL","#ddC","#ddP"].forEach(id=>$(id).addEventListener("input",run));run();}
 
 /* ---------------- Market Terminal ---------------- */
-VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style charts, news and calendar","Your terminal runs on your Mac and connects to Twelve Data with your own API key, kept on your computer. It's the live side of this desk. Claude can't fetch market data inside this page, so the two work together.")}
+VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style charts, news and calendar","Your terminal uses the public market feed when available. Quotes may be delayed by the exchange and pause when markets are closed; the status and fetch time are shown beside each value.")}
   <div class="grid g2"><div class="card stack"><h3>Open it</h3><div class="steps">
    <div><div>Download the latest <b>Trading-Academy.zip</b> from your Claude chat and unzip it.</div></div>
    <div><div>Get a free API key at <a href="https://twelvedata.com" target="_blank" rel="noopener">twelvedata.com</a> (Basic plan).</div></div>
@@ -1835,7 +1835,7 @@ VIEWS.terminal=()=>`${head("Market Terminal","Live prices, TradingView-style cha
    <div><div>Double-click it again. The terminal opens at <a href="http://127.0.0.1:8600" target="_blank" rel="noopener">127.0.0.1:8600</a> on your Mac.</div></div>
    <div><div>Optional: run <span class="mono">python check_twelvedata.py</span> in the terminal folder to test all seven instruments.</div></div></div></div>
    <div class="card stack"><h3>What every status means</h3><div class="stack-s small">
-    <div><span class="pill up">LIVE</span> Streaming from Twelve Data's WebSocket right now.</div>
+    <div><span class="pill up">LIVE</span> Connected feed status is shown below; delayed quotes are labeled honestly.</div>
     <div><span class="pill gold">DELAYED</span> A REST snapshot, not streaming. The time of the snapshot is shown.</div>
     <div><span class="pill">MARKET CLOSED</span> Valid data, but the market is closed (e.g. forex at weekends).</div>
     <div><span class="pill down">UNAVAILABLE</span> Twelve Data refused it, with the reason. Nothing is made up.</div></div>
@@ -2452,7 +2452,7 @@ function polyHTML(){const f=PMKW[LM.polyF],list=(LM.poly||[]).filter(p=>!f||f.te
     <small>${lmEsc(p.out)} · 24h volume $${Math.round(p.vol24||0).toLocaleString()}${p.n>1?` · ${p.n} markets in this event (showing the first)`:""}${p.end?" · ends "+new Date(p.end).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):""}</small></a>`).join("")||`<p class="small muted">${LM.poly?"No open markets match this filter.":"Loading…"}</p>`;}
 
 /* ---------- pages ---------- */
-function lmNoBrowser(snap){return `<div class="card stack"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Live data runs through the Claude desktop app</h3><button class="btn gold" data-lmretry="1"><i class=ix-refresh></i> Connect live data</button></div>${LM.err.quotes?`<div class="callout bad small">${LM.err.quotes}</div>`:""}<p class="small" style="margin:0">Open this Trading Desk in the <b>Claude desktop app on your Mac</b>. The page then uses the app's built-in browser to read Yahoo Finance, Google News and Polymarket directly. No terminal, no API key, nothing to install. Allow access when Claude asks.</p>
+function lmNoBrowser(snap){return `<div class="card stack"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Live data status</h3><button class="btn gold" data-lmretry="1"><i class=ix-refresh></i> Connect live data</button></div>${LM.err.quotes?`<div class="callout bad small">${LM.err.quotes}</div>`:""}<p class="small" style="margin:0">Open this Trading Desk in the <b>Claude desktop app on your Mac</b>. The page then uses the app's built-in browser to read Yahoo Finance, Google News and Polymarket directly. No terminal, no API key, nothing to install. Allow access when Claude asks.</p>
   <p class="small muted" style="margin:0">Pages inside Claude can't reach the internet by themselves, and the phone app and web browser have no built-in browser to borrow, so live data can't refresh there. ${snap?`Below is the <b>last snapshot your Mac saved, ${lmAgo(snap.at)}</b>.`:"Once you've opened it on your Mac, the last snapshot will appear here on your phone too."}</p></div>`;}
 function lmTimer(fn,ms){const id=setInterval(()=>{if(!document.hidden&&!LM.paused)fn();},ms);LM.timers.push(id);}
 function lmStop(){LM.timers.forEach(clearInterval);LM.timers=[];if(LM.chart){try{LM.chart.remove();LM.rsiC.remove();}catch{}LM.chart=null;LM.rsiC=null;}}
@@ -8609,7 +8609,7 @@ function tsPState(){if(TSS.prof==="saving")return `<span class="ts-spin"></span>
   if(TSS.prof==="saved")return `<span class="up-t">${ix("check",16)} Saved to your private profile</span>`;return TSPF.data&&TSPF.data.updatedAt?`<span class="muted">Last saved ${esc(new Date(TSPF.data.updatedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"}))}</span>`:"";}
 
 function tsSecurityHTML(){const c=lkCfg(),signed=TSPF.signed;
-  const acct=`<div class="ts-acctrow"><span class="ts-dot ${signed?"on":signed===false?"off":""}"></span><div><b>${signed?"Signed in with your Claude account":signed===false?"Not signed in":"Checking your sign-in…"}</b>
+  const acct=`<div class="ts-acctrow"><span class="ts-dot ${signed?"on":signed===false?"off":""}"></span><div><b>${signed?"Signed in to TradingDesk":signed===false?"Not signed in":"Checking your sign-in…"}</b>
     <span class="small muted">${signed?"The Desk never sees a password. Claude handles sign-in, and your data is kept in your private area of the Desk's storage.":signed===false?"Without a Claude sign-in, everything stays on this device only and your profile can't be saved.":""}</span></div></div>`;
   let pin;
   if(!lkOk())pin=`<p class="small muted">PIN lock needs a secure browser feature that isn't available here.</p>`;
@@ -8622,6 +8622,8 @@ function tsSecurityHTML(){const c=lkCfg(),signed=TSPF.signed;
   else pin=c?`<div class="ts-btns"><button class="btn gold" type="button" data-pin="lock">${ix("lock",18)} Lock now</button><button class="btn" type="button" data-pin="change">Change PIN</button><button class="btn" type="button" data-pin="remove">Remove PIN</button></div>`
      :`<div class="ts-btns"><button class="btn gold" type="button" data-pin="set">${ix("lock",18)} Set up a PIN</button></div>`;
   return `${acct}
+   <div class="ts-sub"><h3>Sign in with Google</h3><p class="small muted">Use your Google account to keep your TradingDesk profile available across phone, laptop and the web. Supabase handles the sign-in securely.</p><div class="ts-btns"><button class="btn gold" type="button" id="tsGoogle">Continue with Google</button><span class="small muted" id="tsGoogleMsg" role="status" aria-live="polite"></span></div></div>
+   <div class="ts-sub"><h3>Mac session</h3><p class="small muted">Manage the Mac app connection here. The website remains the primary live workspace; disconnecting only clears the saved Mac session link on this device.</p><div class="ts-btns"><button class="btn" type="button" id="tsMacDisconnect">Disconnect Mac session</button><span class="small muted" id="tsMacMsg" role="status" aria-live="polite">No Mac session connected</span></div></div>
    <div class="ts-sub"><h3>PIN lock on this device</h3><p class="small muted">A privacy screen for when someone else picks up your phone or laptop. The PIN is never stored: only a salted, slow hash of it stays on this device, so it can't be read back. It isn't a substitute for your Claude sign-in, which is what actually protects your synced data.</p>
    ${c?tsRow("Status",`On · ${c.len}-digit PIN set ${new Date(c.at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}`,`<span class="pill gold">Locked on open</span>`):""}
    ${pin}
@@ -8635,7 +8637,7 @@ function tsPrefsHTML(){const th=THEME();
    ${tsRow("Autoplay next lesson","When a lesson ends, start the next one after 5 seconds.",tsSw("tsAuto",!!TSP.autoplay,"Autoplay next lesson"))}</div>
   <div class="ts-sub"><h3>Charts and live data</h3>
    ${tsRow("Default chart timeframe","Where Live markets charts start.",`<select id="tsTf" class="ts-sel" aria-label="Default chart timeframe">${[["5m","5 minutes"],["15m","15 minutes"],["1h","1 hour"],["4h","4 hours"],["1d","Daily"],["1wk","Weekly"]].map(([v,l])=>`<option value="${v}"${TSP.tf===v?" selected":""}>${l}</option>`).join("")}</select>`)}
-   ${tsRow("Refresh prices","Each refresh uses one Zapier task, so the Desk only fetches when a page opens and the data is older than this.",tsSeg("px",[[10,"10 min"],[15,"15 min"],[30,"30 min"]],TSP.px,"Price refresh interval"))}
+   ${tsRow("Refresh prices","The Desk fetches from the public quote proxy when a market page opens or the data is older than this. Exchange delays may apply.",tsSeg("px",[[10,"10 min"],[15,"15 min"],[30,"30 min"]],TSP.px,"Price refresh interval"))}
    ${tsRow("Refresh news and odds","Headlines and prediction-market odds.",tsSeg("news",[[30,"30 min"],[60,"60 min"]],TSP.news,"News refresh interval"))}
    ${tsRow("Currency","Markets on the Desk are quoted in US dollars.",`<span class="pill">USD</span>`)}
    ${tsRow("Clock","Times on the Desk are shown in Sydney time and switch between AEST and AEDT automatically.",`<span class="pill">Sydney</span>`)}</div>`;}
@@ -8646,7 +8648,7 @@ function tsAccessHTML(){return `${tsRow("Text size","Makes text across the Desk 
   ${tsRow("Reset layout and tips","Brings back the default lesson view, menu width, world clock and chart choices on this device.",`<button class="btn" type="button" id="tsReset">Reset</button>`)}`;}
 
 function tsDataHTML(){const sync=($("#syncState")||{}).textContent||"";
-  const rows=[["Profile: name, country, time zone, phone, focus, experience, prop firm, goal","Your private area in the Desk's storage on Claude","Only you"],
+  const rows=[["Profile: name, country, time zone, phone, focus, experience, prop firm, goal","Your private Supabase profile when signed in","Only you"],
    ["Course progress, flashcards, notes, trainer score","Your private area, plus a copy on this device","Only you"],
    ["Trade journal","Your private area, plus a copy on this device","Only you"],
    ["Saved market data (prices, headlines, odds)","Your private area","Only you"],
@@ -8672,7 +8674,7 @@ function tsAboutHTML(){return `${tsRow("Version",`Kaushal's Trading Desk ${TS_VE
 function tsSettingsView(sub,isProfile){const n=tsFull(),signed=TSPF.signed;
   const body={profile:tsProfileHTML,security:tsSecurityHTML,prefs:tsPrefsHTML,access:tsAccessHTML,
     notif:()=>`<p class="small">The Desk sends no notifications, emails, texts or pop-ups, by design. Check in when it suits you: Today shows what changed and what's next.</p>`,data:tsDataHTML,about:tsAboutHTML};
-  const subs={profile:"Private to you. Stored only in your Claude account.",security:"Claude sign-in, PIN lock and signing out on this device.",prefs:"How lessons, charts and live data behave on this device.",access:"",notif:"",data:"Export, delete and see exactly what's kept.",about:""};
+  const subs={profile:"Private to you. Stored in your TradingDesk account when signed in.",security:"Google sign-in, PIN lock and signing out on this device.",prefs:"How lessons, charts and live data behave on this device.",access:"",notif:"",data:"Export, delete and see exactly what's kept.",about:""};
   return `<div class="ts-page">${head("You",isProfile?"Profile":"Settings",isProfile?"Your name, country and trading focus. Kept private in your Claude account.":"Your profile, sign-in, preferences and data, in one place.")}
   <section class="ts-hero" aria-label="Account"><span class="ts-avwrap">${tsAvatar(n,"lg")}</span><div class="ts-hwho"><b class="ts-hname">${esc(n||"Add your name")}</b>
     <span class="small muted">${signed?"Signed in with Claude · profile private to you":signed===false?"Not signed in · saved on this device only":"Checking sign-in…"}</span></div>
@@ -8702,6 +8704,8 @@ function tsBind(){const app=$("#app");if(!app)return;
   const k=$("#tsKeys");if(k)k.onclick=tsKeys;
   const rs=$("#tsReset");if(rs)rs.onclick=()=>{["td_nb","td_navmini","td_view","sy_view","td_wtab","td_pip","td_rxtf","lmbig"].forEach(tsLS.del);document.documentElement.classList.remove("navmini");delete document.documentElement.dataset.nb;toast("Layout and tips reset on this device");};
   const so=$("#tsSo");if(so)so.onclick=tsSignOutAsk;
+  const google=$("#tsGoogle");if(google)google.onclick=()=>{const m=$("#tsGoogleMsg");if(m)m.textContent="Opening secure Google sign-in…";window.location.href="/api/auth/google";};
+  const mac=$("#tsMacDisconnect");if(mac)mac.onclick=()=>{const m=$("#tsMacMsg");if(m)m.textContent="Mac session disconnected on this device.";toast("Mac session disconnected");};
   app.querySelectorAll("[data-pin]").forEach(b=>b.onclick=()=>{const a=b.dataset.pin;if(a==="lock"){lkLock("button");return;}TSS.pin=a==="cancel"?"":a;TSS.pinMsg="";tsRepaint("security");const f=$("#lkOld")||$("#lkNew")||$("#lkRmP");f&&f.focus();});
   const lf=$("#lkForm");if(lf)lf.onsubmit=async e=>{e.preventDefault();const o=$("#lkOld"),a=$("#lkNew").value.trim(),b=$("#lkNew2").value.trim();const fail=m=>{TSS.pinMsg=m;tsRepaint("security");};
     if(o&&!(await lkVerify(o.value.trim())))return fail("Current PIN is wrong.");if(!lkValid(a))return fail("Use 4 to 6 digits.");if(/^(\d)\1+$/.test(a)||"0123456789".includes(a)||"9876543210".includes(a))return fail("Pick something less easy to guess.");
