@@ -1,0 +1,1 @@
+module.exports = function handler(req, res) { return res.status(200).json({ ok: true, runtime: process.version, fetchAvailable: typeof fetch === "function", abortSignalTimeout: typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" }); };
