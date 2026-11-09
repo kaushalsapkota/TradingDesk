@@ -1,8 +1,48 @@
-const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.\-^=]{0,14}$/;
-const COIN_IDS={"BTC-USD":"bitcoin","ETH-USD":"ethereum"};
-const STOOQ=new Set(["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ"]);
-async function getJson(url,ms=7000){const r=await fetch(url,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(ms)});if(!r.ok)throw Error("Upstream returned "+r.status);return r.json();}
-async function yahooQuote(symbol){const p=await getJson("https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(symbol)+"?range=1d&interval=1m&includePrePost=true"),r=p?.chart?.result?.[0],m=r?.meta;const price=Number(m?.regularMarketPrice??m?.postMarketPrice??m?.previousClose),previousClose=Number(m?.previousClose??m?.chartPreviousClose);if(!Number.isFinite(price)||!Number.isFinite(previousClose)||!previousClose)throw Error("No valid quote");return {symbol,price,previousClose,change:price-previousClose,changePercent:(price-previousClose)/previousClose*100,currency:m?.currency||"USD",marketState:m?.marketState||"UNKNOWN",source:"Yahoo Finance",updatedAt:Date.now(),delayed:true};}
-async function coinQuote(symbol){const id=COIN_IDS[symbol];if(!id)throw Error("No alternate source");const j=await getJson("https://api.coingecko.com/api/v3/simple/price?ids="+id+"&vs_currencies=usd&include_24hr_change=true"),price=Number(j?.[id]?.usd),pct=Number(j?.[id]?.usd_24h_change);if(!Number.isFinite(price)||!Number.isFinite(pct))throw Error("No crypto quote");const previousClose=price/(1+pct/100);return {symbol,price,previousClose,change:price-previousClose,changePercent:pct,currency:"USD",marketState:"OPEN",source:"CoinGecko",updatedAt:Date.now(),delayed:true};}
-async function stooqQuote(symbol){if(!STOOQ.has(symbol))throw Error("No alternate source");const r=await fetch("https://stooq.com/q/d/l/?s="+symbol.toLowerCase()+".us&i=d",{signal:AbortSignal.timeout(7000)});if(!r.ok)throw Error("Stooq returned "+r.status);const lines=(await r.text()).trim().split(/\r?\n/);if(lines.length<3)throw Error("No alternate daily quote");const a=lines[lines.length-1].split(","),b=lines[lines.length-2].split(","),price=Number(a[4]),previousClose=Number(b[4]);if(!price||!previousClose)throw Error("Invalid alternate quote");return {symbol,price,previousClose,change:price-previousClose,changePercent:(price-previousClose)/previousClose*100,currency:"USD",marketState:"CLOSED",source:"Stooq daily fallback",updatedAt:Date.now(),delayed:true};}
-export default async function handler(req,res){const raw=String(req.query?.symbols||"AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,SPY,QQQ,BTC-USD,ETH-USD"),symbols=[...new Set(raw.split(",").map(s=>s.trim().toUpperCase()).filter(s=>SYMBOL_PATTERN.test(s)))].slice(0,50);if(!symbols.length)return res.status(400).json({error:"No supported symbols requested"});const data=await Promise.all(symbols.map(async symbol=>{try{return await yahooQuote(symbol);}catch{for(const fn of [()=>coinQuote(symbol),()=>stooqQuote(symbol)])try{return await fn();}catch{}return null;}}));res.setHeader("Cache-Control","s-maxage=10, stale-while-revalidate=20");return res.status(200).json({source:"Yahoo Finance with CoinGecko and Stooq fallbacks",delayed:true,updatedAt:Date.now(),data:data.filter(Boolean)});}
+export default async function handler(req, res) {
+  const raw = String(req.query?.symbols || 'SPY,QQQ').split(',').slice(0, 40)
+  const symbols = raw.map(symbol => symbol.replace(/[^A-Za-z0-9.=^_-]/g, '')).filter(Boolean)
+  const stocks = symbols.filter(symbol => /^[A-Z]{1,6}$/.test(symbol))
+  const snapshots = {}, key = process.env.APCA_API_KEY_ID, secret = process.env.APCA_API_SECRET_KEY
+  if (key && secret && stocks.length) {
+    try {
+      const url = 'https://data.alpaca.markets/v2/stocks/snapshots?symbols=' + encodeURIComponent(stocks.join(',')) + '&feed=iex'
+      const response = await fetch(url, { headers: { 'APCA-API-KEY-ID': key, 'APCA-API-SECRET-KEY': secret, Accept: 'application/json' }, signal: AbortSignal.timeout(6500) })
+      if (!response.ok) throw new Error('Alpaca returned ' + response.status)
+      Object.assign(snapshots, (await response.json()).snapshots || {})
+    } catch (error) { console.error('Alpaca IEX snapshots unavailable:', error instanceof Error ? error.message : 'unknown error') }
+  }
+  async function quote(symbol) {
+    const snap = snapshots[symbol]
+    if (snap) {
+      const trade = snap.latestTrade || {}, minute = snap.minuteBar || {}, day = snap.dailyBar || {}, previous = snap.prevDailyBar || {}
+      const price = Number.isFinite(trade.p) ? trade.p : Number.isFinite(minute.c) ? minute.c : day.c
+      const previousClose = Number.isFinite(previous.c) ? previous.c : null
+      const timestamp = trade.t || minute.t || day.t || null
+      const seconds = timestamp ? new Date(timestamp).getTime() / 1000 : Date.now() / 1000
+      if (Number.isFinite(price)) return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(previousClose) ? price - previousClose : null }, regularMarketChangePercent: { raw: Number.isFinite(previousClose) && previousClose !== 0 ? (price - previousClose) / previousClose * 100 : null }, regularMarketTime: seconds, source: 'Alpaca IEX', isRealTime: Date.now() - seconds * 1000 < 120000, currency: 'USD' }
+    }
+    if (symbol.endsWith('-USD')) {
+      const base = symbol.slice(0, -4), response = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=' + encodeURIComponent(base), { signal: AbortSignal.timeout(5000) })
+      if (response.ok) { const payload = await response.json(), price = Number(payload?.data?.rates?.USD); if (Number.isFinite(price)) return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: null }, regularMarketChangePercent: { raw: null }, regularMarketTime: Date.now() / 1000, source: 'Coinbase spot rate', isRealTime: false } }
+    }
+    const chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=1d&interval=1m&includePrePost=true'
+    const chartResponse = await fetch(chartUrl, { headers: { 'User-Agent': 'Mozilla/5.0 TradingDesk/1.0', Accept: 'application/json' }, signal: AbortSignal.timeout(5500) })
+    if (chartResponse.ok) {
+      const payload = await chartResponse.json(), result = payload?.chart?.result?.[0], meta = result?.meta || {}, closes = (result?.indicators?.quote?.[0]?.close || []).filter(Number.isFinite)
+      const price = Number.isFinite(meta.regularMarketPrice) ? meta.regularMarketPrice : closes[closes.length - 1], previous = Number.isFinite(meta.chartPreviousClose) ? meta.chartPreviousClose : meta.previousClose
+      if (Number.isFinite(price)) return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(previous) ? price - previous : null }, regularMarketChangePercent: { raw: Number.isFinite(previous) && previous !== 0 ? (price - previous) / previous * 100 : null }, regularMarketTime: meta.regularMarketTime || Date.now() / 1000, source: 'Yahoo Finance snapshot', isRealTime: false, currency: meta.currency || 'USD' }
+    }
+    const target = 'https://api.nasdaq.com/api/quote/' + encodeURIComponent(symbol.replace('^', '')) + '/info?assetclass=' + (['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO'].includes(symbol) ? 'etf' : 'stocks')
+    const response = await fetch(target, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }, signal: AbortSignal.timeout(5000) })
+    if (!response.ok) return null
+    const payload = await response.json(), data = payload?.data?.primaryData
+    if (!data || data.lastSalePrice === 'N/A') return null
+    const price = Number(String(data.lastSalePrice).replace(/[$,]/g, '')), change = Number(String(data.netChange || 0).replace(/[$,%,+]/g, '')), changePercent = Number(String(data.percentageChange || 0).replace(/[%+]/g, ''))
+    if (!Number.isFinite(price)) return null
+    return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(change) ? change : null }, regularMarketChangePercent: { raw: Number.isFinite(changePercent) ? changePercent : null }, regularMarketTime: Date.now() / 1000, source: data.isRealTime ? 'Nasdaq real-time' : 'Nasdaq delayed', isRealTime: !!data.isRealTime }
+  }
+  const result = await Promise.all(symbols.map(async symbol => { try { return await quote(symbol) } catch (error) { console.error('Quote unavailable for', symbol, error instanceof Error ? error.message : 'unknown error'); return null } }))
+  const clean = result.filter(Boolean), data = clean.map(q => ({ symbol: q.symbol, price: q.regularMarketPrice.raw, changePercent: q.regularMarketChangePercent.raw, change: q.regularMarketChange.raw, updatedAt: (q.regularMarketTime || Date.now() / 1000) * 1000, source: q.source, realtime: !!q.isRealTime }))
+  res.setHeader('Cache-Control', key && secret ? 's-maxage=2, stale-while-revalidate=3' : 'no-store')
+  res.status(200).json({ data, quoteResponse: { result: clean, error: null }, provider: key && secret ? 'Alpaca IEX + Yahoo Finance fallback' : 'Yahoo Finance + Nasdaq + Coinbase fallback', realtime: clean.some(q => q.source === 'Alpaca IEX' && q.isRealTime) })
+}
