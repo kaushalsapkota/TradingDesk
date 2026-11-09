@@ -13,7 +13,7 @@ const SYMBOLS = [
 
 async function quote(item) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8500);
+  const timer = setTimeout(() => controller.abort(), 4500);
   try {
     const endpoint = "https://query1.finance.yahoo.com/v8/finance/chart/" +
       encodeURIComponent(item.symbol) + "?range=1d&interval=1m";

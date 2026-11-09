@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; TradingDesk/1.0)", "Accept": "application/rss+xml, application/xml, text/xml" },
-      signal: AbortSignal.timeout(9000)
+      signal: AbortSignal.timeout(4500)
     });
     if (!response.ok) throw new Error("News provider returned " + response.status);
     const xml = await response.text();
