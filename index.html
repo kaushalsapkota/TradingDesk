@@ -9703,3 +9703,92 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 setInterval(restore,500);
 })();
 </script>
+<style id="kaushal-full-width-market-ribbon">
+/* One seamless full-width market strip directly below the search/header bar */
+.topbar{
+  border-bottom:0!important;
+  box-shadow:none!important;
+}
+.topbar::after{display:none!important}
+.stage{padding-top:0!important}
+#kaMarketRibbon.market-ribbon{
+  position:sticky!important;
+  top:var(--tb,58px)!important;
+  z-index:59!important;
+  box-sizing:border-box!important;
+  width:calc(100% + 56px)!important;
+  max-width:none!important;
+  min-height:48px!important;
+  margin:0 0 12px -28px!important;
+  padding:0!important;
+  border:0!important;
+  border-top:1px solid color-mix(in srgb,var(--line) 45%,transparent)!important;
+  border-bottom:1px solid var(--line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:color-mix(in srgb,var(--panel) 96%,var(--gold))!important;
+  display:flex!important;
+  align-items:stretch!important;
+  gap:0!important;
+  overflow:hidden!important;
+}
+#kaMarketRibbon .mr-label{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:132px!important;
+  min-width:132px!important;
+  padding:0 18px!important;
+  border:0!important;
+  border-right:1px solid var(--line)!important;
+  background:transparent!important;
+  font-size:.68rem!important;
+  letter-spacing:.15em!important;
+  white-space:nowrap!important;
+}
+#kaMarketRibbon .mr-track{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  width:0!important;
+  overflow:visible!important;
+  align-items:center!important;
+  animation-duration:48s!important;
+}
+#kaMarketRibbon .mr-item{
+  min-height:48px!important;
+  padding:0 20px!important;
+  border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;
+  gap:10px!important;
+  font-size:.74rem!important;
+}
+#kaMarketRibbon .mr-state{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 auto!important;
+  min-width:150px!important;
+  padding:0 18px!important;
+  margin:0!important;
+  border-left:1px solid var(--line)!important;
+  background:color-mix(in srgb,var(--panel) 80%,transparent)!important;
+  font-size:.6rem!important;
+  letter-spacing:.04em!important;
+  white-space:nowrap!important;
+}
+@media(max-width:960px){
+  .topbar{border-bottom:0!important}
+  #kaMarketRibbon.market-ribbon{
+    width:calc(100% + 32px)!important;
+    margin-left:-16px!important;
+    min-height:46px!important;
+    top:var(--tb,54px)!important;
+  }
+  #kaMarketRibbon .mr-label{width:108px!important;min-width:108px!important;padding:0 10px!important;font-size:.61rem!important}
+  #kaMarketRibbon .mr-item{min-height:46px!important;padding:0 13px!important}
+  #kaMarketRibbon .mr-state{min-width:0!important;padding:0 10px!important;font-size:.55rem!important}
+}
+@media(max-width:560px){
+  #kaMarketRibbon .mr-state{display:none!important}
+  #kaMarketRibbon .mr-label{width:96px!important;min-width:96px!important}
+}
+</style>
