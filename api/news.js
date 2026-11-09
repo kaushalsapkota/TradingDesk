@@ -1,24 +1,3 @@
-const TOPICS = ["stock market", "futures forex gold", "Federal Reserve economy", "crypto market", "earnings markets"];
-
-function clean(value = "") {
-  return value.replace(/<[^>]*>/g, "").replace(/<!\[CDATA\[|\]\]>/g, "").trim();
-}
-
-export default async function handler(req, res) {
-  const query = String(req.query?.q || TOPICS.join(" OR ")).slice(0, 180);
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
-  try {
-    const response = await fetch(url, { headers: { Accept: "application/rss+xml, application/xml" } });
-    if (!response.ok) throw new Error(`News source returned ${response.status}`);
-    const xml = await response.text();
-    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 80).map((match) => {
-      const item = match[1];
-      const read = (tag) => clean(item.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`))?.[1] || "");
-      return { title: read("title"), link: read("link"), published: read("pubDate"), source: read("source") };
-    }).filter((item) => item.title && item.link);
-    res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
-    return res.status(200).json({ source: "Google News RSS public feed", delayed: true, updatedAt: Date.now(), data: items });
-  } catch (error) {
-    return res.status(502).json({ error: "News feed unavailable", detail: error instanceof Error ? error.message : "Unknown upstream error" });
-  }
-}
+const TOPICS=["stock market","futures forex gold","Federal Reserve economy","crypto market","earnings markets"];
+function clean(v=""){return v.replace(/<[^>]*>/g,"").replace(/<!\\[CDATA\\[|\\]\\]>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();}
+export default async function handler(req,res){const query=String(req.query?.q||TOPICS.join(" OR ")).slice(0,180),url="https://news.google.com/rss/search?q="+encodeURIComponent(query+" when:1d")+"&hl=en-US&gl=US&ceid=US:en";try{const response=await fetch(url,{headers:{Accept:"application/rss+xml, application/xml"},signal:AbortSignal.timeout(9000)});if(!response.ok)throw Error("News source returned "+response.status);const xml=await response.text();const data=[...xml.matchAll(/<item>([\\s\\S]*?)<\\/item>/gi)].slice(0,80).map(m=>{const item=m[1],read=tag=>clean(item.match(new RegExp("<"+tag+"[^>]*>([\\\\s\\\\S]*?)<\\\\/"+tag+">","i"))?.[1]||"");return {title:read("title"),link:read("link"),published:read("pubDate"),source:read("source")||"Google News"};}).filter(x=>x.title&&x.link);res.setHeader("Cache-Control","s-maxage=90, stale-while-revalidate=180");return res.status(200).json({source:"Google News RSS",delayed:true,updatedAt:Date.now(),data});}catch(e){return res.status(502).json({error:"News feed unavailable",detail:e instanceof Error?e.message:"Unknown upstream error"});}}
