@@ -8635,7 +8635,7 @@ function tsSecurityHTML(){const c=lkCfg(),signed=TSPF.signed;
    <div class="ts-sub"><h3>Sign out on this device</h3><p class="small muted">Clears this device's copy of the Desk, your preferences and PIN, then closes the Desk. Your synced data stays in your Claude account.</p><div class="ts-btns"><button class="btn" type="button" id="tsSo">${ix("out",18)} Sign out on this device</button></div></div>`;}
 
 function tsPrefsHTML(){const th=THEME();
-  return `${tsRow("Theme","Automatic follows your device's light or dark setting.",tsSeg("theme",[["system","Auto"],["light","Light"],["dark","Dark"]],th,"Theme"))}
+  return `${tsRow("Theme","Choose Light or Dark appearance.",tsSeg("theme",[["light","Light"],["dark","Dark"]],th==="dark"?"dark":"light","Theme"))}
   <div class="ts-sub"><h3>Lessons</h3>${typeof voiceCard==="function"?voiceCard():""}
    ${tsRow("Captions","Show captions when a lesson starts. You can still toggle them in the player.",tsSw("tsCap",TSP.captions!==false,"Captions on by default"))}
    ${tsRow("Autoplay next lesson","When a lesson ends, start the next one after 5 seconds.",tsSw("tsAuto",!!TSP.autoplay,"Autoplay next lesson"))}</div>
@@ -9567,12 +9567,13 @@ function profileMenu(){
  let host=top||brand;if(!host)return;
  if(!$("#kaProfileWrap")){
   const w=document.createElement("div");w.id="kaProfileWrap";w.className="ka-profile-wrap";
-  w.innerHTML='<button class="ka-profile-trigger" id="kaProfileTrigger" aria-expanded="false"><span class="ka-avatar">K</span><span>Profile</span><span aria-hidden="true">⌄</span></button><div class="ka-profile-menu" id="kaProfileMenu"><div class="ka-profile-caption">ACCOUNT & PREFERENCES</div><button id="kaProfileAuth">Sign in / Create account</button><button id="kaProfileSound">Sound alerts: Off</button><button id="kaProfileTheme">Appearance settings</button></div>';
+  w.innerHTML='<button class="ka-profile-trigger" id="kaProfileTrigger" aria-expanded="false"><span class="ka-avatar">K</span><span>Profile</span><span aria-hidden="true">⌄</span></button><div class="ka-profile-menu" id="kaProfileMenu"><div class="ka-profile-caption">ACCOUNT & PREFERENCES</div><button id="kaProfileAuth">Sign in / Create account</button><button id="kaProfileSound">Sound alerts: Off</button><button id="kaProfileSettings">Settings & appearance</button><button id="kaProfilePrivacy">Privacy</button></div>';
   host.appendChild(w);
   $("#kaProfileTrigger").addEventListener("click",()=>{const m=$("#kaProfileMenu"),open=m.classList.toggle("open");$("#kaProfileTrigger").setAttribute("aria-expanded",String(open));});
   $("#kaProfileAuth").onclick=()=>{if(typeof openAuth==="function")openAuth();$("#kaProfileMenu").classList.remove("open");};
   $("#kaProfileSound").onclick=()=>{const on=localStorage.getItem("kaSoundAlerts")==="on";localStorage.setItem("kaSoundAlerts",on?"off":"on");soundLabel();};
-  $("#kaProfileTheme").onclick=()=>{const b=$("#thmBtn");if(b)b.click();else $("#themeBtn")?.click();};
+  $("#kaProfileSettings").onclick=()=>{location.hash="#settings";$("#kaProfileMenu").classList.remove("open");};
+  $("#kaProfilePrivacy").onclick=()=>{location.hash="#privacy";$("#kaProfileMenu").classList.remove("open");};
   document.addEventListener("click",e=>{if(!w.contains(e.target))$("#kaProfileMenu")?.classList.remove("open");});
  }
  const old=$("#kaAuthTrigger");if(old)old.style.display="none";const side=$("#kaAuthSide");if(side)side.style.display="none";
@@ -9613,7 +9614,7 @@ setInterval(()=>{profileMenu();sidebar();},2500);
 </script>
 
 <style id="kaushal-header-cleanup">
-#kaProfileWrap{display:none!important}
+#acctBtn{display:none!important}
 #thmBtn{display:none!important}
 #devTop,#devSide{display:none!important}
 </style>
@@ -9621,7 +9622,7 @@ setInterval(()=>{profileMenu();sidebar();},2500);
 (()=>{"use strict";
 const $=s=>document.querySelector(s);
 function cleanHeader(){
- $("#kaProfileWrap")?.remove();
+ const oldAccount=$("#acctBtn");if(oldAccount)oldAccount.style.display="none";
  const t=$("#thmBtn");if(t){t.hidden=true;t.style.display="none";t.setAttribute("aria-hidden","true");}
  $("#devTop")?.remove();$("#devSide")?.remove();
 }
