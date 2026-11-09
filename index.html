@@ -2491,7 +2491,7 @@ function lmNoBrowser(snap){return `<div class="card stack"><div class="row" styl
 function lmTimer(fn,ms){const id=setInterval(()=>{if(!document.hidden&&!LM.paused)fn();},ms);LM.timers.push(id);}
 function lmStop(){LM.timers.forEach(clearInterval);LM.timers=[];if(LM.chart){try{LM.chart.remove();LM.rsiC.remove();}catch{}LM.chart=null;LM.rsiC=null;}}
 VIEWS.live=()=>`${head("Live markets","Real prices and charts, inside your Desk","Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.")}
-  <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px"><span class="lm-conn" id="lmConn"><i></i>Connecting…</span><span class="small muted" id="lmAt"></span></div><div id="lmTop"></div>
+  <div id="lmIndexStrip" class="lm-index-strip" aria-label="Major market indices"></div><div class="lm-workspace-head"><h3>Trading workspace</h3><span>INTERACTIVE CHART · LIVE WATCHLIST</span></div><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px"><span class="lm-conn" id="lmConn"><i></i>Connecting…</span><span class="small muted" id="lmAt"></span></div><div id="lmTop"></div>
   <div class="lm"><div class="lm-side"><div class="wl2" id="lmWL"></div></div>
   <div class="stack"><div class="lm-chart"><div class="lm-ch" id="lmHead"><div class="small muted">Loading chart…</div></div>
     <div class="lm-tools"><span id="lmTf">${TFS.map(([k,l])=>`<button data-tf="${k}" aria-pressed="${k===LM.tf}">${l}</button>`).join("")}</span>${[["candle","Candles"],["hollow","Hollow"],["ha","Heikin-Ashi"],["bars","Bars"],["line","Line"],["area","Area"],["baseline","Baseline"]].map(([k,l])=>`<button data-ty="${k}" aria-pressed="${LM.type===k}" title="${l} chart">${l}</button>`).join("")}<button data-fit="1">Fit</button><button data-full="1" title="Full screen chart"><i class=ix-full></i> Full screen</button><button data-big="1" title="Taller chart"><i class=ix-expand></i> Bigger</button><span class="small" id="lmLeg" style="font:.72rem var(--f-mono);color:#8d97a8;align-self:center"></span></div>
@@ -2652,25 +2652,27 @@ SOURCES.push(["Live data used in this Desk",[["Yahoo Finance chart & spark data 
  ["Regulators & exchanges",[["CME Group micro futures","https://www.cmegroup.com/markets/microsuite.html"],["CFTC Commitments of Traders","https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"],["ASIC Moneysmart: CFDs and leverage","https://moneysmart.gov.au/investment-warnings/contracts-for-difference-cfds"],["ATO: income from trading","https://www.ato.gov.au/individuals-and-families/investments-and-assets/investing-in-shares"]]]);
 </script>
 <style>
-/* TradingView-style live layout: big chart left, watchlist right */
-.lm{grid-template-columns:minmax(0,1fr) 360px}
-.lm>.lm-side{order:2}.lm>.stack{order:1}
-.wl2{max-height:calc(100vh - 120px)}
-.wr{padding:12px 16px;gap:12px}.wr b{font-size:1rem}.wr small{font-size:.8rem}.wr .pp b{font-size:1rem}.wr .pp small{font-size:.8rem}
-.lgo{width:38px!important;height:38px!important;font-size:.72rem}
-.lm-body{display:grid;grid-template-columns:46px minmax(0,1fr);border-top:1px solid #1a212b}
-.lm-draw{display:flex;flex-direction:column;gap:4px;padding:8px 6px;border-right:1px solid #1a212b;background:#0d1117}
-.lm-draw button{width:34px;height:34px;border-radius:8px;border:1px solid transparent;background:none;color:#aab3c0;font-size:15px;cursor:pointer}
-.lm-draw button:hover{background:#161d27}.lm-draw button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold);background:rgba(226,176,74,.1)}
-.lm-cv{height:max(540px,calc(100vh - 300px))}
-.lm.big .lm-cv{height:calc(100vh - 140px)}
-.lm-chart:fullscreen{border-radius:0;overflow:auto}.lm-chart:fullscreen .lm-cv{height:calc(100vh - 230px)}
-@media(max-width:1000px){.lm{grid-template-columns:1fr}.lm>.lm-side{order:1}.lm-cv{height:62vh}.wl2{max-height:46vh}}
-/* styles + study pages */
-.st-tbl td,.st-tbl th{padding:9px 10px;vertical-align:top;font-size:.86rem}
-.ytc{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.ytc a{display:grid;gap:6px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);text-decoration:none;color:var(--ink)}.ytc a:hover{border-color:#ff0033}
-.ytc .yb{display:flex;align-items:center;gap:8px;font:700 .7rem var(--f-mono);color:#ff4d6d;letter-spacing:.08em}
+/* Live Markets: spacious terminal workspace with compact index overview */
+.lm{grid-template-columns:minmax(0,1fr) 310px!important;gap:16px!important;align-items:start}
+.lm>.lm-side{order:2;position:sticky;top:12px}.lm>.stack{order:1;min-width:0}
+.lm-chart{width:100%;min-width:0;border-radius:16px}
+.lm-cv{height:clamp(520px,68vh,820px)!important}.lm-sub{height:135px!important}
+.lm-chart .lm-ch{min-height:86px;padding:18px 20px}.lm-chart .lm-tools{gap:6px;padding:10px 14px;flex-wrap:wrap}
+.lm-chart .lm-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.lm>.lm-side .wl2{max-height:calc(100vh - 150px)}
+.lm-index-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.lm-index-card{min-width:0;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--panel);display:grid;gap:5px}
+.lm-index-card .ix-name{font:600 .65rem var(--f-mono);letter-spacing:.07em;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm-index-card .ix-price{font:600 1.02rem var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm-index-card .ix-change{font:600 .72rem var(--f-mono);font-variant-numeric:tabular-nums}
+.lm-index-card .ix-change.up{color:var(--up)}.lm-index-card .ix-change.down{color:var(--down)}
+.lm-index-card .ix-source{font:500 .59rem var(--f-mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm-workspace-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:2px 0 10px}
+.lm-workspace-head h3{font-size:1rem}.lm-workspace-head span{font:500 .65rem var(--f-mono);color:var(--muted)}
+@media(min-width:1500px){.lm{grid-template-columns:minmax(0,1fr) 340px!important}.lm-cv{height:min(72vh,900px)!important}}
+@media(max-width:1200px){.lm-index-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.lm{grid-template-columns:minmax(0,1fr) 290px!important}}
+@media(max-width:1000px){.lm{grid-template-columns:1fr!important}.lm>.lm-side{order:2;position:static}.lm>.stack{order:1}.lm-cv{height:62vh!important;min-height:430px}.lm-index-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.lm>.lm-side .wl2{max-height:48vh}}
+@media(max-width:600px){.lm-index-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.lm-index-card{padding:10px}.lm-index-card .ix-price{font-size:.92rem}.lm-cv{height:58vh!important;min-height:360px}.lm-chart .lm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.lm-workspace-head{align-items:flex-start;flex-direction:column}}
 </style>
 <script>
 "use strict";
@@ -6181,6 +6183,12 @@ lmDck=function(){const el=$("#lmDck");if(!el)return;const row=(n,k,at)=>`<div><s
   .replace("Prices and candles from Yahoo Finance, read live by your Claude desktop app's built-in browser. Every number shows its source and time. Nothing is simulated.","Prices and candles are fetched by the Trading Desk server from Yahoo Finance. Each quote shows its source and exchange timestamp. Delayed feeds are labelled; nothing is simulated.")
   .replace('<span class="small muted" id="lmAt"></span></div>',`<span class="zr"><span class="small muted" id="lmAt"></span>${zRefreshBtn()}</span></div>`)
   .replace('<button class="btn" id="lmRe">Refresh now</button>','');}
+function lmPaintIndexStrip(){
+ const host=document.querySelector("#lmIndexStrip");if(!host)return;
+ const items=[["^GSPC","S&P 500"],["^NDX","NASDAQ 100"],["^DJI","DOW 30"],["^RUT","RUSSELL 2000"],["^VIX","VIX"],["DX-Y.NYB","US DOLLAR"]];
+ host.innerHTML=items.map(([sym,label])=>{const q=LM.quotes[sym],p=q&&Number.isFinite(q.price)?lmPx(q.price):"—",pct=q&&Number.isFinite(q.pct)?(q.pct>0?"+":"")+q.pct.toFixed(2)+"%":"Awaiting quote",dir=q&&q.pct>0?"up":q&&q.pct<0?"down":"",stamp=q&&q.ts?new Date(q.ts*1000).toLocaleTimeString("en-AU",{timeZone:"Australia/Sydney",hour:"2-digit",minute:"2-digit"}):"No timestamp",source=q&&q.source?q.source:"Yahoo Finance";
+ return '<article class="lm-index-card"><span class="ix-name">'+lmEsc(label)+'</span><b class="ix-price">'+lmEsc(p)+'</b><span class="ix-change '+dir+'">'+lmEsc(pct)+'</span><span class="ix-source">'+lmEsc(source)+' · '+lmEsc(stamp)+' Syd</span></article>';}).join("");
+}
 function zLivePaint(){lmPaintWL();lmPaintConn();lmDck();const m=$("#lmNewsMini");if(m)m.innerHTML=LM.news?newsHTML(LM.news.slice(0,8)):`<p class="small muted">${zBlocking()?"Headlines are loading from the market news feed.":"Loading…"}</p>`;
   const top=$("#lmTop");if(top)top.innerHTML=zBlocking()?zCard(Z.snapAt):(LM.err.quotes&&!LM.qAt?`<div class="callout bad small">${lmEsc(LM.err.quotes)}</div>`:"");}
 AFTER.live=async()=>{lmStop();cleanup.push(lmStop);
@@ -6197,7 +6205,7 @@ AFTER.live=async()=>{lmStop();cleanup.push(lmStop);
   $$(".lm-tools [data-tf]").forEach(b=>b.onclick=()=>{LM.tf=b.dataset.tf;$$(".lm-tools [data-tf]").forEach(x=>x.setAttribute("aria-pressed",x===b));lmLoadChart(false);});
   $$(".lm-tools [data-ty]").forEach(b=>b.onclick=()=>{LM.type=b.dataset.ty;$$(".lm-tools [data-ty]").forEach(x=>x.setAttribute("aria-pressed",x===b));lmDraw(true);});
   const fit=$(".lm-tools [data-fit]");if(fit)fit.onclick=()=>LM.chart&&LM.chart.timeScale().fitContent();
-  zLivePaint();await zEnsure({quotes:1,news:1});if(!$("#lmWL"))return;zLivePaint();
+  zLivePaint();lmPaintIndexStrip();await zEnsure({quotes:1,news:1});if(!$("#lmWL"))return;zLivePaint();lmPaintIndexStrip();
   await lmLoadChart(false);if(!$("#lmWL"))return;mountOptionsPanel();
   lmTimer(async()=>{await lmQuotes();zLivePaint();},20000);
   lmTimer(async()=>{if(LM.sym)await lmLoadChart(true);},60000);
