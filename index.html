@@ -3929,7 +3929,7 @@ html.pvp .nowbar{background:var(--panel)!important}
 .mk-tki em{font-style:normal;display:inline-flex;align-items:center;gap:3px}
 .mk-tkat{flex:0 0 auto;color:var(--faint);font-size:.66rem;white-space:nowrap}
 .mk-tk-empty{color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(min-width:1100px){.mk-tkg{animation:none}.mk-tkg[aria-hidden]{display:none}.mk-tkr{mask-image:none;-webkit-mask-image:none;justify-content:flex-start}}
+@media(min-width:1100px){.mk-tkg{animation:mkMarq 44s linear infinite}.mk-tkg[aria-hidden]{display:none}.mk-tkr{mask-image:none;-webkit-mask-image:none;justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){.mk-tkg{animation:none}.mk-tkg[aria-hidden]{display:none}.mk-tkr{overflow-x:auto;scrollbar-width:none;mask-image:none;-webkit-mask-image:none}.mk-tkr::-webkit-scrollbar{display:none}}
 @media(max-width:600px){.mk-tkat{display:none}}
 
@@ -7372,7 +7372,7 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="mkIxSel"){MK.
 /* hub header: what the refresh cadence is and why */
 const mkCadNote=()=>{const C=tdCadence(),m=x=>x>=3600?Math.round(x/3600)+" h":x>=60?Math.round(x/60)+" min":x+" s";
   return C.standalone?`Auto-refresh while this tab is visible: prices every ${m(C.px)}, charts, sectors and options every ${m(C.bars)}, news every ${m(C.news)}, CFTC every ${m(C.cot)}.`
-   :`Auto-refresh while this page is open: prices every ${m(C.px)}, following your Settings interval, because inside Claude each refresh uses one Zapier task. The deployed web version of the Desk refreshes every 30 s.`;};
+   :`Auto-refresh while this page is open: the browser refreshes prices every ${m(C.px)} when the public feed is reachable. Prices are delayed or unavailable when markets are closed; the page never invents values.`;};
 {const _v=VIEWS.intel;VIEWS.intel=sub=>_v(sub).replace('<div id="mkTop"></div>',`<p class="mk-cad"><i class="mk-dot on"></i><span id="mkCad">${mkCadNote()}</span></p><div id="mkTop"></div>`);}
 /* standalone build: v6d's price and news TTLs follow the cadence too (after v7s sets them from Settings) */
 function mkApplyCad(){if(!(window.TD_STANDALONE===true))return;const C=tdCadence();try{ZQ_TTL=C.px;ZN_TTL=C.news;ZP_TTL=C.news;}catch(e){}}
