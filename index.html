@@ -9503,7 +9503,7 @@ const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=
 const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD"];
 let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
 function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
-function ribbonPaint(rows,delayed){const el=$("#kaMarketRibbon");if(!el)return;const items=(rows||[]).filter(x=>Number.isFinite(+x.price)).map(x=>{const pct=+x.changePercent||0,cl=pct>=0?"up":"down";return '<span class="mr-item"><b>'+safe(x.symbol)+'</b><span>'+safe((+x.price).toLocaleString("en-US",{maximumFractionDigits:4}))+'</span><span class="'+cl+'">'+(pct>0?"+":"")+pct.toFixed(2)+'%</span></span>';}).join("");if(!items){el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Waiting for verified market feed…</span>';return;}el.innerHTML='<span class="mr-label">MARKET PULSE</span><div class="mr-track">'+items+items+'</div><span class="mr-state">'+(delayed?"DELAYED PUBLIC FEED":"PUBLIC FEED")+' · AUTO REFRESH</span>';}
+function ribbonPaint(rows,delayed){const el=$("#kaMarketRibbon");if(!el)return;const items=(rows||[]).filter(x=>Number.isFinite(+x.price)).map(x=>{const pct=+x.changePercent||0,cl=pct>=0?"up":"down";return '<span class="mr-item" data-symbol="'+safe(x.symbol)+'"><b>'+safe(x.symbol)+'</b><span>'+safe((+x.price).toLocaleString("en-US",{maximumFractionDigits:4}))+'</span><span class="'+cl+'">'+(pct>0?"+":"")+pct.toFixed(2)+'%</span></span>';}).join("");if(!items){el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Waiting for verified market feed…</span>';return;}el.innerHTML='<span class="mr-label">MARKET PULSE</span><div class="mr-track">'+items+items+'</div><span class="mr-state">'+(delayed?"DELAYED PUBLIC FEED":"PUBLIC FEED")+' · AUTO REFRESH</span>';}
 async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
 function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
 function authMessage(s){const el=$("#kaAuthMsg");if(el)el.textContent=s;}
@@ -9516,7 +9516,7 @@ function soundBeep(){if(!soundEnabled())return;try{audioCtx=audioCtx||new(window
 function soundToggle(){let b=$("#kaSoundToggle");if(!b){b=document.createElement("button");b.id="kaSoundToggle";b.className="ka-sound-toggle";document.body.appendChild(b);b.onclick=()=>{localStorage.setItem("kaSoundAlerts",soundEnabled()?"off":"on");soundToggle();if(soundEnabled())soundBeep();};}b.textContent=soundEnabled()?"◖ Sound alerts on":"◖ Sound alerts off";}
 async function checkBreakingNews(){try{const r=await fetch("/api/news?q="+encodeURIComponent("stock market OR Federal Reserve OR inflation OR crypto OR gold"),{cache:"no-store"});if(!r.ok)return;const j=await r.json(),items=j.data||[],high=items.filter(n=>/fed|federal reserve|inflation|rate decision|crash|halt|war|sanction|bank failure|emergency/i.test(n.title||""));const fresh=high.find(n=>n.title&&!lastNews.has(n.title));items.forEach(n=>n.title&&lastNews.add(n.title));if(fresh&&lastNews.size>1){const a=document.createElement("div");a.className="ka-alert";a.innerHTML='<b>MARKET NEWS ALERT</b><span>'+safe(fresh.title)+'</span><div style="text-align:right;margin-top:8px"><button style="background:transparent;color:var(--gold);border:0;cursor:pointer">Dismiss</button></div>';document.body.appendChild(a);a.querySelector("button").onclick=()=>a.remove();soundBeep();setTimeout(()=>a.remove(),12000);}}catch{}}
 function viewCountWrap(){if(typeof Player!=="function"||Player.__kaWrapped)return;const original=Player;const wrapped=function(host,sc,opt){const off=original(host,sc,opt);try{const id=(opt&&opt.title)||sc.title||"lesson",key="kaLessonViews:"+id;let badge=host.querySelector(".ka-view-count");if(!badge){badge=document.createElement("span");badge.className="ka-view-count";badge.textContent=(+localStorage.getItem(key)||0)+" plays on this device";host.querySelector(".screen")?.appendChild(badge);}const count=()=>{if(host.dataset.kaCounted==="1")return;host.dataset.kaCounted="1";const n=(+localStorage.getItem(key)||0)+1;localStorage.setItem(key,String(n));badge.textContent=n+" plays on this device";};host.addEventListener("click",e=>{if(e.target.closest('[data-a="play"],.bigplay,canvas'))count();},{capture:true});}catch{}return off;};wrapped.__kaWrapped=true;Player=wrapped;}
-function start(){splash();authUI();soundToggle();ribbonInit();refreshRibbon();viewCountWrap();setInterval(()=>{ribbonInit();refreshRibbon();authUI();soundToggle();},30000);setInterval(checkBreakingNews,240000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshRibbon();});}
+function start(){splash();authUI();soundToggle();ribbonInit();refreshRibbon();viewCountWrap();setInterval(()=>{ribbonInit();refreshRibbon();authUI();soundToggle();},15000);setInterval(checkBreakingNews,240000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshRibbon();});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
 })();
 </script>
@@ -9651,5 +9651,45 @@ function addSoundSetting(){
 function run(){cleanHeader();addSoundSetting();}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
 setInterval(run,1200);
+})();
+</script>
+<script id="kaushal-coinbase-live-stream">
+(()=>{"use strict";
+const products=["BTC-USD","ETH-USD","SOL-USD","DOGE-USD"];
+let socket=null,retry=1000,retryTimer=null,closed=false;
+const money=n=>Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits: n>=1000?2:4});
+function paint(t){
+ const price=Number(t.price),open=Number(t.open_24h),pct=Number.isFinite(open)&&open>0?(price-open)/open*100:null;
+ if(!Number.isFinite(price))return;
+ const nodes=[...document.querySelectorAll('.mr-item[data-symbol="'+t.product_id+'"]')];
+ if(!nodes.length){
+  const track=document.querySelector("#kaMarketRibbon .mr-track");if(!track)return;
+  const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=t.product_id;
+  const name=document.createElement("b");name.textContent=t.product_id;
+  const val=document.createElement("span");val.className="mr-price";const change=document.createElement("span");change.className="mr-change";
+  item.append(name,val,change);track.append(item, item.cloneNode(true));
+ }
+ document.querySelectorAll('.mr-item[data-symbol="'+t.product_id+'"]').forEach(node=>{
+  const spans=node.querySelectorAll("span");
+  if(spans[0])spans[0].textContent=money(price);
+  if(spans[1]){spans[1].textContent=pct===null?"—":(pct>0?"+":"")+pct.toFixed(2)+"%";spans[1].classList.toggle("up",pct!==null&&pct>=0);spans[1].classList.toggle("down",pct!==null&&pct<0);}
+  node.title="Live Coinbase trade · "+new Date(Number(t.time||Date.now())).toLocaleTimeString();
+ });
+ const status=document.querySelector("#kaMarketRibbon .mr-state");
+ if(status){status.textContent="CRYPTO LIVE · STOCK QUOTES SNAPSHOT / DELAYED";status.title="Crypto trades stream live from Coinbase. Stock prices depend on their quote provider and exchange permissions.";}
+}
+function connect(){
+ if(closed)return;
+ try{
+  socket=new WebSocket("wss://ws-feed.exchange.coinbase.com");
+  socket.onopen=()=>{retry=1000;socket.send(JSON.stringify({type:"subscribe",product_ids:products,channels:["ticker"]}));};
+  socket.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="ticker"&&products.includes(msg.product_id))paint(msg);}catch{}};
+  socket.onerror=()=>{try{socket.close();}catch{}};
+  socket.onclose=()=>{if(!closed){clearTimeout(retryTimer);retryTimer=setTimeout(connect,retry);retry=Math.min(retry*2,30000);}};
+ }catch{if(!closed){retryTimer=setTimeout(connect,retry);retry=Math.min(retry*2,30000);}}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&(!socket||socket.readyState===WebSocket.CLOSED))connect();});
+window.addEventListener("beforeunload",()=>{closed=true;clearTimeout(retryTimer);try{socket&&socket.close();}catch{}});
+connect();
 })();
 </script>
