@@ -9693,3 +9693,13 @@ window.addEventListener("beforeunload",()=>{closed=true;clearTimeout(retryTimer)
 connect();
 })();
 </script>
+<style id="kaushal-restore-original-profile">
+#kaProfileWrap{display:none!important}
+#acctBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+</style>
+<script id="kaushal-remove-replacement-profile">
+(()=>{function restore(){document.getElementById("kaProfileWrap")?.remove();const b=document.getElementById("acctBtn");if(b){b.style.removeProperty("display");b.hidden=false;}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",restore,{once:true});else restore();
+setInterval(restore,500);
+})();
+</script>
