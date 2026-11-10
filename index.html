@@ -1734,21 +1734,7 @@ VIEWS.sources=()=>`${head("Sources","Where every fact comes from","Facts on rule
 "use strict";
 Object.assign(PA_SCENE,{phases:"w-phases",impulse:"w-impulse",logic:"w-impulse",ob:"w-ob",fvg:"w-fvg"});
 
-/* ---------------- Sydney date/time bar on every page ---------------- */
-function nowbar(){return `<div class="nowbar" id="nowbar" aria-live="off">${nowText()}</div>`;}
-function nowText(){const d=new Date(),f=(tz,o)=>d.toLocaleString("en-AU",{timeZone:tz,...o});
-  const z=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",timeZoneName:"short"}).formatToParts(d).find(p=>p.type==="timeZoneName");
-  return `<span><b>${f("Australia/Sydney",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</b></span><span class="gold-t">${f("Australia/Sydney",{hour:"numeric",minute:"2-digit",second:"2-digit"})} Sydney${z?" ("+z.value+")":""}</span>
-  <span>New York ${f("America/New_York",{weekday:"short",hour:"numeric",minute:"2-digit"})}</span><span>London ${f("Europe/London",{hour:"numeric",minute:"2-digit"})}</span><span>Kathmandu ${f("Asia/Kathmandu",{hour:"numeric",minute:"2-digit"})}</span>
-  <span>${fxOpen(d)?'<span class="up-t">Forex & gold open</span>':'Forex & gold closed (weekend)'}</span>`;}
-function mountMarketCorner(){if(!$("#marketCorner")){const app=$("#app");if(app)app.insertAdjacentHTML("beforebegin",nowbar());else document.body.insertAdjacentHTML("beforeend",nowbar());}}
-mountMarketCorner();
-document.addEventListener("click",e=>{
-  const toggle=e.target.closest&&e.target.closest("#mcToggle");
-  if(toggle){const panel=$("#mcPanel"),open=panel.hidden;panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));return;}
-  if(e.target.closest&&e.target.closest("#mcHide")){const panel=$("#mcPanel"),toggle=$("#mcToggle");if(panel)panel.hidden=true;if(toggle)toggle.setAttribute("aria-expanded","false");}
-});
-setInterval(()=>{const el=$("#mcMarkets");if(el)el.innerHTML=nowText();},1000);
+/* The compact market-hours widget is mounted after its session helpers are defined below. */
 
 /* ---------------- new animated lessons ---------------- */
 Object.assign(SCENES,{
@@ -1965,7 +1951,7 @@ function nowbar(){return `<aside class="market-corner" id="marketCorner">
     <span class="mc-live"></span><span>MARKET HOURS</span><b>4 markets</b><span class="mc-chevron">⌃</span>
   </button>
   <section class="mc-panel" id="mcPanel" hidden>
-    <header class="mc-head"><span><b>Market sessions</b><small>World clocks & live session status</small></span><button id="mcHide" type="button">Hide</button></header>
+    <header class="mc-head"><span><b>Market sessions</b><small>Live market status and session countdowns</small></span><button id="mcHide" type="button">Hide</button></header>
     <div class="mc-content" id="mcMarkets">${nowText()}</div>
   </section>
 </aside>`;}
@@ -1974,13 +1960,43 @@ function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asi
   const z=(new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,timeZoneName:"short"}).formatToParts(d).find(p=>p.type==="timeZoneName")||{}).value||"";
   const hm=tf(homeTz,{hour:"numeric",minute:"2-digit",hour12:true}).replace(/\s?(am|pm)/i,(_,a)=>`<small>${a.toLowerCase()}</small>`);
   const sec=tf(homeTz,{second:"2-digit"}).padStart(2,"0");
-  const cities=NB_CITIES.filter(c=>c[1]!==homeTz).map(([n,tz,s])=>{const p=parts(d,tz),m=p.h*60+p.mi,on=s&&!["Sat","Sun"].includes(p.wd)&&m>=s[0]*60&&m<s[1]*60;
-    return `<div class="nb-city ${on?"on":""}" title="${n}${s?` · trading session ${s[0]}:00–${s[1]}:00 local`:""}"><i>${n}${on?" · session":""}</i><b>${tf(tz,{hour:"numeric",minute:"2-digit",hour12:true}).replace(/\s?(am|pm)/i,"$1".toLowerCase())}<small>${p.wd}</small></b></div>`;}).join("");
   const mk=NB_MKTS.filter(m=>np?(m.np||m.id==="fx"||m.id==="crypto"):!m.np).map(m=>{const o=m.open(d);let f=nbCache[m.id];
     if(!f||f.state!==o||(f.until&&f.until<=d)){f=nbCache[m.id]={state:o,until:m.id==="crypto"?null:nbFlip(m,d)};}
     const when=f.until?new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,weekday:"short",hour:"numeric",minute:"2-digit"}).format(f.until):"";
     return `<div class="nb-m ${o?"open":""}" title="${esc(m.note)}"><i></i><b>${m.n}</b><em>${o?"Open":"Closed"}</em><span>${f.until?`${o?"Closes":"Opens"} in <strong>${nbDur(f.until-d)}</strong> · ${when} ${homeN}`:"Always open"}</span></div>`;}).join("");
-  return `<div class="nb-cities">${cities}</div><div class="nb-mkts">${mk}</div>`;}
+  return `<div class="nb-mkts">${mk}</div>`;}
+
+function mountMarketCorner(){
+  if(!$("#marketCorner")){
+    const app=$("#app");
+    const html=nowbar();
+    if(app) app.insertAdjacentHTML("beforebegin",html);
+    else document.body.insertAdjacentHTML("beforeend",html);
+  }
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mountMarketCorner,{once:true});
+else mountMarketCorner();
+document.addEventListener("click",e=>{
+  const toggle=e.target.closest&&e.target.closest("#mcToggle");
+  if(toggle){
+    const panel=$("#mcPanel");
+    if(!panel)return;
+    const open=panel.hidden;
+    panel.hidden=!open;
+    toggle.setAttribute("aria-expanded",String(open));
+    return;
+  }
+  if(e.target.closest&&e.target.closest("#mcHide")){
+    const panel=$("#mcPanel"),toggle=$("#mcToggle");
+    if(panel)panel.hidden=true;
+    if(toggle)toggle.setAttribute("aria-expanded","false");
+  }
+});
+setInterval(()=>{
+  const el=$("#mcMarkets");
+  if(el)el.innerHTML=nowText();
+},15000);
+
 
 /* ===================== Cinema player (continuous video, narration, subtitles) ===================== */
 const VOICE={get on(){try{return localStorage.getItem("td_voice")!=="0";}catch{return true;}},set on(v){try{localStorage.setItem("td_voice",v?"1":"0");}catch{}},
@@ -9897,36 +9913,7 @@ setInterval(restore,500);
 }
 @media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
 </style>
-<style id="market-sessions-corner">
-/* Compact expandable market-hours widget; preserve existing market data and chart controls. */
-.nowbar#nowbar{
- position:fixed!important;top:14px!important;right:18px!important;left:auto!important;
- z-index:28!important;width:min(460px,calc(100vw - 300px))!important;max-width:460px!important;
- box-shadow:var(--shadow)!important;background:var(--panel)!important
-}
-.nowbar#nowbar .nb-line{min-height:36px!important;padding:5px 10px!important;gap:8px!important;white-space:normal!important}
-.nowbar#nowbar .nb-now{display:none!important}
-.nowbar#nowbar .nb-dots{display:flex!important;flex:1 1 auto!important;flex-wrap:wrap!important;gap:5px 10px!important;overflow:visible!important}
-.nowbar#nowbar .nb-dots span{font-size:.68rem!important;white-space:nowrap!important}
-.nowbar#nowbar .nb-sum{display:inline-flex!important;align-items:center;font:600 .64rem var(--f-mono)!important;color:var(--gold)!important;white-space:nowrap!important}
-.nowbar#nowbar .nb-tog{font-size:.6rem!important;white-space:nowrap!important}
-.nowbar#nowbar .nb-full{padding:8px!important;gap:6px!important}
-.nowbar#nowbar .nb-full .nb-cities{display:none!important}
-.nowbar#nowbar .nb-full .nb-mkts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important}
-.nowbar#nowbar .nb-m{min-width:0!important;padding:6px 8px!important;grid-template-columns:9px minmax(0,1fr) auto!important;column-gap:6px!important}
-.nowbar#nowbar .nb-m b{font-size:.72rem!important}
-.nowbar#nowbar .nb-m em{font-size:.56rem!important}
-.nowbar#nowbar .nb-m span{font-size:.62rem!important;line-height:1.35!important}
-@media(max-width:960px){
- .nowbar#nowbar{top:64px!important;right:10px!important;width:min(390px,calc(100vw - 20px))!important}
-}
-@media(max-width:520px){
- .nowbar#nowbar{top:60px!important;right:8px!important;width:calc(100vw - 16px)!important}
- .nowbar#nowbar .nb-full .nb-mkts{grid-template-columns:1fr!important}
- .nowbar#nowbar .nb-dots{gap:4px 8px!important}
- .nowbar#nowbar .nb-dots span{font-size:.62rem!important}
-}
-</style>
+
 \n
 <style id="responsive-device-layout">
 /* Device-aware layout: CSS selects phone/tablet or desktop from the actual viewport. */
