@@ -1,64 +1,122 @@
-export default async function handler(req, res) {
-  const raw = String(req.query?.symbols || 'SPY,QQQ').split(',').slice(0, 40)
-  const symbols = raw.map(symbol => symbol.replace(/[^A-Za-z0-9.=^_-]/g, '')).filter(Boolean)
-  const stocks = symbols.filter(symbol => /^[A-Z]{1,6}$/.test(symbol))
-  const snapshots = {}, key = process.env.APCA_API_KEY_ID, secret = process.env.APCA_API_SECRET_KEY
+const SYMBOLS = [
+  { symbol: "AAPL", name: "Apple", group: "US stocks" },
+  { symbol: "NVDA", name: "NVIDIA", group: "US stocks" },
+  { symbol: "MSFT", name: "Microsoft", group: "US stocks" },
+  { symbol: "^AXJO", name: "ASX 200", group: "Australia" },
+  { symbol: "^NSEI", name: "Nifty 50", group: "India" },
+  { symbol: "SPY", name: "S&P 500 ETF", group: "Indices" },
+  { symbol: "QQQ", name: "Nasdaq 100 ETF", group: "Indices" },
+  { symbol: "EURUSD=X", name: "EUR / USD", group: "Forex" },
+  { symbol: "GC=F", name: "Gold futures", group: "Commodities" },
+  { symbol: "CL=F", name: "WTI crude oil", group: "Commodities" },
+  { symbol: "AMZN", name: "Amazon", group: "US stocks" },
+  { symbol: "GOOGL", name: "Alphabet", group: "US stocks" },
+  { symbol: "META", name: "Meta Platforms", group: "US stocks" },
+  { symbol: "TSLA", name: "Tesla", group: "US stocks" },
+  { symbol: "AMD", name: "Advanced Micro Devices", group: "US stocks" }
+];
+const LIVE_SYMBOLS = ["AAPL","NVDA","MSFT","AMZN","GOOGL","META","TSLA","AMD","SPY","QQQ"];
 
-  if (key && secret && stocks.length) {
-    try {
-      const url = 'https://data.alpaca.markets/v2/stocks/snapshots?symbols=' + encodeURIComponent(stocks.join(',')) + '&feed=iex'
-      const response = await fetch(url, { headers: { 'APCA-API-KEY-ID': key, 'APCA-API-SECRET-KEY': secret, Accept: 'application/json' }, signal: AbortSignal.timeout(6500) })
-      if (!response.ok) throw new Error('Alpaca returned ' + response.status)
-      Object.assign(snapshots, (await response.json()).snapshots || {})
-    } catch (error) { console.error('Alpaca IEX snapshots unavailable:', error instanceof Error ? error.message : 'unknown error') }
-  }
-
-  async function quote(symbol) {
-    const snap = snapshots[symbol]
-    if (snap) {
-      const trade = snap.latestTrade || {}, minute = snap.minuteBar || {}, day = snap.dailyBar || {}, previous = snap.prevDailyBar || {}
-      const price = Number.isFinite(trade.p) ? trade.p : Number.isFinite(minute.c) ? minute.c : day.c
-      const previousClose = Number.isFinite(previous.c) ? previous.c : null
-      const timestamp = trade.t || minute.t || day.t || null
-      const seconds = timestamp ? new Date(timestamp).getTime() / 1000 : Date.now() / 1000
-      if (Number.isFinite(price)) return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(previousClose) ? price - previousClose : null }, regularMarketChangePercent: { raw: Number.isFinite(previousClose) && previousClose !== 0 ? (price - previousClose) / previousClose * 100 : null }, regularMarketTime: seconds, source: 'Alpaca IEX', isRealTime: Date.now() - seconds * 1000 < 120000, currency: 'USD' }
-    }
-
-    if (symbol.endsWith('-USD')) {
-      const product = symbol.toUpperCase()
-      const response = await fetch('https://api.exchange.coinbase.com/products/' + encodeURIComponent(product) + '/stats', { headers: { Accept: 'application/json', 'User-Agent': 'TradingDesk/1.0' }, signal: AbortSignal.timeout(5000) })
-      if (response.ok) {
-        const payload = await response.json(), price = Number(payload.last), open = Number(payload.open)
-        if (Number.isFinite(price)) {
-          const change = Number.isFinite(open) && open !== 0 ? price - open : null
-          return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: change }, regularMarketChangePercent: { raw: change === null ? null : change / open * 100 }, regularMarketTime: Date.now() / 1000, source: 'Coinbase Exchange snapshot', isRealTime: false, currency: 'USD' }
-        }
-      }
-    }
-
-    const chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=1d&interval=1m&includePrePost=true'
-    const chartResponse = await fetch(chartUrl, { headers: { 'User-Agent': 'Mozilla/5.0 TradingDesk/1.0', Accept: 'application/json' }, signal: AbortSignal.timeout(5500) })
-    if (chartResponse.ok) {
-      const payload = await chartResponse.json(), result = payload?.chart?.result?.[0], meta = result?.meta || {}, closes = (result?.indicators?.quote?.[0]?.close || []).filter(Number.isFinite)
-      const price = Number.isFinite(meta.regularMarketPrice) ? meta.regularMarketPrice : closes[closes.length - 1], previous = Number.isFinite(meta.chartPreviousClose) ? meta.chartPreviousClose : meta.previousClose
-      if (Number.isFinite(price)) return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(previous) ? price - previous : null }, regularMarketChangePercent: { raw: Number.isFinite(previous) && previous !== 0 ? (price - previous) / previous * 100 : null }, regularMarketTime: meta.regularMarketTime || Date.now() / 1000, source: 'Yahoo Finance snapshot', isRealTime: false, currency: meta.currency || 'USD' }
-    }
-
-    const target = 'https://api.nasdaq.com/api/quote/' + encodeURIComponent(symbol.replace('^', '')) + '/info?assetclass=' + (['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO'].includes(symbol) ? 'etf' : 'stocks')
-    const response = await fetch(target, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }, signal: AbortSignal.timeout(5000) })
-    if (!response.ok) return null
-    const payload = await response.json(), data = payload?.data?.primaryData
-    if (!data || data.lastSalePrice === 'N/A') return null
-    const price = Number(String(data.lastSalePrice).replace(/[$,]/g, '')), change = Number(String(data.netChange || 0).replace(/[$,%,+]/g, '')), changePercent = Number(String(data.percentageChange || 0).replace(/[%+]/g, ''))
-    if (!Number.isFinite(price)) return null
-    return { symbol, regularMarketPrice: { raw: price }, regularMarketChange: { raw: Number.isFinite(change) ? change : null }, regularMarketChangePercent: { raw: Number.isFinite(changePercent) ? changePercent : null }, regularMarketTime: Date.now() / 1000, source: data.isRealTime ? 'Nasdaq real-time' : 'Nasdaq delayed', isRealTime: !!data.isRealTime }
-  }
-
-  const result = await Promise.all(symbols.map(async symbol => { try { return await quote(symbol) } catch (error) { console.error('Quote unavailable for', symbol, error instanceof Error ? error.message : 'unknown error'); return null } }))
-  const clean = result.filter(Boolean)
-  const data = clean.map(q => ({ symbol: q.symbol, price: q.regularMarketPrice.raw, previousClose: Number.isFinite(q.regularMarketChange.raw) ? q.regularMarketPrice.raw - q.regularMarketChange.raw : null, changePercent: q.regularMarketChangePercent.raw, change: q.regularMarketChange.raw, updatedAt: (q.regularMarketTime || Date.now() / 1000) * 1000, source: q.source, realtime: !!q.isRealTime }))
-  const allRealtime = clean.length > 0 && clean.every(q => q.isRealTime)
-  const anyDelayed = clean.some(q => !q.isRealTime)
-  res.setHeader('Cache-Control', key && secret ? 's-maxage=2, stale-while-revalidate=3' : 'no-store')
-  res.status(200).json({ data, quoteResponse: { result: clean, error: null }, provider: key && secret ? 'Alpaca IEX + Yahoo Finance fallback' : 'Yahoo Finance + Nasdaq + Coinbase Exchange', realtime: allRealtime, delayed: anyDelayed })
+async function getStooqQuote(item) {
+  const map = {AAPL:"aapl.us",NVDA:"nvda.us",MSFT:"msft.us",SPY:"spy.us",QQQ:"qqq.us"};
+  const ticker = map[item.symbol];
+  if (!ticker) throw new Error("No Stooq symbol mapping");
+  const response = await fetch("https://stooq.com/q/l/?s="+ticker+"&f=sd2t2ohlcv&h&e=csv",{signal:AbortSignal.timeout(4500)});
+  if (!response.ok) throw new Error("Stooq "+response.status);
+  const rows=(await response.text()).trim().split(/\r?\n/);
+  if(rows.length<2) throw new Error("No Stooq quote");
+  const fields=rows[1].split(",");
+  const price=Number(fields[6]),open=Number(fields[3]);
+  if(!Number.isFinite(price)) throw new Error("Stooq quote unavailable");
+  return {symbol:item.symbol,name:item.name,group:item.group,price,previousClose:Number.isFinite(open)?open:null,change:Number.isFinite(open)?price-open:null,changePercent:Number.isFinite(open)&&open?((price-open)/open)*100:null,currency:"USD",exchange:"Stooq",marketState:"SNAPSHOT",timestamp:Date.now(),history:[],source:"Stooq",delayed:true};
 }
+
+async function getQuote(item) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4500);
+  try {
+    const url = "https://query1.finance.yahoo.com/v8/finance/chart/" +
+      encodeURIComponent(item.symbol) + "?range=1d&interval=1m";
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 TradingDesk/1.0", "Accept": "application/json" }
+    });
+    if (!response.ok) throw new Error("Provider returned " + response.status);
+    const payload = await response.json();
+    const result = payload && payload.chart && payload.chart.result && payload.chart.result[0];
+    if (!result) throw new Error("No quote returned");
+    const meta = result.meta || {};
+    const quote = result.indicators && result.indicators.quote && result.indicators.quote[0] || {};
+    const closes = (quote.close || []).filter(Number.isFinite);
+    const price = Number.isFinite(meta.regularMarketPrice) ? meta.regularMarketPrice : closes[closes.length - 1];
+    const previous = Number.isFinite(meta.chartPreviousClose) ? meta.chartPreviousClose : meta.previousClose;
+    if (!Number.isFinite(price)) throw new Error("Price unavailable");
+    return {
+      symbol: item.symbol, name: item.name, group: item.group,
+      price, previousClose: Number.isFinite(previous) ? previous : null,
+      change: Number.isFinite(previous) ? price - previous : null,
+      changePercent: Number.isFinite(previous) && previous !== 0 ? (price - previous) / previous * 100 : null,
+      currency: meta.currency || "USD",
+      exchange: meta.fullExchangeName || meta.exchangeName || "",
+      marketState: meta.marketState || "UNKNOWN",
+      timestamp: meta.regularMarketTime ? meta.regularMarketTime * 1000 : Date.now(),
+      history: closes.slice(-90)
+    };
+  } catch (primaryError) {
+    try { return await getStooqQuote(item); }
+    catch (_) { throw primaryError; }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function getAlpacaSnapshots() {
+ const key=process.env.APCA_API_KEY_ID,secret=process.env.APCA_API_SECRET_KEY;if(!key||!secret)return null;
+ const url="https://data.alpaca.markets/v2/stocks/snapshots?symbols="+LIVE_SYMBOLS.join(",")+"&feed=iex";
+ const response=await fetch(url,{headers:{"APCA-API-KEY-ID":key,"APCA-API-SECRET-KEY":secret,"Accept":"application/json"},signal:AbortSignal.timeout(6500)});
+ if(!response.ok)throw new Error("Alpaca market feed returned "+response.status);
+ const payload=await response.json(),snapshots=payload.snapshots||payload,now=Date.now();
+ return Object.fromEntries(LIVE_SYMBOLS.filter(symbol=>snapshots[symbol]).map(symbol=>{
+  const snap=snapshots[symbol],item=SYMBOLS.find(x=>x.symbol===symbol)||{symbol,name:symbol,group:"US stocks"},trade=snap.latestTrade||{},minute=snap.minuteBar||{},day=snap.dailyBar||{},prev=snap.prevDailyBar||{};
+  const price=Number.isFinite(trade.p)?trade.p:(Number.isFinite(minute.c)?minute.c:day.c),previous=Number.isFinite(prev.c)?prev.c:null,stamp=trade.t||minute.t||day.t||null,age=stamp?now-new Date(stamp).getTime():Infinity;
+  return [symbol,{symbol,name:item.name,group:item.group,price,previousClose:previous,change:Number.isFinite(previous)&&Number.isFinite(price)?price-previous:null,changePercent:Number.isFinite(previous)&&previous!==0&&Number.isFinite(price)?(price-previous)/previous*100:null,currency:"USD",exchange:"IEX",marketState:"IEX",timestamp:stamp?new Date(stamp).getTime():now,history:[prev.c,day.o,minute.o,minute.c,price].filter(Number.isFinite),source:"Alpaca IEX",feed:"IEX",realtime:age<120000,delayed:false}];
+ }));
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Cache-Control", process.env.APCA_API_KEY_ID && process.env.APCA_API_SECRET_KEY ? "s-maxage=2, stale-while-revalidate=3" : "s-maxage=15, stale-while-revalidate=45");
+  res.setHeader("Content-Type", "application/json");
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  try {
+    let liveSnapshots=null,liveFeedError=null;
+    try { liveSnapshots=await getAlpacaSnapshots(); } catch(error) { liveFeedError=error.message; console.error("Alpaca feed unavailable",error.message); }
+    const data=await Promise.all(SYMBOLS.map(async item=>{if(liveSnapshots&&liveSnapshots[item.symbol])return liveSnapshots[item.symbol];try{return await getQuote(item)}catch(_){return {symbol:item.symbol,name:item.name,group:item.group,error:"Quote temporarily unavailable"}}}));
+    const realtime=!!liveSnapshots&&Object.keys(liveSnapshots).length>0;
+    return res.status(200).json({
+      provider:realtime?"Alpaca IEX real-time + Yahoo/Stooq snapshots":"Yahoo Finance with Stooq fallback",
+      realtime,liveFeed:realtime?"Alpaca IEX":null,liveSymbols:realtime?Object.keys(liveSnapshots).length:0,pollIntervalMs:realtime?5000:null,liveFeedError:liveFeedError||null,
+      sources: [
+        {name:"Alpaca IEX",status:process.env.APCA_API_KEY_ID&&process.env.APCA_API_SECRET_KEY?"configured":"api_key_required",role:"Real-time US stock trades and quotes from IEX; 10 symbols"},
+        {name:"Yahoo Finance",status:"active",role:"Fallback snapshots for international indices, FX and commodities"},
+        {name:"Stooq",status:"fallback",role:"US equity and ETF fallback snapshots"},
+        {name:"Binance",status:"active",role:"Live crypto WebSocket stream"},
+        {name:"Coinbase Exchange",status:"available",role:"Alternative crypto feed; adapter not yet enabled"},
+        {name:"Kraken",status:"available",role:"Alternative crypto feed; adapter not yet enabled"},
+        {name:"CoinGecko",status:"available",role:"Crypto market data; API integration pending"},
+        {name:"Twelve Data",status:process.env.TWELVEDATA_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"},
+        {name:"Alpha Vantage",status:process.env.ALPHA_VANTAGE_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"},
+        {name:"Finnhub",status:process.env.FINNHUB_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"},
+        {name:"Financial Modeling Prep",status:process.env.FMP_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"},
+        {name:"Polygon",status:process.env.POLYGON_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"},
+        {name:"Marketstack",status:process.env.MARKETSTACK_API_KEY?"configured":"api_key_required",role:"Optional market data adapter"}
+      ],
+      fetchedAt: Date.now(),
+      delayed: true,
+      note: "Stocks, forex and commodity quotes may be delayed by the provider or exchange.",
+      data
+    });
+  } catch (error) {
+    console.error("Market API failed", error && error.stack || error);
+    return res.status(502).json({ error: "Market data is temporarily unavailable." });
+  }
+};
