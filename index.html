@@ -9674,6 +9674,7 @@ async function authSyncUser(){
  try{
   const raw=sessionStorage.getItem("kaAuthSession");if(!raw)return;
   const session=JSON.parse(raw);if(!session||!session.access_token)return;
+  if(window.__kaAuthNameToken===session.access_token)return;
   const r=await fetch("/api/auth/me",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store"});
   if(!r.ok)return;
   const user=await r.json();
@@ -9681,6 +9682,7 @@ async function authSyncUser(){
   const phoneName=user.phone?("User "+user.phone.slice(-4)):"";
   const name=String(user.name||emailName||phoneName||"Trader").trim();
   if(!name)return;
+  window.__kaAuthNameToken=session.access_token;
   S.settings.name=name;
   document.title=name+"'s Trading Desk";
   if(typeof render==="function")render();
