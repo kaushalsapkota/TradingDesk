@@ -1954,7 +1954,7 @@ function mcClockText(){
 }
 function nowbar(){return `<aside class="market-corner" id="marketCorner">
   <button class="mc-toggle" id="mcToggle" type="button" aria-expanded="false" aria-controls="mcPanel">
-    <span class="mc-live"></span><span class="mc-clock" id="mcClock">${mcClockText()}</span><b>4 markets</b><span class="mc-chevron">⌃</span>
+    <span class="mc-live"></span><b class="mc-label">Market sessions</b><span class="mc-count">4 markets</span><span class="mc-chevron">⌃</span>
   </button>
   <section class="mc-panel" id="mcPanel" hidden>
     <header class="mc-head"><span><b>Market sessions</b><small>Live market status and session countdowns</small></span><button id="mcHide" type="button">Hide</button></header>
@@ -1963,9 +1963,6 @@ function nowbar(){return `<aside class="market-corner" id="marketCorner">
 </aside>`;}
 function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asia/Kathmandu":"Australia/Sydney",homeN=np?"Kathmandu":"Sydney";
   const tf=(tz,o)=>new Intl.DateTimeFormat("en-AU",{timeZone:tz,...o}).format(d);
-  const z=(new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,timeZoneName:"short"}).formatToParts(d).find(p=>p.type==="timeZoneName")||{}).value||"";
-  const hm=tf(homeTz,{hour:"numeric",minute:"2-digit",hour12:true}).replace(/\s?(am|pm)/i,(_,a)=>`<small>${a.toLowerCase()}</small>`);
-  const sec=tf(homeTz,{second:"2-digit"}).padStart(2,"0");
   const mk=NB_MKTS.filter(m=>np?(m.np||m.id==="fx"||m.id==="crypto"):!m.np).map(m=>{const o=m.open(d);let f=nbCache[m.id];
     if(!f||f.state!==o||(f.until&&f.until<=d)){f=nbCache[m.id]={state:o,until:m.id==="crypto"?null:nbFlip(m,d)};}
     const when=f.until?new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,weekday:"short",hour:"numeric",minute:"2-digit"}).format(f.until):"";
@@ -1973,12 +1970,14 @@ function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asi
   return `<div class="nb-mkts">${mk}</div>`;}
 
 function mountMarketCorner(){
-  if(!$("#marketCorner")){
-    const app=$("#app");
-    const html=nowbar();
-    if(app) app.insertAdjacentHTML("beforebegin",html);
-    else document.body.insertAdjacentHTML("beforeend",html);
-  }
+  let corner=$("#marketCorner");
+  if(!corner){const html=nowbar();const host=document.createElement("div");host.innerHTML=html;corner=host.firstElementChild;}
+  const right=$(".tb-right"),clock=$("#topClock"),top=$(".topbar");
+  if(right){
+    const anchor=clock&&clock.parentElement===right?clock.nextSibling:right.firstChild;
+    if(corner.parentElement!==right||corner!==anchor)right.insertBefore(corner,anchor||null);
+  }else if(top&&corner.parentElement!==top){top.appendChild(corner);}
+  else if(!top&&!corner.isConnected)document.body.appendChild(corner);
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mountMarketCorner,{once:true});
 else mountMarketCorner();
@@ -2001,8 +2000,7 @@ document.addEventListener("click",e=>{
 setInterval(()=>{
   const el=$("#mcMarkets");
   if(el)el.innerHTML=nowText();
-  const clock=$("#mcClock");
-  if(clock)clock.innerHTML=mcClockText();
+  mountMarketCorner();
 },15000);
 
 
@@ -9993,5 +9991,37 @@ img,video,canvas,svg{max-width:100%}
  .mc-content .nb-city b{font-size:.74rem}
  .mc-content .nb-mkts{grid-template-columns:1fr}
  .mc-content .nb-m{grid-template-columns:8px minmax(0,1fr) auto}
+}
+</style>
+
+<style id="kaushal-market-header-layout">
+/* Compact header: ticker sits close to the top bar; market sessions live beside Sydney time and account. */
+.topbar{height:auto!important;min-height:var(--tb,56px)!important;overflow:visible!important;z-index:120!important}
+.tb-right{align-items:center!important;overflow:visible!important}
+.market-corner{position:relative!important;z-index:125!important;width:auto!important;max-width:none!important;margin:0!important;clear:none!important;display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:flex-end!important;align-self:stretch!important;justify-content:center!important;pointer-events:auto!important}
+.mc-toggle{min-height:36px!important;padding:0 10px!important;gap:8px!important;border-radius:999px!important;background:var(--g-chip,var(--panel))!important;border-color:var(--g-line,var(--line))!important;box-shadow:var(--g-shadow-s,0 4px 14px #0002)!important;backdrop-filter:var(--g-blur,blur(14px))!important;-webkit-backdrop-filter:var(--g-blur,blur(14px))!important;font-size:.65rem!important;white-space:nowrap!important}
+.mc-toggle .mc-label{font:650 .66rem var(--f-body)!important;letter-spacing:.01em!important}
+.mc-toggle .mc-count{font:600 .58rem var(--f-mono)!important;color:var(--muted)!important;border-left:1px solid var(--g-line,var(--line));padding-left:8px!important}
+.mc-panel{position:static!important;inset:auto!important;width:min(430px,calc(100vw - 28px))!important;max-width:calc(100vw - 28px)!important;box-sizing:border-box!important;margin:7px 0 10px auto!important;max-height:min(66vh,560px)!important;overflow-y:auto!important;box-shadow:0 16px 42px #0003!important}
+.mc-panel[hidden]{display:none!important}
+.mc-head,.mc-content{min-width:0}
+#kaMarketRibbon.market-ribbon{min-height:42px!important;margin:0 0 4px -20px!important;top:var(--tb,56px)!important}
+#kaMarketRibbon .mr-item{min-height:42px!important}
+.page{padding-top:10px!important;gap:20px!important}
+@media(max-width:960px){
+ .topbar{align-items:center!important;flex-wrap:nowrap!important}
+ .tb-right{gap:4px!important;min-width:0!important}
+ .market-corner{align-self:center!important}
+ .mc-toggle{min-height:34px!important;padding:0 8px!important;gap:6px!important}
+ .mc-toggle .mc-label{font-size:.61rem!important}
+ .mc-toggle .mc-count{font-size:.54rem!important;padding-left:6px!important}
+ .mc-panel{width:min(390px,calc(100vw - 18px))!important;max-width:calc(100vw - 18px)!important;margin-right:0!important}
+ #kaMarketRibbon.market-ribbon{margin-bottom:2px!important}
+ .page{padding-top:8px!important}
+}
+@media(max-width:520px){
+ .mc-toggle .mc-count{display:none!important}
+ .mc-toggle .mc-label{font-size:.58rem!important}
+ .mc-panel{width:min(350px,calc(100vw - 16px))!important;max-width:calc(100vw - 16px)!important}
 }
 </style>
