@@ -1946,9 +1946,15 @@ const nbCache={};
 function nbFlip(mk,now){const cur=mk.open(now);let t=new Date(Math.ceil(now.getTime()/6e4)*6e4);
   for(let i=0;i<8*96;i++){const n=new Date(t.getTime()+9e5);if(mk.open(n)!==cur){for(let k=0;k<=15;k++){const f=new Date(t.getTime()+k*6e4);if(mk.open(f)!==cur)return f;}return n;}t=n;}return null;}
 function nbDur(ms){const m=Math.max(0,Math.round(ms/6e4)),d=Math.floor(m/1440),h=Math.floor(m%1440/60),mi=m%60;return d?`${d}d ${h}h`:h?`${h}h ${String(mi).padStart(2,"0")}m`:`${mi}m`;}
+function mcClockText(){
+  const np=S.settings.region==="np",tz=np?"Asia/Kathmandu":"Australia/Sydney",city=np?"Kathmandu":"Sydney",d=new Date();
+  const time=new Intl.DateTimeFormat("en-AU",{timeZone:tz,hour:"numeric",minute:"2-digit",hour12:true}).format(d);
+  const date=new Intl.DateTimeFormat("en-AU",{timeZone:tz,weekday:"short",day:"numeric",month:"short"}).format(d);
+  return `<span class="mc-clock-time">${time}</span><span class="mc-clock-place">${city} · ${date}</span>`;
+}
 function nowbar(){return `<aside class="market-corner" id="marketCorner">
   <button class="mc-toggle" id="mcToggle" type="button" aria-expanded="false" aria-controls="mcPanel">
-    <span class="mc-live"></span><span>MARKET HOURS</span><b>4 markets</b><span class="mc-chevron">⌃</span>
+    <span class="mc-live"></span><span class="mc-clock" id="mcClock">${mcClockText()}</span><b>4 markets</b><span class="mc-chevron">⌃</span>
   </button>
   <section class="mc-panel" id="mcPanel" hidden>
     <header class="mc-head"><span><b>Market sessions</b><small>Live market status and session countdowns</small></span><button id="mcHide" type="button">Hide</button></header>
@@ -1995,6 +2001,8 @@ document.addEventListener("click",e=>{
 setInterval(()=>{
   const el=$("#mcMarkets");
   if(el)el.innerHTML=nowText();
+  const clock=$("#mcClock");
+  if(clock)clock.innerHTML=mcClockText();
 },15000);
 
 
@@ -5240,24 +5248,7 @@ function searchInit(){const inp=$("#qSearch"),res=$("#qRes"),tb=$(".topbar");let
   $(".tb-sback").onclick=()=>{inp.value="";close();tb.classList.remove("searching");};
   document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.target.closest("input,textarea,select")){e.preventDefault();if(innerWidth<=960)tb.classList.add("searching");inp.focus();}});}
 
-/* ---------- 5. slim world-clock strip (tap for the full board) ---------- */
-const NB_SHORT={fx:"FX & gold",us:"US stocks",cme:"Futures",crypto:"Crypto"};
-{const _nt=nowText;nowText=function(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asia/Kathmandu":"Australia/Sydney",homeN=np?"Kathmandu":"Sydney";
-  const tf=o=>new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,...o}).format(d);
-  const hm=tf({hour:"numeric",minute:"2-digit",hour12:true}).replace(/\s?(am|pm)/i,(_,a)=>`<small>${a.toLowerCase()}</small>`);
-  const mk=NB_MKTS.filter(m=>np?(m.np||m.id==="fx"||m.id==="crypto"):!m.np),open=mk.filter(m=>m.open(d));
-  const full=document.documentElement.dataset.nb==="full";
-  return `<div class="nb-line"><span class="nb-now">${ix("clock",15)}<b>${hm}</b><span>${homeN} · ${tf({weekday:"short",day:"numeric",month:"short"})}</span></span>
-   <span class="nb-dots">${mk.map(m=>`<span class="${m.open(d)?"on":""}" title="${esc(m.n)}: ${m.open(d)?"open":"closed"}"><i></i>${esc(NB_SHORT[m.id]||m.n)}</span>`).join("")}</span>
-   <span class="nb-sum">${open.length} of ${mk.length} markets open</span>
-   <span class="nb-tog">${full?"Hide":"World times"}${ix(full?"chevu":"chevd",14)}</span></div>
-   <div class="nb-full">${_nt()}</div>`;};}
-{const _nb=nowbar;nowbar=function(){return `<div class="nowbar" id="nowbar" role="button" tabindex="0" aria-label="Market session status. Tap to expand" aria-expanded="${document.documentElement.dataset.nb==="full"}">${nowText()}</div>`;};}
-try{if(localStorage.getItem("td_nb")==="full")document.documentElement.dataset.nb="full";}catch{}
-function nbToggle(){const d=document.documentElement,full=d.dataset.nb!=="full";if(full)d.dataset.nb="full";else delete d.dataset.nb;try{localStorage.setItem("td_nb",full?"full":"");}catch{}
-  const el=$("#nowbar");if(el){el.innerHTML=nowText();el.setAttribute("aria-expanded",full);}}
-document.addEventListener("click",e=>{const n=e.target.closest&&e.target.closest("#nowbar");if(!n||e.target.closest("a,button:not(#nowbar)"))return;nbToggle();});
-document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.id==="nowbar"){e.preventDefault();nbToggle();}});
+/* The separate world-times strip is intentionally removed; Sydney time now lives in the market corner. */
 
 /* ---------- 6. video cards, shelves, continue-learning hero ---------- */
 const lLen=id=>{try{return lessonLen(id);}catch{return "";}};
@@ -9963,12 +9954,16 @@ img,video,canvas,svg{max-width:100%}
 
 
 <style id="floating-market-corner">
-/* Compact floating market-hours widget. The main Sydney clock remains in the site's existing clock area. */
-.market-corner{position:relative;z-index:20;width:min(390px,calc(100% - 32px));margin:10px 16px 12px auto;font-family:var(--f-body);pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;clear:both}
+/* Single in-flow market corner with its Sydney clock; no fixed overlay over dashboard content. */
+.market-corner{position:relative;z-index:2;width:min(430px,calc(100% - 32px));max-width:100%;margin:10px 16px 12px auto;font-family:var(--f-body);pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;clear:both}
 .market-corner button{font:inherit}
 .mc-toggle{pointer-events:auto;margin-left:auto;display:flex;align-items:center;gap:9px;min-height:42px;padding:0 13px;border:1px solid var(--g-line,var(--line));border-radius:999px;background:var(--g-card,var(--panel));color:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.28);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);cursor:pointer;font-size:.68rem;font-weight:750;letter-spacing:.09em}
-.mc-toggle b{font:600 .64rem var(--f-mono);letter-spacing:0;color:var(--muted);padding-left:8px;border-left:1px solid var(--line)}
+.mc-toggle b{flex:none;font:600 .64rem var(--f-mono);letter-spacing:0;color:var(--muted);padding-left:8px;border-left:1px solid var(--line)}
 .mc-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.mc-clock{display:flex;align-items:baseline;gap:7px;min-width:0;letter-spacing:0;text-transform:none;white-space:nowrap}
+.mc-clock-time{font:650 .84rem var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.mc-clock-place{font:500 .66rem var(--f-mono);color:var(--muted)}
+@media(max-width:520px){.mc-toggle{max-width:100%;gap:7px;padding:0 10px}.mc-clock{gap:4px}.mc-clock-time{font-size:.76rem}.mc-clock-place{font-size:.58rem}.mc-toggle b{font-size:.58rem;padding-left:6px}}
 .mc-chevron{font-size:1rem;color:var(--gold);transition:transform .2s}
 .mc-toggle[aria-expanded="true"] .mc-chevron{transform:rotate(180deg)}
 .mc-panel{pointer-events:auto;margin-top:9px;margin-bottom:0;padding:12px;border:1px solid var(--g-line,var(--line));border-radius:16px;background:var(--g-card,var(--panel));box-shadow:0 18px 50px rgba(0,0,0,.34);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);max-height:min(72vh,620px);overflow-y:auto;overscroll-behavior:contain}
