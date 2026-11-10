@@ -857,7 +857,8 @@ function render(){if(typeof nowbar!=="function"){clearTimeout(window.__rq);windo
   cleanup.forEach(f=>{try{f();}catch(e){}});cleanup=[];
   route=parseHash();markNav();
   const fn=VIEWS[route.page]||VIEWS.home;
-  $("#app").innerHTML=nowbar()+fn(route.sub);
+  $("#app").innerHTML=fn(route.sub);
+  mountMarketCorner();
   if(AFTER[route.page])AFTER[route.page](route.sub);
 }
 const VIEWS={},AFTER={};
@@ -1740,7 +1741,14 @@ function nowText(){const d=new Date(),f=(tz,o)=>d.toLocaleString("en-AU",{timeZo
   return `<span><b>${f("Australia/Sydney",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</b></span><span class="gold-t">${f("Australia/Sydney",{hour:"numeric",minute:"2-digit",second:"2-digit"})} Sydney${z?" ("+z.value+")":""}</span>
   <span>New York ${f("America/New_York",{weekday:"short",hour:"numeric",minute:"2-digit"})}</span><span>London ${f("Europe/London",{hour:"numeric",minute:"2-digit"})}</span><span>Kathmandu ${f("Asia/Kathmandu",{hour:"numeric",minute:"2-digit"})}</span>
   <span>${fxOpen(d)?'<span class="up-t">Forex & gold open</span>':'Forex & gold closed (weekend)'}</span>`;}
-setInterval(()=>{const el=$("#nowbar");if(el)el.innerHTML=nowText();},1000);
+function mountMarketCorner(){if(!$("#marketCorner"))document.body.insertAdjacentHTML("beforeend",nowbar());}
+mountMarketCorner();
+document.addEventListener("click",e=>{
+  const toggle=e.target.closest&&e.target.closest("#mcToggle");
+  if(toggle){const panel=$("#mcPanel"),open=panel.hidden;panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));return;}
+  if(e.target.closest&&e.target.closest("#mcHide")){const panel=$("#mcPanel"),toggle=$("#mcToggle");if(panel)panel.hidden=true;if(toggle)toggle.setAttribute("aria-expanded","false");}
+});
+setInterval(()=>{const el=$("#mcMarkets");if(el)el.innerHTML=nowText();},1000);
 
 /* ---------------- new animated lessons ---------------- */
 Object.assign(SCENES,{
@@ -1952,7 +1960,15 @@ const nbCache={};
 function nbFlip(mk,now){const cur=mk.open(now);let t=new Date(Math.ceil(now.getTime()/6e4)*6e4);
   for(let i=0;i<8*96;i++){const n=new Date(t.getTime()+9e5);if(mk.open(n)!==cur){for(let k=0;k<=15;k++){const f=new Date(t.getTime()+k*6e4);if(mk.open(f)!==cur)return f;}return n;}t=n;}return null;}
 function nbDur(ms){const m=Math.max(0,Math.round(ms/6e4)),d=Math.floor(m/1440),h=Math.floor(m%1440/60),mi=m%60;return d?`${d}d ${h}h`:h?`${h}h ${String(mi).padStart(2,"0")}m`:`${mi}m`;}
-function nowbar(){return `<div class="nowbar" id="nowbar" aria-label="World clock and market hours">${nowText()}</div>`;}
+function nowbar(){return `<aside class="market-corner" id="marketCorner">
+  <button class="mc-toggle" id="mcToggle" type="button" aria-expanded="false" aria-controls="mcPanel">
+    <span class="mc-live"></span><span>MARKET HOURS</span><b>4 markets</b><span class="mc-chevron">⌃</span>
+  </button>
+  <section class="mc-panel" id="mcPanel" hidden>
+    <header class="mc-head"><span><b>Market sessions</b><small>World clocks & live session status</small></span><button id="mcHide" type="button">Hide</button></header>
+    <div class="mc-content" id="mcMarkets">${nowText()}</div>
+  </section>
+</aside>`;}
 function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asia/Kathmandu":"Australia/Sydney",homeN=np?"Kathmandu":"Sydney";
   const tf=(tz,o)=>new Intl.DateTimeFormat("en-AU",{timeZone:tz,...o}).format(d);
   const z=(new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,timeZoneName:"short"}).formatToParts(d).find(p=>p.type==="timeZoneName")||{}).value||"";
@@ -1964,7 +1980,7 @@ function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asi
     if(!f||f.state!==o||(f.until&&f.until<=d)){f=nbCache[m.id]={state:o,until:m.id==="crypto"?null:nbFlip(m,d)};}
     const when=f.until?new Intl.DateTimeFormat("en-AU",{timeZone:homeTz,weekday:"short",hour:"numeric",minute:"2-digit"}).format(f.until):"";
     return `<div class="nb-m ${o?"open":""}" title="${esc(m.note)}"><i></i><b>${m.n}</b><em>${o?"Open":"Closed"}</em><span>${f.until?`${o?"Closes":"Opens"} in <strong>${nbDur(f.until-d)}</strong> · ${when} ${homeN}`:"Always open"}</span></div>`;}).join("");
-  return `<div class="nb-home"><b>${hm}</b><span><em>${homeN} ${z} · :${sec}</em>${tf(homeTz,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</span></div><div class="nb-cities">${cities}</div><div class="nb-mkts">${mk}</div>`;}
+  return `<div class="nb-cities">${cities}</div><div class="nb-mkts">${mk}</div>`;}
 
 /* ===================== Cinema player (continuous video, narration, subtitles) ===================== */
 const VOICE={get on(){try{return localStorage.getItem("td_voice")!=="0";}catch{return true;}},set on(v){try{localStorage.setItem("td_voice",v?"1":"0");}catch{}},
@@ -9955,5 +9971,45 @@ img,video,canvas,svg{max-width:100%}
  .lm-index-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  .lm-cv{min-height:310px!important}
  .lm-tools button{padding-inline:7px!important;font-size:.68rem!important}
+}
+</style>
+
+
+<style id="floating-market-corner">
+/* Compact floating market-hours widget. The main Sydney clock remains in the site's existing clock area. */
+.market-corner{position:fixed;right:16px;bottom:18px;z-index:120;width:min(390px,calc(100vw - 24px));font-family:var(--f-body);pointer-events:none}
+.market-corner button{font:inherit}
+.mc-toggle{pointer-events:auto;margin-left:auto;display:flex;align-items:center;gap:9px;min-height:42px;padding:0 13px;border:1px solid var(--g-line,var(--line));border-radius:999px;background:var(--g-card,var(--panel));color:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.28);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);cursor:pointer;font-size:.68rem;font-weight:750;letter-spacing:.09em}
+.mc-toggle b{font:600 .64rem var(--f-mono);letter-spacing:0;color:var(--muted);padding-left:8px;border-left:1px solid var(--line)}
+.mc-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px var(--up-soft)}
+.mc-chevron{font-size:1rem;color:var(--gold);transition:transform .2s}
+.mc-toggle[aria-expanded="true"] .mc-chevron{transform:rotate(180deg)}
+.mc-panel{pointer-events:auto;margin-bottom:9px;padding:12px;border:1px solid var(--g-line,var(--line));border-radius:16px;background:var(--g-card,var(--panel));box-shadow:0 18px 50px rgba(0,0,0,.34);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);max-height:min(72vh,620px);overflow-y:auto;overscroll-behavior:contain}
+.mc-panel[hidden]{display:none!important}
+.mc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.mc-head span{display:grid;gap:3px;min-width:0}
+.mc-head b{font-size:.86rem;color:var(--ink)}
+.mc-head small{font-size:.65rem;color:var(--muted)}
+.mc-head button{border:1px solid var(--line);border-radius:8px;background:var(--g-chip,var(--raised));color:var(--muted);padding:6px 10px;font-size:.68rem;cursor:pointer}
+.mc-content{display:grid;gap:10px;min-width:0}
+.mc-content .nb-cities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+.mc-content .nb-city{min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:var(--g-card2,var(--sunk))}
+.mc-content .nb-city i{font-size:.56rem;letter-spacing:.08em}
+.mc-content .nb-city b{font-size:.82rem;white-space:nowrap}
+.mc-content .nb-mkts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+.mc-content .nb-m{min-width:0;display:grid;grid-template-columns:8px minmax(0,1fr) auto;column-gap:7px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--g-card2,var(--sunk))}
+.mc-content .nb-m b{font-size:.7rem;line-height:1.3;min-width:0}
+.mc-content .nb-m em{font-size:.55rem;white-space:nowrap}
+.mc-content .nb-m span{grid-column:1/-1;font-size:.62rem;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}
+.mc-content .nb-m span strong{color:var(--gold)}
+@media(max-width:960px){.market-corner{right:10px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(370px,calc(100vw - 20px))}}
+@media(max-width:520px){
+ .market-corner{right:9px;bottom:calc(74px + env(safe-area-inset-bottom,0px));width:calc(100vw - 18px)}
+ .mc-panel{padding:10px;max-height:66svh}
+ .mc-content .nb-cities{gap:5px}
+ .mc-content .nb-city{padding:6px 5px}
+ .mc-content .nb-city b{font-size:.74rem}
+ .mc-content .nb-mkts{grid-template-columns:1fr}
+ .mc-content .nb-m{grid-template-columns:8px minmax(0,1fr) auto}
 }
 </style>
