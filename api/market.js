@@ -83,7 +83,7 @@ async function getAlpacaSnapshots() {
  }));
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Cache-Control", process.env.APCA_API_KEY_ID && process.env.APCA_API_SECRET_KEY ? "s-maxage=2, stale-while-revalidate=3" : "s-maxage=15, stale-while-revalidate=45");
   res.setHeader("Content-Type", "application/json");
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });

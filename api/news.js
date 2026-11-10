@@ -10,7 +10,7 @@ function field(xml, name) {
   return match ? decode(match[1]).trim() : "";
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Cache-Control", process.env.APCA_API_KEY_ID && process.env.APCA_API_SECRET_KEY ? "s-maxage=15, stale-while-revalidate=30" : "s-maxage=120, stale-while-revalidate=300");
   res.setHeader("Content-Type", "application/json");
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
