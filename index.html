@@ -9612,8 +9612,7 @@ function ribbonPaint(rows,delayed){
  const el=$("#kaMarketRibbon");if(!el)return;
  let label=el.querySelector(".mr-label");
  if(!label){label=document.createElement("span");label.className="mr-label";label.textContent="LIVE MARKETS";el.prepend(label);}
- let state=el.querySelector(".mr-state");
- if(!state){state=document.createElement("span");state.className="mr-state";el.append(state);}
+ const oldState=el.querySelector(".mr-state");if(oldState)oldState.remove();
  let viewport=el.querySelector(".mr-viewport");
  let track=el.querySelector(".mr-track");
  if(!viewport){
@@ -9623,7 +9622,7 @@ function ribbonPaint(rows,delayed){
  }
  if(!track){track=document.createElement("div");track.className="mr-track";viewport.append(track);}
  const valid=(rows||[]).filter(x=>x&&x.symbol&&Number.isFinite(Number(x.price)));
- if(!valid.length){state.textContent="NO VALID QUOTES · RETRYING";state.title="The market-data endpoint responded, but no valid quote rows were returned. Previous ticker values are preserved.";return;}
+ if(!valid.length){el.dataset.feedStatus="retrying";return;}else{delete el.dataset.feedStatus;}
  const makeItem=q=>{
   const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=q.symbol;
   const name=document.createElement("b");name.textContent=q.symbol;
@@ -9749,8 +9748,7 @@ function sidebar(){
 function ribbonLabel(){
  const el=$("#kaMarketRibbon");if(!el)return;
  const label=el.querySelector(".mr-label");if(label)label.textContent="LIVE MARKETS";
- const state=el.querySelector(".mr-state");
- if(state&&/DELAYED|SNAPSHOT/.test(state.textContent||""))state.textContent="CRYPTO LIVE · US QUOTES DELAYED";
+ const state=el.querySelector(".mr-state");if(state)state.remove();
 }
 function run(){
  profileMenu();sidebar();ribbonLabel();
@@ -10129,4 +10127,57 @@ img,video,canvas,svg{max-width:100%}
 @media(max-width:960px){
   #kaMarketRibbon.market-ribbon{width:100vw!important;max-width:100vw!important;margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important}
 }
+</style>
+
+<style id="kaushal-live-markets-pro-redesign">
+/* Remove the empty search-results tray (the stray white pill below the header). */
+.tb-res[hidden]{display:none!important}
+/* Give the ticker the full usable dashboard width, edge-to-edge within the content stage. */
+#kaMarketRibbon.market-ribbon{
+ width:calc(100% + 40px)!important;max-width:none!important;
+ margin:0 0 18px -20px!important;box-sizing:border-box!important;
+ min-height:54px!important;height:54px!important;padding:0!important;
+ display:flex!important;align-items:stretch!important;overflow:hidden!important;
+ border:1px solid color-mix(in srgb,var(--gold) 22%,var(--line))!important;
+ border-left:0!important;border-right:0!important;border-radius:0!important;
+ background:linear-gradient(100deg,color-mix(in srgb,var(--panel) 96%,var(--gold)) 0%,var(--panel) 42%,color-mix(in srgb,var(--panel) 94%,var(--gold)) 100%)!important;
+ box-shadow:0 8px 24px -22px rgba(45,35,17,.45),inset 0 1px 0 rgba(255,255,255,.65)!important;
+}
+#kaMarketRibbon .mr-label{
+ flex:0 0 154px!important;width:154px!important;min-width:154px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ padding:0 18px!important;background:transparent!important;
+ border-right:1px solid color-mix(in srgb,var(--gold) 22%,var(--line))!important;
+ color:var(--gold)!important;font:750 .67rem var(--f-mono)!important;
+ letter-spacing:.16em!important;white-space:nowrap!important;
+}
+#kaMarketRibbon .mr-viewport{
+ display:block!important;position:relative!important;flex:1 1 0%!important;
+ width:0!important;min-width:0!important;overflow:hidden!important;align-self:stretch!important;
+}
+#kaMarketRibbon .mr-track{
+ display:flex!important;align-items:stretch!important;width:max-content!important;
+ min-width:max-content!important;will-change:transform!important;
+ animation:mr-scroll var(--mr-duration,100s) linear infinite!important;
+}
+#kaMarketRibbon .mr-item{
+ flex:0 0 auto!important;min-height:54px!important;padding:0 24px!important;
+ gap:12px!important;border-right:1px solid color-mix(in srgb,var(--line) 78%,transparent)!important;
+ font:650 .75rem var(--f-mono)!important;letter-spacing:.015em!important;
+}
+#kaMarketRibbon .mr-item b{font-weight:750!important;color:var(--ink)!important}
+#kaMarketRibbon .mr-price{color:var(--ink)!important;font-variant-numeric:tabular-nums!important}
+#kaMarketRibbon .mr-change{font-weight:750!important;font-variant-numeric:tabular-nums!important}
+#kaMarketRibbon .mr-state{display:none!important}
+@media(max-width:960px){
+ #kaMarketRibbon.market-ribbon{width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:50px!important;height:50px!important;margin-bottom:14px!important}
+ #kaMarketRibbon .mr-label{flex-basis:126px!important;width:126px!important;min-width:126px!important;font-size:.61rem!important}
+ #kaMarketRibbon .mr-item{min-height:50px!important;padding:0 16px!important;gap:9px!important}
+}
+@media(max-width:600px){
+ #kaMarketRibbon.market-ribbon{width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:46px!important;height:46px!important}
+ #kaMarketRibbon .mr-label{flex-basis:108px!important;width:108px!important;min-width:108px!important;font-size:.56rem!important;letter-spacing:.1em!important}
+ #kaMarketRibbon .mr-item{min-height:46px!important;padding:0 12px!important;font-size:.66rem!important;gap:7px!important}
+}
+@media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
 </style>
