@@ -5592,7 +5592,7 @@ Player=function(host,sc,opt={}){
   function kick(){if(!raf&&!dead)raf=requestAnimationFrame(vvLoop);}
   let lastUI="";
   function ui(now){const D=dur(k),done=cum(k)+Math.min(el,D)*speed,p=Math.max(0,Math.min(1,done/TOTAL)),key=Math.round(p*1000)+"|"+Math.floor(done/1000);
-    const voiceCaption=studio&&talking();
+    const voiceCaption=talking();
     if(chunks.length>1&&!voiceCaption){const e=Math.max(0,el),tot=chunks.reduce((a,c)=>a+c.length,0);let acc=0,want=0;const f=Math.max(0,Math.min(1,e/(D*SPAN)))*tot;for(let i=0;i<chunks.length;i++){acc+=chunks[i].length;want=i;if(f<acc)break;}
       if(want!==ci){ci=want;subsT.data=chunks[want];}}else if(ci<0&&chunks.length===1){ci=0;}
     if(!diag.hidden&&now-(ui.dAt||0)>250){ui.dAt=now;let sp="off";try{sp=!VOICE.ok?"none":VVS.off?"unavailable ("+VVS.last+")":!VOICE.on?"muted":`${spokeFor===k?"this chapter":"idle"} · started ${spStarted?"yes":"no"} · ${spDone?"done":"open"} · last word ${spLastB>0?((now-spLastB)/1000).toFixed(1)+"s ago":"never"} · speaking ${speechSynthesis.speaking?"yes":"no"}`;}catch{}
