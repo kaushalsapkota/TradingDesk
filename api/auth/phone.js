@@ -14,7 +14,7 @@ export default async function handler(req,res){
   const body=await response.json().catch(()=>({}));
   if(!response.ok)return res.status(response.status).json({error:body.msg||body.message||body.error_description||"Authentication provider rejected the request."});
   if(action==="verify"&&body.access_token){
-    try{await fetch(url.replace(/\\/$/,"")+"/auth/v1/user",{method:"PATCH",headers:{"Content-Type":"application/json",apikey:key,Authorization:"Bearer "+body.access_token},body:JSON.stringify({data:{full_name:fullName.trim(),name:fullName.trim()}}),signal:AbortSignal.timeout(10000)});}catch{}
+    try{await fetch(url.replace(/\/$/,"")+"/auth/v1/user",{method:"PATCH",headers:{"Content-Type":"application/json",apikey:key,Authorization:"Bearer "+body.access_token},body:JSON.stringify({data:{full_name:fullName.trim(),name:fullName.trim()}}),signal:AbortSignal.timeout(10000)});}catch{}
   }
   return res.status(200).json(body);
  }catch(e){return res.status(502).json({error:e instanceof Error?e.message:"Authentication provider unavailable."});}
