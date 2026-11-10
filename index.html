@@ -1,4 +1,5 @@
-<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kaushal's Trading Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2011,9 +2012,13 @@ const plain=h=>String(h||"").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replac
 const easeIO=t=>t<.5?2*t*t:1-(-2*t+2)**2/2;
 const clamp01=t=>Math.max(0,Math.min(1,t));
 function fmtClock(ms){const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");}
-function sceneDur(sc,i,speed=1){const s=sc.steps[i];const words=plain(s.cap).split(/\s+/).length;
-  if(sc.draw)return (s.d||Math.max(4200,words*330+1400))/speed;
-  const from=i>0?sc.steps[i-1].to:(sc.start??-1),n=s.to-from;return (n*(s.slow?1500:520)+Math.max(3400,words*420+1200))/speed;}
+function sceneDur(sc,i,speed=1){const s=sc.steps[i],words=plain(s.cap).split(/\s+/).filter(Boolean).length;
+  const rate=typeof VOICE!=="undefined"?(VOICE.rate||.95):.95;
+  const readTime=words/(2.55*rate)*1000+850;
+  if(sc.draw)return (s.d||Math.max(2800,readTime))/speed;
+  const from=i>0?sc.steps[i-1].to:(sc.start??-1),n=Math.max(0,s.to-from);
+  const visualTime=n*(s.slow?980:350);
+  return Math.max(2500,readTime,visualTime)/speed;}
 function sceneTotal(sc){let t=0;sc.steps.forEach((_,i)=>t+=sceneDur(sc,i));return t;}
 const IC={play:'<svg width="15" height="15" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5v11l9-5.5z"/></svg>',pause:'<svg width="15" height="15" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2h3v10H3zM8 2h3v10H8z"/></svg>',
   replay:'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M2.5 2v2.5H5"/></svg>',
@@ -5491,7 +5496,7 @@ Player=function(host,sc,opt={}){
   sc.steps.forEach((_,i)=>{if(i){const t=document.createElement("i");t.className="tick";t.style.left=(cum(i)/TOTAL*100)+"%";tl.appendChild(t);}});
   let k=0,playing=false,el=0,speed=1,raf=0,iv=0,dead=false,ended=false,started=false,holding=false,dirty=true,drag=false,ccOn=true;
   let last=0,lastRaf=0,lastDraw=-1e9,frameKey="",drawErr=0,fpsN=0,fpsAt=0,fps=0,holdUsed=0,rafN=0,rafAt=0,rafRate=0,drawMs=0;
-  const HOLD_BUDGET=TOTAL*.06;
+  const HOLD_BUDGET=TOTAL*.18;
   /* speech state for this player */
   let spokeFor=-1,spGen=0,spStarted=false,spDone=false,spLastB=-1e9,spCount=0;
   if(!VOICE.ok)vB.hidden=true;
@@ -5510,17 +5515,29 @@ Player=function(host,sc,opt={}){
   function speakFrom(i,j){spokeFor=-1;const my=++spGen;spStarted=false;spDone=false;spLastB=-1e9;if(!VOICE.ok)return;
     const fresh=performance.now()-vvPrimedAt<80;if(!fresh&&!VVS.off)vvCancel();
     if(!vvSpeechOn()||!playing)return;let parts=SENT[i].slice(j).map(x=>x.t);if(studio)parts=parts.map(vvSpeakable);
-    const chunks=parts.flatMap(t=>vvSplit(t));if(!chunks.length)return;spokeFor=i;
+    const speechChunks=parts.flatMap(t=>vvSplit(t));if(!speechChunks.length)return;spokeFor=i;
+    const fullText=plain(sc.steps[i].cap),fullLength=Math.max(1,fullText.length);
+    let spokenOffset=Math.round((SENT[i][j]?.st||0)*fullLength);
+    const syncCaption=charIndex=>{
+      if(studio||!chunks.length)return;
+      const ratio=clamp01((spokenOffset+Math.max(0,charIndex||0))/fullLength);
+      const total=chunks.reduce((n,x)=>n+x.length,0);let acc=0,want=0;
+      for(let x=0;x<chunks.length;x++){acc+=chunks[x].length;want=x;if(ratio*total<=acc)break;}
+      if(want!==ci){ci=want;subsT.data=chunks[want];}
+    };
     try{if(speechSynthesis.paused)speechSynthesis.resume();}catch{}
-    for(let n=0;n<chunks.length;n++){if(my!==spGen||VVS.off)return;let u;
-      try{u=vvUtter(chunks[n],{speed});}catch(e){vvSpeechFail(e);return;}
+    for(let n=0;n<speechChunks.length;n++){if(my!==spGen||VVS.off)return;let u;
+      const piece=speechChunks[n],base=spokenOffset;
+      try{u=vvUtter(piece,{speed});}catch(e){vvSpeechFail(e);return;}
       u.onstart=()=>{if(my===spGen)spStarted=true;};
-      u.onboundary=()=>{if(my===spGen)spLastB=performance.now();};
-      if(n===chunks.length-1)u.onend=()=>{if(my===spGen)spDone=true;};
+      u.onboundary=ev=>{if(my===spGen){spLastB=performance.now();syncCaption(base+(ev&&Number.isFinite(ev.charIndex)?ev.charIndex:0));}};
+      if(n===speechChunks.length-1)u.onend=()=>{if(my===spGen)spDone=true;};
       u.onerror=ev=>{const c=ev&&ev.error;if(c==="interrupted"||c==="canceled")return;
-        if(c==="not-allowed"){if(my===spGen){spDone=true;vvUnlocked=false;}return;}  /* iOS outside a tap: wait for the next tap */
+        if(c==="not-allowed"){if(my===spGen){spDone=true;vvUnlocked=false;}return;}
         if(my===spGen)spDone=true;vvSpeechFail(c||"error");};
-      try{speechSynthesis.speak(u);spCount++;}catch(e){vvSpeechFail(e);return;}}}
+      try{speechSynthesis.speak(u);spCount++;}catch(e){vvSpeechFail(e);return;}
+      spokenOffset+=piece.length+1;
+    }}
   /* line the picture up with the start of the sentence being read, then read from there */
   function resync(){if(vvSpeechOn()){const j=sentAt(k,el);el=Math.min(el,sentStart(k,j));speakFrom(k,j);}else stopSpeech();dirty=true;kick();}
   const icon=()=>{P.classList.toggle("isplaying",playing);playB.innerHTML=playing?IC.pause:IC.play;playB.setAttribute("aria-label",playing?"Pause":"Play");
@@ -5550,7 +5567,7 @@ Player=function(host,sc,opt={}){
   /* --- the clock --- */
   function logic(){if(!playing||drag)return;const D=dur(k);if(el<D){holding=false;return;}
     /* narration still audibly mid-sentence: hold the last frame up to 3 s, within 6% of the whole lesson */
-    const over=el-D;if(talking()&&over<Math.min(3000,HOLD_BUDGET-holdUsed)){holding=true;return;}
+    const over=el-D;if(talking()&&over<Math.min(5000,HOLD_BUDGET-holdUsed)){holding=true;return;}
     if(holding)holdUsed+=over;holding=false;if(k<N-1){k++;el=0;caption();speakFrom(k,0);}else if(over>=800)finish();}  /* v7v: the end card waits 0.8 s after the last chapter */
   /* where the picture is: between interval ticks the time is interpolated, so motion stays smooth */
   const curEl=now=>playing&&!drag&&!holding?el+Math.max(0,Math.min(150,now-last)):el;
@@ -5575,8 +5592,9 @@ Player=function(host,sc,opt={}){
   function kick(){if(!raf&&!dead)raf=requestAnimationFrame(vvLoop);}
   let lastUI="";
   function ui(now){const D=dur(k),done=cum(k)+Math.min(el,D)*speed,p=Math.max(0,Math.min(1,done/TOTAL)),key=Math.round(p*1000)+"|"+Math.floor(done/1000);
-    if(chunks.length>1){const e=Math.max(0,el),tot=chunks.reduce((a,c)=>a+c.length,0);let acc=0,want=0;const f=Math.max(0,Math.min(1,e/(D*SPAN)))*tot;for(let i=0;i<chunks.length;i++){acc+=chunks[i].length;want=i;if(f<acc)break;}
-      if(want!==ci){ci=want;subsT.data=chunks[want];}}else if(ci<0){ci=0;}
+    const voiceCaption=studio&&talking();
+    if(chunks.length>1&&!voiceCaption){const e=Math.max(0,el),tot=chunks.reduce((a,c)=>a+c.length,0);let acc=0,want=0;const f=Math.max(0,Math.min(1,e/(D*SPAN)))*tot;for(let i=0;i<chunks.length;i++){acc+=chunks[i].length;want=i;if(f<acc)break;}
+      if(want!==ci){ci=want;subsT.data=chunks[want];}}else if(ci<0&&chunks.length===1){ci=0;}
     if(!diag.hidden&&now-(ui.dAt||0)>250){ui.dAt=now;let sp="off";try{sp=!VOICE.ok?"none":VVS.off?"unavailable ("+VVS.last+")":!VOICE.on?"muted":`${spokeFor===k?"this chapter":"idle"} · started ${spStarted?"yes":"no"} · ${spDone?"done":"open"} · last word ${spLastB>0?((now-spLastB)/1000).toFixed(1)+"s ago":"never"} · speaking ${speechSynthesis.speaking?"yes":"no"}`;}catch{}
       diag.textContent=`fps ${fps} painted (only when the picture changes) · frames ${rafRate}/s · draw ${drawMs.toFixed(1)} ms\n${playing?"playing":"paused"}${holding?" (holding for voice)":""}\nclock ${fmtClock(done)} / ${fmtClock(TOTAL)} · el ${(el/1000).toFixed(2)}s\nchapter ${k+1}/${N} · ${(D/1000).toFixed(1)}s · speed ${speed}×\nvoice ${sp}\nutterances ${spCount} · errors ${VVS.errs} · held ${(holdUsed/1000).toFixed(1)}s\nframes: rAF ${Math.round(now-lastRaf)} ms ago · page ${document.visibilityState}${drawErr?" · draw errors "+drawErr:""}`;}
     if(key===lastUI)return;lastUI=key;
@@ -9634,6 +9652,7 @@ function ribbonPaint(rows,delayed){
  if(track.dataset.symbols!==signature){
   track.replaceChildren(...items,...items.map(n=>n.cloneNode(true)));
   track.dataset.symbols=signature;
+  track.style.setProperty("animation","none","important");void track.offsetWidth;track.style.removeProperty("animation");
  }else{
   const bySymbol=new Map(valid.map(q=>[q.symbol,q]));
   track.querySelectorAll(".mr-item").forEach(item=>{const q=bySymbol.get(item.dataset.symbol);if(q)update(item,q);});
@@ -9661,7 +9680,8 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 
 <style id="kaushal-live-polish">
 :root{--kaushal-warm:#c7a46b}
-#mkTick{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;overflow:hidden!important;border:0!important;padding:0!important;margin:0!important}\n.market-ribbon{position:sticky!important;top:0!important;margin:0 0 12px!important;min-height:42px!important;border-radius:11px!important;z-index:100!important}
+#mkTick{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;overflow:hidden!important;border:0!important;padding:0!important;margin:0!important}
+.market-ribbon{position:sticky!important;top:0!important;margin:0 0 12px!important;min-height:42px!important;border-radius:11px!important;z-index:100!important}
 .market-ribbon .mr-label{width:auto!important;min-width:104px!important;letter-spacing:.12em!important}
 .market-ribbon .mr-track{animation-duration:42s!important}
 .market-ribbon .mr-item{padding-inline:13px!important}
@@ -9902,7 +9922,6 @@ setInterval(restore,500);
 @media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
 </style>
 
-\n
 <style id="responsive-device-layout">
 /* Device-aware layout: CSS selects phone/tablet or desktop from the actual viewport. */
 html,body{width:100%;min-width:0;overflow-x:hidden}
@@ -10024,5 +10043,42 @@ img,video,canvas,svg{max-width:100%}
  .mc-toggle .mc-count{display:none!important}
  .mc-toggle .mc-label{font-size:.58rem!important}
  .mc-panel{width:min(350px,calc(100vw - 16px))!important;max-width:calc(100vw - 16px)!important}
+}
+</style>
+
+<style id="kaushal-market-ribbon-v2">
+/* Premium full-bleed market ribbon: one clean edge-to-edge rail, continuous loop, no dead space. */
+#kaMarketRibbon.market-ribbon{
+ width:calc(100% + 40px)!important;max-width:none!important;margin:0 0 8px -20px!important;
+ min-height:48px!important;height:48px!important;top:var(--tb,56px)!important;
+ border-top:1px solid var(--g-line,var(--line))!important;border-bottom:1px solid var(--g-line,var(--line))!important;
+ background:color-mix(in srgb,var(--g-top,var(--panel)) 94%,var(--gold))!important;
+ backdrop-filter:var(--g-blur,blur(18px))!important;-webkit-backdrop-filter:var(--g-blur,blur(18px))!important;
+ box-shadow:inset 0 1px 0 var(--g-hi,rgba(255,255,255,.04)),0 8px 22px -18px #0009!important;
+}
+#kaMarketRibbon .mr-label{flex-basis:142px!important;width:142px!important;min-width:142px!important;background:transparent!important}
+#kaMarketRibbon .mr-track{animation:mr-scroll 78s linear 0s infinite!important;animation-fill-mode:both!important}
+#kaMarketRibbon .mr-item{min-height:48px!important;padding-inline:20px!important;gap:11px!important}
+#kaMarketRibbon .mr-state{flex-basis:148px!important;min-width:148px!important}
+@media(max-width:960px){
+ #kaMarketRibbon.market-ribbon{width:calc(100% + 24px)!important;margin-left:-12px!important;min-height:46px!important;height:46px!important;top:var(--tb,56px)!important}
+ #kaMarketRibbon .mr-label{flex-basis:116px!important;width:116px!important;min-width:116px!important}
+ #kaMarketRibbon .mr-item{min-height:46px!important;padding-inline:14px!important}
+}
+@media(max-width:600px){
+ #kaMarketRibbon.market-ribbon{width:calc(100% + 18px)!important;margin-left:-9px!important;min-height:44px!important;height:44px!important}
+ #kaMarketRibbon .mr-label{flex-basis:104px!important;width:104px!important;min-width:104px!important;font-size:.56rem!important}
+ #kaMarketRibbon .mr-item{min-height:44px!important;padding-inline:12px!important;gap:8px!important}
+ #kaMarketRibbon .mr-state{display:none!important}
+}
+@media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
+/* Market sessions open below the header as a measured glass panel, never over dashboard cards. */
+.topbar:has(#mcPanel:not([hidden])){flex-wrap:wrap!important;align-items:center!important;padding-bottom:8px!important}
+.market-corner:has(#mcPanel:not([hidden])){flex:1 0 100%!important;width:100%!important;max-width:100%!important;margin:2px 0 0!important;align-items:flex-end!important}
+.mc-panel{width:min(560px,calc(100vw - 32px))!important;max-width:100%!important;box-sizing:border-box!important}
+.mc-content .nb-mkts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+@media(max-width:600px){
+ .mc-panel{width:calc(100vw - 18px)!important;max-width:calc(100vw - 18px)!important}
+ .mc-content .nb-mkts{grid-template-columns:1fr!important}
 }
 </style>
