@@ -5220,7 +5220,7 @@ const NB_SHORT={fx:"FX & gold",us:"US stocks",cme:"Futures",crypto:"Crypto"};
    <span class="nb-sum">${open.length} of ${mk.length} markets open</span>
    <span class="nb-tog">${full?"Hide":"World times"}${ix(full?"chevu":"chevd",14)}</span></div>
    <div class="nb-full">${_nt()}</div>`;};}
-{const _nb=nowbar;nowbar=function(){return `<div class="nowbar" id="nowbar" role="button" tabindex="0" aria-label="World clock and market hours. Tap for all cities" aria-expanded="${document.documentElement.dataset.nb==="full"}">${nowText()}</div>`;};}
+{const _nb=nowbar;nowbar=function(){return `<div class="nowbar" id="nowbar" role="button" tabindex="0" aria-label="Market session status. Tap to expand" aria-expanded="${document.documentElement.dataset.nb==="full"}">${nowText()}</div>`;};}
 try{if(localStorage.getItem("td_nb")==="full")document.documentElement.dataset.nb="full";}catch{}
 function nbToggle(){const d=document.documentElement,full=d.dataset.nb!=="full";if(full)d.dataset.nb="full";else delete d.dataset.nb;try{localStorage.setItem("td_nb",full?"full":"");}catch{}
   const el=$("#nowbar");if(el){el.innerHTML=nowText();el.setAttribute("aria-expanded",full);}}
@@ -9882,4 +9882,34 @@ setInterval(restore,500);
  #kaMarketRibbon .mr-item .mr-change{min-width:48px!important}
 }
 @media(prefers-reduced-motion:reduce){#kaMarketRibbon .mr-track{animation:none!important}}
+</style>
+<style id="market-sessions-corner">
+/* Compact expandable market-hours widget; preserve existing market data and chart controls. */
+.nowbar#nowbar{
+ position:fixed!important;top:14px!important;right:18px!important;left:auto!important;
+ z-index:28!important;width:min(460px,calc(100vw - 300px))!important;max-width:460px!important;
+ box-shadow:var(--shadow)!important;background:var(--panel)!important
+}
+.nowbar#nowbar .nb-line{min-height:36px!important;padding:5px 10px!important;gap:8px!important;white-space:normal!important}
+.nowbar#nowbar .nb-now{display:none!important}
+.nowbar#nowbar .nb-dots{display:flex!important;flex:1 1 auto!important;flex-wrap:wrap!important;gap:5px 10px!important;overflow:visible!important}
+.nowbar#nowbar .nb-dots span{font-size:.68rem!important;white-space:nowrap!important}
+.nowbar#nowbar .nb-sum{display:inline-flex!important;align-items:center;font:600 .64rem var(--f-mono)!important;color:var(--gold)!important;white-space:nowrap!important}
+.nowbar#nowbar .nb-tog{font-size:.6rem!important;white-space:nowrap!important}
+.nowbar#nowbar .nb-full{padding:8px!important;gap:6px!important}
+.nowbar#nowbar .nb-full .nb-cities{display:none!important}
+.nowbar#nowbar .nb-full .nb-mkts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important}
+.nowbar#nowbar .nb-m{min-width:0!important;padding:6px 8px!important;grid-template-columns:9px minmax(0,1fr) auto!important;column-gap:6px!important}
+.nowbar#nowbar .nb-m b{font-size:.72rem!important}
+.nowbar#nowbar .nb-m em{font-size:.56rem!important}
+.nowbar#nowbar .nb-m span{font-size:.62rem!important;line-height:1.35!important}
+@media(max-width:960px){
+ .nowbar#nowbar{top:64px!important;right:10px!important;width:min(390px,calc(100vw - 20px))!important}
+}
+@media(max-width:520px){
+ .nowbar#nowbar{top:60px!important;right:8px!important;width:calc(100vw - 16px)!important}
+ .nowbar#nowbar .nb-full .nb-mkts{grid-template-columns:1fr!important}
+ .nowbar#nowbar .nb-dots{gap:4px 8px!important}
+ .nowbar#nowbar .nb-dots span{font-size:.62rem!important}
+}
 </style>
