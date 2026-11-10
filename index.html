@@ -1971,13 +1971,12 @@ function nowText(){const d=new Date(),np=S.settings.region==="np",homeTz=np?"Asi
 
 function mountMarketCorner(){
   let corner=$("#marketCorner");
-  if(!corner){const html=nowbar();const host=document.createElement("div");host.innerHTML=html;corner=host.firstElementChild;}
-  const right=$(".tb-right"),clock=$("#topClock"),top=$(".topbar");
-  if(right){
-    const anchor=clock&&clock.parentElement===right?clock.nextSibling:right.firstChild;
-    if(corner.parentElement!==right||corner!==anchor)right.insertBefore(corner,anchor||null);
-  }else if(top&&corner.parentElement!==top){top.appendChild(corner);}
-  else if(!top&&!corner.isConnected)document.body.appendChild(corner);
+  if(!corner){const host=document.createElement("div");host.innerHTML=nowbar();corner=host.firstElementChild;}
+  const top=$(".topbar"),right=$(".tb-right");
+  if(top){
+    if(corner.parentElement!==top)top.appendChild(corner);
+    if(right&&corner.previousElementSibling!==right)right.after(corner);
+  }else if(!corner.isConnected)document.body.appendChild(corner);
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mountMarketCorner,{once:true});
 else mountMarketCorner();
@@ -9995,23 +9994,25 @@ img,video,canvas,svg{max-width:100%}
 </style>
 
 <style id="kaushal-market-header-layout">
-/* Compact header: ticker sits close to the top bar; market sessions live beside Sydney time and account. */
-.topbar{height:auto!important;min-height:var(--tb,56px)!important;overflow:visible!important;z-index:120!important}
-.tb-right{align-items:center!important;overflow:visible!important}
-.market-corner{position:relative!important;z-index:125!important;width:auto!important;max-width:none!important;margin:0!important;clear:none!important;display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:flex-end!important;align-self:stretch!important;justify-content:center!important;pointer-events:auto!important}
+/* Compact ticker and a non-overlapping market-session dropdown in the top header. */
+.topbar{height:auto!important;min-height:var(--tb,56px)!important;overflow:visible!important;z-index:120!important;flex-wrap:nowrap!important}
+.tb-right{align-items:center!important;overflow:visible!important;flex:none!important}
+.market-corner{position:relative!important;z-index:125!important;width:auto!important;max-width:none!important;margin:0 0 0 8px!important;clear:none!important;display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:flex-end!important;align-self:center!important;pointer-events:auto!important}
 .mc-toggle{min-height:36px!important;padding:0 10px!important;gap:8px!important;border-radius:999px!important;background:var(--g-chip,var(--panel))!important;border-color:var(--g-line,var(--line))!important;box-shadow:var(--g-shadow-s,0 4px 14px #0002)!important;backdrop-filter:var(--g-blur,blur(14px))!important;-webkit-backdrop-filter:var(--g-blur,blur(14px))!important;font-size:.65rem!important;white-space:nowrap!important}
 .mc-toggle .mc-label{font:650 .66rem var(--f-body)!important;letter-spacing:.01em!important}
 .mc-toggle .mc-count{font:600 .58rem var(--f-mono)!important;color:var(--muted)!important;border-left:1px solid var(--g-line,var(--line));padding-left:8px!important}
 .mc-panel{position:static!important;inset:auto!important;width:min(430px,calc(100vw - 28px))!important;max-width:calc(100vw - 28px)!important;box-sizing:border-box!important;margin:7px 0 10px auto!important;max-height:min(66vh,560px)!important;overflow-y:auto!important;box-shadow:0 16px 42px #0003!important}
 .mc-panel[hidden]{display:none!important}
 .mc-head,.mc-content{min-width:0}
+.topbar:has(#mcPanel:not([hidden])){height:auto!important;min-height:var(--tb,56px)!important;flex-wrap:wrap!important;align-items:center!important;padding-bottom:8px!important}
+.market-corner:has(#mcPanel:not([hidden])){flex:1 0 100%!important;width:100%!important;max-width:100%!important;margin:0!important;align-items:flex-end!important;align-self:stretch!important}
 #kaMarketRibbon.market-ribbon{min-height:42px!important;margin:0 0 4px -20px!important;top:var(--tb,56px)!important}
 #kaMarketRibbon .mr-item{min-height:42px!important}
 .page{padding-top:10px!important;gap:20px!important}
 @media(max-width:960px){
- .topbar{align-items:center!important;flex-wrap:nowrap!important}
- .tb-right{gap:4px!important;min-width:0!important}
- .market-corner{align-self:center!important}
+ .topbar{align-items:center!important;flex-wrap:wrap!important}
+ .tb-right{margin-left:auto!important;gap:4px!important;min-width:0!important}
+ .market-corner{margin-left:8px!important}
  .mc-toggle{min-height:34px!important;padding:0 8px!important;gap:6px!important}
  .mc-toggle .mc-label{font-size:.61rem!important}
  .mc-toggle .mc-count{font-size:.54rem!important;padding-left:6px!important}
