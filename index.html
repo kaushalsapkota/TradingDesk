@@ -1,4 +1,4 @@
-<meta charset="utf-8">
+<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kaushal's Trading Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9503,10 +9503,8 @@ window.TD_AUDIO={"f":{"w-buyers":{"ch":[[0.0,6.131],[6.131,11.123],[17.255,7.71]
   const now=()=>XA.src&&XA.ctx?XA.startOff+(XA.ctx.currentTime-XA.startCtx)*XA.rate:-1;
   function players(){return [...document.querySelectorAll(".player")].filter(el=>el._v6&&el.__sc);}
   function active(){const ps=players();return ps.find(el=>el._v6.playing)||ps[0]||null;}
-  /* one voice only: silence device speech whenever a recorded lesson is on the page */
-  const recorded=()=>players().some(el=>el.__sc.__audio);
-  try{if(window.speechSynthesis&&speechSynthesis.speak){const _speak=speechSynthesis.speak.bind(speechSynthesis);
-    speechSynthesis.speak=function(u){if(u&&u.text&&u.text.trim().length>1){ /* never use the robotic device voice: recorded narration only */setTimeout(()=>{try{u.onstart&&u.onstart({});u.onend&&u.onend({});}catch(e){}},0);return;}return _speak(u);};}}catch(e){}
+  /* Narration fallback: if a lesson recording is missing or cannot load, allow the
+     browser's native speech engine to read the lesson instead of silently skipping it. */
   /* narrator changed: rebuild the lesson so chapter lengths match the new voice */
   let lastPk=pk();
   function tick(){const cur=pk();if(cur!==lastPk){lastPk=cur;stop();const el=active();if(el&&typeof render==="function"){try{render();}catch(e){}}return;}
@@ -9911,5 +9909,51 @@ setInterval(restore,500);
  .nowbar#nowbar .nb-full .nb-mkts{grid-template-columns:1fr!important}
  .nowbar#nowbar .nb-dots{gap:4px 8px!important}
  .nowbar#nowbar .nb-dots span{font-size:.62rem!important}
+}
+</style>
+\n
+<style id="responsive-device-layout">
+/* Device-aware layout: CSS selects phone/tablet or desktop from the actual viewport. */
+html,body{width:100%;min-width:0;overflow-x:hidden}
+img,video,canvas,svg{max-width:100%}
+@media(min-width:961px){
+ .shell{grid-template-columns:248px minmax(0,1fr)!important}
+ .stage{min-width:0}
+ .page{width:100%;max-width:1500px!important}
+ .lm{grid-template-columns:minmax(0,1fr) 320px!important;align-items:start}
+ .lm>.stack{min-width:0}
+ .lm-cv{width:100%;height:min(72vh,900px)!important;min-height:560px}
+}
+@media(max-width:960px){
+ .shell{display:block!important;min-width:0}
+ .stage{width:100%;min-width:0;padding-left:12px!important;padding-right:12px!important}
+ .page{width:100%;max-width:none!important;min-width:0;padding:12px 0 104px!important;gap:18px!important}
+ .lm{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;min-width:0;gap:14px!important}
+ .lm>.stack{order:1;min-width:0;width:100%}
+ .lm>.lm-side{order:2;position:static!important;min-width:0;width:100%}
+ .lm-chart,.lm-cv,.lm-body{width:100%;min-width:0;max-width:100%}
+ .lm-cv{height:62svh!important;min-height:380px!important;max-height:720px}
+ .lm-index-strip{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .lm-tools{overflow-x:auto;max-width:100%;flex-wrap:nowrap;scrollbar-width:thin}
+}
+@media(max-width:600px){
+ .stage{padding-left:9px!important;padding-right:9px!important}
+ .page{padding-top:9px!important;gap:14px!important}
+ .head h1{font-size:1.55rem!important}
+ .lm-index-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+ .lm-index-card{min-width:0;padding:9px!important}
+ .lm-index-card .ix-price{font-size:.88rem!important}
+ .lm-cv{height:58svh!important;min-height:340px!important;max-height:620px}
+ .lm-chart .lm-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .lm-workspace-head{align-items:flex-start;flex-direction:column}
+ .player{width:100%;max-width:100%;border-radius:12px}
+ .player .screen{width:100%;min-width:0}
+ .player button{touch-action:manipulation}
+ .vvcard .vpre{grid-template-columns:1fr!important}
+}
+@media(max-width:380px){
+ .lm-index-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .lm-cv{min-height:310px!important}
+ .lm-tools button{padding-inline:7px!important;font-size:.68rem!important}
 }
 </style>
