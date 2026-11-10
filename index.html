@@ -9605,7 +9605,7 @@ let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>
 <script>
 (()=>{"use strict";
 const $=s=>document.querySelector(s),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","SPY","QQQ","BTC-USD","ETH-USD","SOL-USD","DOGE-USD"];
+const WATCH=["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AMD","AVGO","NFLX","JPM","ORCL","SPY","QQQ","IWM","DIA","GLD","TLT","^GSPC","^IXIC","^DJI","^VIX","BTC-USD","ETH-USD","SOL-USD","XRP-USD","DOGE-USD","ADA-USD"];
 let ribbonBusy=false,lastNews=new Set(),audioCtx=null;
 function ribbonInit(){const stage=$(".stage"),page=$(".stage .page");if(!stage||!page)return;let el=$("#kaMarketRibbon");if(!el){el=document.createElement("div");el.id="kaMarketRibbon";el.className="market-ribbon";stage.insertBefore(el,page);}}
 function ribbonPaint(rows,delayed){
@@ -9623,7 +9623,7 @@ function ribbonPaint(rows,delayed){
  }
  if(!track){track=document.createElement("div");track.className="mr-track";viewport.append(track);}
  const valid=(rows||[]).filter(x=>x&&x.symbol&&Number.isFinite(Number(x.price)));
- if(!valid.length){state.textContent="FEED UNAVAILABLE · RETRYING";return;}
+ if(!valid.length){state.textContent="NO VALID QUOTES · RETRYING";state.title="The market-data endpoint responded, but no valid quote rows were returned. Previous ticker values are preserved.";return;}
  const makeItem=q=>{
   const item=document.createElement("span");item.className="mr-item";item.dataset.symbol=q.symbol;
   const name=document.createElement("b");name.textContent=q.symbol;
@@ -9652,15 +9652,16 @@ function ribbonPaint(rows,delayed){
  if(track.dataset.symbols!==signature){
   track.replaceChildren(...items,...items.map(n=>n.cloneNode(true)));
   track.dataset.symbols=signature;
-  track.style.setProperty("animation","none","important");void track.offsetWidth;track.style.removeProperty("animation");
+  track.style.setProperty("animation","none");void track.offsetWidth;track.style.removeProperty("animation");
  }else{
   const bySymbol=new Map(valid.map(q=>[q.symbol,q]));
   track.querySelectorAll(".mr-item").forEach(item=>{const q=bySymbol.get(item.dataset.symbol);if(q)update(item,q);});
  }
  state.textContent=delayed?"STOCKS · DELAYED / SNAPSHOT":"STOCKS · PROVIDER QUOTES";
- state.title="Stock quotes use the available provider feed and may be delayed. Bitcoin and Ether receive live Coinbase trade updates.";
+ state.title="Quotes are supplied by the configured market-data providers. Exchange sessions, provider limits and market closures can make some prices delayed. Hover for source and timestamp.";
+ const halfWidth=Math.max(1,track.scrollWidth/2);const seconds=Math.max(65,Math.min(210,halfWidth/42));track.style.setProperty("--mr-duration",seconds.toFixed(1)+"s");
 }
-async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch{const el=$("#kaMarketRibbon");if(el&&!el.querySelector(".mr-track"))el.innerHTML='<span class="mr-label">MARKET PULSE</span><span class="mr-state">Feed temporarily unavailable · retrying</span>';}finally{ribbonBusy=false;}}
+async function refreshRibbon(){if(ribbonBusy||document.hidden)return;ribbonBusy=true;try{const r=await fetch("/api/market?symbols="+encodeURIComponent(WATCH.join(",")),{cache:"no-store"});if(!r.ok)throw Error("Market feed "+r.status);const j=await r.json();ribbonPaint(j.data,j.delayed!==false);}catch(error){const el=$("#kaMarketRibbon");if(el){let state=el.querySelector(".mr-state");if(!state){state=document.createElement("span");state.className="mr-state";el.append(state);}const message=String(error&&error.message||"connection issue").replace(/[<>]/g,"").slice(0,54);state.textContent=el.querySelector(".mr-track")?"FEED INTERRUPTED · RETRYING":"FEED ERROR · RETRYING";state.title="Market data could not refresh: "+message+" · Previous quotes remain visible until the next successful update.";}}finally{ribbonBusy=false;}}
 function splash(){if(sessionStorage.getItem("kaIntroSeen"))return;const el=document.createElement("div");el.className="ka-intro";el.innerHTML='<div class="ka-intro-inner"><div class="ka-mark">K</div><h1>TRADING DESK</h1><p>Market intelligence · Learn · Practise · Plan</p><div class="ka-line"></div></div>';document.body.appendChild(el);sessionStorage.setItem("kaIntroSeen","1");setTimeout(()=>{el.classList.add("out");setTimeout(()=>el.remove(),800);},1900);}
 function authMessage(s){const el=$("#kaAuthMsg");if(el)el.textContent=s;}
 function openAuth(){if($("#kaAuthModal"))return;const el=document.createElement("div");el.id="kaAuthModal";el.className="ka-auth-modal";el.innerHTML='<div class="ka-auth-card"><button class="ka-close" id="kaAuthClose">✕</button><h2>Welcome to Trading Desk</h2><p>Sign in or create an account to continue.</p><button class="ka-google" id="kaGoogle">Continue with Google</button><div style="text-align:center;color:var(--faint);font-size:.7rem;margin:5px 0 12px">OR CONTINUE WITH PHONE</div><label class="small muted">Phone number with country code</label><input id="kaPhone" type="tel" placeholder="+61412345678" autocomplete="tel"><button class="ka-primary" id="kaSend">Send verification code</button><div id="kaVerifyArea" hidden><label class="small muted">6-digit verification code</label><input id="kaCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"><button class="ka-primary" id="kaVerify">Verify and sign in</button></div><div class="ka-msg" id="kaAuthMsg" role="status"></div><p class="tiny muted">Phone verification requires SMS to be enabled in the authentication provider.</p></div>';document.body.appendChild(el);$("#kaAuthClose").onclick=()=>el.remove();el.addEventListener("click",e=>{if(e.target===el)el.remove();});$("#kaGoogle").onclick=()=>location.href="/api/auth/google";
@@ -10097,4 +10098,21 @@ img,video,canvas,svg{max-width:100%}
 @media(max-width:520px){
  .mc-panel{width:min(350px,calc(100vw - 16px))!important;max-width:calc(100vw - 16px)!important}
 }
+</style>
+
+<style id="kaushal-expanded-market-ribbon">
+.market-ribbon{width:100%;max-width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+.market-ribbon .mr-label{flex:0 0 112px;white-space:nowrap}
+.market-ribbon .mr-viewport{display:block;position:relative;flex:1 1 0%;width:0;min-width:0;overflow:hidden;align-self:stretch}
+.market-ribbon .mr-track{width:max-content;min-width:max-content;will-change:transform;animation:mr-scroll var(--mr-duration,100s) linear infinite}
+.market-ribbon .mr-item{flex:0 0 auto;min-height:44px}
+.market-ribbon .mr-state{flex:0 0 auto;white-space:nowrap}
+.market-ribbon .mr-price,.market-ribbon .mr-change{font-variant-numeric:tabular-nums}
+@media(max-width:900px){
+ .market-ribbon{min-height:44px}
+ .market-ribbon .mr-label{flex-basis:94px;width:94px;font-size:.59rem;padding:0 9px}
+ .market-ribbon .mr-item{gap:7px;padding:0 13px;font-size:.68rem}
+ .market-ribbon .mr-state{display:none}
+}
+@media(prefers-reduced-motion:reduce){.market-ribbon .mr-track{animation:none!important;transform:none!important}}
 </style>
