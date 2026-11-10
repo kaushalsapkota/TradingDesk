@@ -7,7 +7,7 @@ export default async function handler(req,res){
   if(!supabaseUrl||!anonKey)return res.status(503).json({error:"Authentication is not configured."});
   if(!token)return res.status(401).json({error:"Sign in is required."});
   try{
-    const response=await fetch(supabaseUrl.replace(/\\/$/,"")+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+token},signal:AbortSignal.timeout(10000)});
+    const response=await fetch(supabaseUrl.replace(/\/$/,"")+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+token},signal:AbortSignal.timeout(10000)});
     const user=await response.json().catch(()=>({}));
     if(!response.ok)return res.status(response.status===401?401:502).json({error:"Unable to verify the signed-in account."});
     const meta=user.user_metadata||{};
